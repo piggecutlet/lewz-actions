@@ -1,0 +1,69 @@
+on:
+  workflow_dispatch:
+
+concurrency:
+  group: zombie
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/checkout@v7
+        with:
+          repository: ${{ secrets.SOURCE_REPO }}
+          token: ${{ secrets.SOURCE_TOKEN }}
+          path: src
+          sparse-checkout-cone-mode: false
+          sparse-checkout: |
+            /api/
+            /scripts/core/
+            /savedata/
+            /CI_SKIP
+            /device/files/ja/ja_ilocalize_base.json
+            /device/files/WarZDoc/config/database.system.xml
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: "24"
+
+      - run: |
+          mkdir -p logs
+          log="logs/$(TZ=Asia/Tokyo date +%Y-%m-%d_%H%M)_setup.log"
+          echo "LOG=$log" >> "$GITHUB_ENV"
+          set +e
+          (
+            cd src
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            node scripts/core/new_dev.mjs --ci
+          ) > "$log" 2>&1
+          echo "CODE=$?" >> "$GITHUB_ENV"
+
+      - if: always() && env.LOG != ''
+        env:
+          LOG_KEY: ${{ secrets.LOG_KEY }}
+          VERCEL_DEPLOY_HOOK: ${{ secrets.VERCEL_DEPLOY_HOOK }}
+        run: |
+          set +e
+          (
+            cd src
+            node -e "import('./scripts/core/_ci.mjs').then(({pushAccounts})=>pushAccounts())"
+            if [ -n "$VERCEL_DEPLOY_HOOK" ]; then
+              curl -fsS -X POST "$VERCEL_DEPLOY_HOOK"
+            fi
+          ) >> "$LOG" 2>&1
+          set -e
+          openssl enc -aes-256-cbc -pbkdf2 -salt -pass env:LOG_KEY -in "$LOG" -out "$LOG.enc"
+          rm "$LOG"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add logs
+          git commit -m "logs"
+          git push
+          exit "${CODE:-1}"
