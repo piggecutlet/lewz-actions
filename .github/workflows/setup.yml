@@ -1,5 +1,9 @@
 on:
   workflow_dispatch:
+    inputs:
+      count:
+        required: false
+        default: ""
 
 concurrency:
   group: zombie
@@ -32,7 +36,12 @@ jobs:
         with:
           node-version: "24"
 
-      - run: |
+      - env:
+          COUNT: ${{ inputs.count }}
+        run: |
+          case "$COUNT" in
+            *[!0-9]*) exit 1 ;;
+          esac
           mkdir -p logs
           log="logs/$(TZ=Asia/Tokyo date +%Y-%m-%d_%H%M)_setup.log"
           echo "LOG=$log" >> "$GITHUB_ENV"
@@ -41,7 +50,7 @@ jobs:
             cd src
             git config user.name "github-actions[bot]"
             git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-            node scripts/core/new_dev.mjs --ci
+            node scripts/core/new_dev.mjs $COUNT --ci
           ) > "$log" 2>&1
           echo "CODE=$?" >> "$GITHUB_ENV"
 
