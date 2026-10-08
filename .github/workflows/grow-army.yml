@@ -1,0 +1,79 @@
+on:
+  workflow_dispatch:
+    inputs:
+      names:
+        required: true
+      mode:
+        type: choice
+        options:
+          - 4種
+          - Lv.1
+          - ゾンビのみ
+
+concurrency:
+  group: grow-army
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/checkout@v7
+        with:
+          repository: ${{ secrets.SOURCE_REPO }}
+          token: ${{ secrets.SOURCE_TOKEN }}
+          path: src
+          sparse-checkout-cone-mode: false
+          sparse-checkout: |
+            /api/
+            /scripts/core/
+            /savedata/
+            /work/skill_box_train_verify775.mjs
+            /device/files/ja/ja_ilocalize_base.json
+            /device/files/WarZDoc/config/database.activity.xml
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: "24"
+
+      - env:
+          LOG_KEY: ${{ secrets.LOG_KEY }}
+        run: |
+          names=$(jq -r .inputs.names "$GITHUB_EVENT_PATH")
+          case "$names" in
+            "" | *[!A-Za-z0-9,]*) exit 1 ;;
+          esac
+          case "$(jq -r .inputs.mode "$GITHUB_EVENT_PATH")" in
+            4種) flag="" ;;
+            Lv.1) flag="--lv1" ;;
+            ゾンビのみ) flag="--zombie-only" ;;
+            *) exit 1 ;;
+          esac
+          mkdir -p logs
+          log="logs/$(TZ=Asia/Tokyo date +%Y-%m-%d_%H%M)_grow-army.log"
+          set +e
+          (
+            cd src
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            node work/skill_box_train_verify775.mjs "$names" $flag
+            code=$?
+            node -e "import('./scripts/core/_ci.mjs').then(({pushAccounts})=>pushAccounts('chore: CI の grow-army で accounts.json を更新する'))"
+            exit $code
+          ) > "$log" 2>&1
+          code=$?
+          set -e
+          openssl enc -aes-256-cbc -pbkdf2 -salt -pass env:LOG_KEY -in "$log" -out "$log.enc"
+          rm "$log"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add logs
+          git commit -m "logs"
+          git pull --rebase
+          git push
+          exit $code
