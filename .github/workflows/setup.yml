@@ -4,6 +4,10 @@ on:
       count:
         required: false
         default: ""
+      delete_account:
+        description: 削除申請
+        type: boolean
+        default: true
 
 concurrency:
   group: zombie
@@ -38,6 +42,7 @@ jobs:
 
       - env:
           COUNT: ${{ inputs.count }}
+          DELETE_ACCOUNT: ${{ inputs.delete_account && '--delete-account' || '' }}
         run: |
           case "$COUNT" in
             *[!0-9]*) exit 1 ;;
@@ -50,7 +55,7 @@ jobs:
             cd src
             git config user.name "github-actions[bot]"
             git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-            node scripts/core/new_dev.mjs $COUNT --ci
+            node scripts/core/new_dev.mjs $COUNT $DELETE_ACCOUNT --ci
           ) > "$log" 2>&1
           echo "CODE=$?" >> "$GITHUB_ENV"
 
