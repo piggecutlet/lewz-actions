@@ -17,7 +17,7 @@ on:
           - 4種
           - Lv.1
           - ゾンビのみ
-          - ハーベスター
+          - Lv.9 車両
 
 concurrency:
   group: zombie
@@ -62,7 +62,8 @@ jobs:
           esac
           case "$GROW_ARMY" in
             "" | なし) grow_army="" ;;
-            4種 | Lv.1 | ゾンビのみ | ハーベスター) grow_army="--grow-army=$GROW_ARMY" ;;
+            4種 | Lv.1 | ゾンビのみ) grow_army="--grow-army=$GROW_ARMY" ;;
+            "Lv.9 車両") grow_army="--grow-army=ハーベスター" ;;
             *) exit 1 ;;
           esac
           mkdir -p logs
