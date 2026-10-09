@@ -16,6 +16,10 @@ permissions:
 jobs:
   run:
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        part: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19]
     steps:
       - uses: actions/checkout@v7
 
@@ -35,6 +39,7 @@ jobs:
 
       - env:
           LOG_KEY: ${{ secrets.LOG_KEY }}
+          PART: ${{ matrix.part }}
         run: |
           receivers=$(jq -r .inputs.receivers "$GITHUB_EVENT_PATH")
           senders=$(jq -r .inputs.senders "$GITHUB_EVENT_PATH")
@@ -43,8 +48,12 @@ jobs:
               "" | *[!A-Za-z0-9,]*) exit 1 ;;
             esac
           done
+          senders=$(echo "$senders" | tr ',' '\n' | awk -v p="$PART" '(NR - 1) % 20 == p' | paste -sd, -)
+          if [ -z "$senders" ]; then
+            exit 0
+          fi
           mkdir -p logs
-          log="logs/$(TZ=Asia/Tokyo date +%Y-%m-%d_%H%M)_rose.log"
+          log="logs/$(TZ=Asia/Tokyo date +%Y-%m-%d_%H%M)_rose-$(printf %02d "$PART").log"
           set +e
           (
             cd src
@@ -63,6 +72,8 @@ jobs:
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add logs
           git commit -m "logs"
-          git pull --rebase
-          git push
+          for i in 1 2 3 4 5; do
+            git pull --rebase && git push && break
+            sleep $((RANDOM % 20 + 5))
+          done
           exit $code
