@@ -8,6 +8,16 @@ on:
         description: 削除申請
         type: boolean
         default: true
+      grow_army:
+        description: grow-army
+        type: choice
+        default: なし
+        options:
+          - なし
+          - 4種
+          - Lv.1
+          - ゾンビのみ
+          - ハーベスター
 
 concurrency:
   group: zombie
@@ -15,6 +25,7 @@ concurrency:
 
 permissions:
   contents: write
+  actions: write
 
 jobs:
   run:
@@ -43,9 +54,16 @@ jobs:
       - env:
           COUNT: ${{ inputs.count }}
           DELETE_ACCOUNT: ${{ inputs.delete_account && '--delete-account' || '' }}
+          GROW_ARMY: ${{ inputs.grow_army }}
+          GH_TOKEN: ${{ github.token }}
         run: |
           case "$COUNT" in
             *[!0-9]*) exit 1 ;;
+          esac
+          case "$GROW_ARMY" in
+            "" | なし) grow_army="" ;;
+            4種 | Lv.1 | ゾンビのみ | ハーベスター) grow_army="--grow-army=$GROW_ARMY" ;;
+            *) exit 1 ;;
           esac
           mkdir -p logs
           log="logs/$(TZ=Asia/Tokyo date +%Y-%m-%d_%H%M)_setup.log"
@@ -55,7 +73,7 @@ jobs:
             cd src
             git config user.name "github-actions[bot]"
             git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-            node scripts/core/new_dev.mjs $COUNT $DELETE_ACCOUNT --ci
+            node scripts/core/new_dev.mjs $COUNT $DELETE_ACCOUNT $grow_army --ci
           ) > "$log" 2>&1
           echo "CODE=$?" >> "$GITHUB_ENV"
 
@@ -79,6 +97,8 @@ jobs:
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add logs
           git commit -m "logs"
-          git pull --rebase
-          git push
+          for i in 1 2 3 4 5; do
+            git pull --rebase && git push && break
+            sleep $((RANDOM % 20 + 5))
+          done
           exit "${CODE:-1}"

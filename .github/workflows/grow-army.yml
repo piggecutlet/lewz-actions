@@ -9,10 +9,10 @@ on:
           - 4種
           - Lv.1
           - ゾンビのみ
-
-concurrency:
-  group: grow-army
-  cancel-in-progress: false
+          - ハーベスター
+      rose:
+        required: false
+        default: ""
 
 permissions:
   contents: write
@@ -52,7 +52,12 @@ jobs:
             4種) flag="" ;;
             Lv.1) flag="--lv1" ;;
             ゾンビのみ) flag="--zombie-only" ;;
+            ハーベスター) flag="--harvester-only" ;;
             *) exit 1 ;;
+          esac
+          rose=$(jq -r '.inputs.rose // ""' "$GITHUB_EVENT_PATH")
+          case "$rose" in
+            *[!A-Za-z0-9,]*) exit 1 ;;
           esac
           mkdir -p logs
           log="logs/$(TZ=Asia/Tokyo date +%Y-%m-%d_%H%M)_grow-army.log"
@@ -61,7 +66,7 @@ jobs:
             cd src
             git config user.name "github-actions[bot]"
             git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-            node work/skill_box_train_verify775.mjs "$names" $flag
+            node work/skill_box_train_verify775.mjs "$names" $flag ${rose:+"--rose=$rose"}
             code=$?
             node -e "import('./scripts/core/_ci.mjs').then(({pushAccounts})=>pushAccounts('chore: CI の grow-army で accounts.json を更新する'))"
             exit $code
@@ -74,6 +79,8 @@ jobs:
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add logs
           git commit -m "logs"
-          git pull --rebase
-          git push
+          for i in 1 2 3 4 5; do
+            git pull --rebase && git push && break
+            sleep $((RANDOM % 20 + 5))
+          done
           exit $code
