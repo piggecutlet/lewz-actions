@@ -11,16 +11,20 @@ on:
       grow_army:
         description: grow-army
         type: choice
-        default: なし
+        default: Lv.10 車両
         options:
           - なし
           - 4種
           - Lv.1
           - ゾンビのみ
           - Lv.9 車両
+          - Lv.10 車両
+      sec:
+        required: false
+        default: ""
 
 concurrency:
-  group: zombie
+  group: setup
   cancel-in-progress: false
 
 permissions:
@@ -55,14 +59,15 @@ jobs:
           COUNT: ${{ inputs.count }}
           DELETE_ACCOUNT: ${{ inputs.delete_account && '--delete-account' || '' }}
           GROW_ARMY: ${{ inputs.grow_army }}
+          SEC: ${{ inputs.sec }}
           GH_TOKEN: ${{ github.token }}
         run: |
-          case "$COUNT" in
+          case "$COUNT$SEC" in
             *[!0-9]*) exit 1 ;;
           esac
           case "$GROW_ARMY" in
             "" | なし) grow_army="" ;;
-            4種 | Lv.1 | ゾンビのみ) grow_army="--grow-army=$GROW_ARMY" ;;
+            4種 | Lv.1 | ゾンビのみ | "Lv.10 車両") grow_army="--grow-army=$GROW_ARMY" ;;
             "Lv.9 車両") grow_army="--grow-army=ハーベスター" ;;
             *) exit 1 ;;
           esac
@@ -74,7 +79,7 @@ jobs:
             cd src
             git config user.name "github-actions[bot]"
             git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-            node scripts/core/new_dev.mjs $COUNT $DELETE_ACCOUNT $grow_army --ci
+            node scripts/core/new_dev.mjs $COUNT $DELETE_ACCOUNT ${grow_army:+"$grow_army"} ${SEC:+"--sec=$SEC"} --ci
           ) > "$log" 2>&1
           echo "CODE=$?" >> "$GITHUB_ENV"
 

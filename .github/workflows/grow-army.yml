@@ -5,11 +5,13 @@ on:
         required: true
       mode:
         type: choice
+        default: Lv.10 車両
         options:
           - 4種
           - Lv.1
           - ゾンビのみ
           - ハーベスター
+          - Lv.10 車両
       rose:
         required: false
         default: ""
@@ -53,6 +55,7 @@ jobs:
             Lv.1) flag="--lv1" ;;
             ゾンビのみ) flag="--zombie-only" ;;
             ハーベスター) flag="--harvester-only" ;;
+            "Lv.10 車両") flag="--vehicle-lv10" ;;
             *) exit 1 ;;
           esac
           rose=$(jq -r '.inputs.rose // ""' "$GITHUB_EVENT_PATH")
@@ -66,7 +69,7 @@ jobs:
             cd src
             git config user.name "github-actions[bot]"
             git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-            node work/skill_box_train_verify775.mjs "$names" $flag ${rose:+"--rose=$rose"}
+            node work/skill_box_train_verify775.mjs "$names" $flag --leave --parallel=60 ${rose:+"--rose=$rose"}
             code=$?
             node -e "import('./scripts/core/_ci.mjs').then(({pushAccounts})=>pushAccounts('chore: CI の grow-army で accounts.json を更新する'))"
             exit $code
