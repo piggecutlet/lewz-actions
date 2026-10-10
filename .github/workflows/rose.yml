@@ -19,7 +19,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        part: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19]
+        part: [0, 1]
     steps:
       - uses: actions/checkout@v7
 
@@ -48,7 +48,7 @@ jobs:
               "" | *[!A-Za-z0-9,]*) exit 1 ;;
             esac
           done
-          senders=$(echo "$senders" | tr ',' '\n' | awk -v p="$PART" '(NR - 1) % 20 == p' | paste -sd, -)
+          senders=$(echo "$senders" | tr ',' '\n' | awk -v p="$PART" '(NR - 1) % 2 == p' | paste -sd, -)
           if [ -z "$senders" ]; then
             exit 0
           fi
@@ -59,7 +59,7 @@ jobs:
             cd src
             git config user.name "github-actions[bot]"
             git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-            node scripts/core/purple_rose.mjs "$receivers" "$senders"
+            node scripts/core/purple_rose.mjs "$receivers" "$senders" --no-zombie
             code=$?
             node -e "import('./scripts/core/_ci.mjs').then(({pushAccounts})=>pushAccounts('chore: CI の rose で accounts.json を更新する'))"
             exit $code
