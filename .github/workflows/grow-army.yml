@@ -15,6 +15,10 @@ on:
       rose:
         required: false
         default: ""
+      delete_account:
+        description: 削除申請
+        type: boolean
+        default: false
 
 permissions:
   contents: write
@@ -45,6 +49,7 @@ jobs:
 
       - env:
           LOG_KEY: ${{ secrets.LOG_KEY }}
+          DELETE_ACCOUNT: ${{ inputs.delete_account && '--delete-account' || '' }}
         run: |
           names=$(jq -r .inputs.names "$GITHUB_EVENT_PATH")
           case "$names" in
@@ -69,7 +74,7 @@ jobs:
             cd src
             git config user.name "github-actions[bot]"
             git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-            node work/skill_box_train_verify775.mjs "$names" $flag --leave --parallel=60 ${rose:+"--rose=$rose"}
+            node work/skill_box_train_verify775.mjs "$names" $flag --leave --parallel=60 ${rose:+"--rose=$rose"} $DELETE_ACCOUNT
             code=$?
             node -e "import('./scripts/core/_ci.mjs').then(({pushAccounts})=>pushAccounts('chore: CI の grow-army で accounts.json を更新する'))"
             exit $code
