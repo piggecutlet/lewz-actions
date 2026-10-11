@@ -10,7 +10,7 @@ on:
           - 4種
           - Lv.1
           - ゾンビのみ
-          - ハーベスター
+          - Lv.9 車両
           - Lv.10 車両
       rose:
         required: false
@@ -54,7 +54,7 @@ jobs:
             4種) flag="" ;;
             Lv.1) flag="--lv1" ;;
             ゾンビのみ) flag="--zombie-only" ;;
-            ハーベスター) flag="--harvester-only" ;;
+            "Lv.9 車両") flag="--harvester-only" ;;
             "Lv.10 車両") flag="--vehicle-lv10" ;;
             *) exit 1 ;;
           esac
