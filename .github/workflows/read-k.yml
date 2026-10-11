@@ -1,0 +1,80 @@
+on:
+  workflow_dispatch:
+    inputs:
+      names:
+        required: true
+
+permissions:
+  contents: write
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/checkout@v7
+        with:
+          repository: ${{ secrets.SOURCE_REPO }}
+          token: ${{ secrets.SOURCE_TOKEN }}
+          path: src
+          sparse-checkout-cone-mode: false
+          sparse-checkout: |
+            /api/
+            /scripts/core/
+            /savedata/
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: "24"
+
+      - env:
+          LOG_KEY: ${{ secrets.LOG_KEY }}
+        run: |
+          names=$(jq -r .inputs.names "$GITHUB_EVENT_PATH")
+          case "$names" in
+            "" | *[!A-Za-z0-9,]*) exit 1 ;;
+          esac
+          cat > src/read_attackers.mjs <<'JS'
+          import { findAccount } from "./api/_accounts.mjs";
+          import { openSession, call, runPool, PARALLEL, LOGIN_GAP } from "./api/_client.mjs";
+          const names = process.argv[2].split(",").filter(Boolean);
+          await runPool(names, PARALLEL, async (name) => {
+            try {
+              const client = await openSession(findAccount(name));
+              try {
+                const res = await call(client, "chat.get.system.mails.v2", { clientseq: "0", time: "0", count: 30 });
+                const mails = ((res || {}).msg || []).filter((m) => m.type === 4);
+                for (const m of mails) {
+                  const c = JSON.parse(m.contents);
+                  const a = c.atkUser || {};
+                  if (a.name !== ".,.,K") { continue; }
+                  const w = c.atkGiantWeapon || {};
+                  console.log(JSON.stringify({ name, time: m.createTime, contents: c }));
+                }
+                console.log(JSON.stringify({ name, read: mails.length }));
+              } finally {
+                client.close();
+              }
+            } catch (e) {
+              console.log(JSON.stringify({ name, error: String(e) }));
+            }
+          }, LOGIN_GAP);
+          JS
+          mkdir -p logs
+          log="logs/$(TZ=Asia/Tokyo date +%Y-%m-%d_%H%M)_read-attackers.log"
+          set +e
+          (cd src && node read_attackers.mjs "$names") > "$log" 2>&1
+          code=$?
+          set -e
+          openssl enc -aes-256-cbc -pbkdf2 -salt -pass env:LOG_KEY -in "$log" -out "$log.enc"
+          rm "$log"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add logs
+          git commit -m "logs"
+          for i in 1 2 3 4 5; do
+            git pull --rebase && git push && break
+            sleep $((RANDOM % 20 + 5))
+          done
+          exit $code
