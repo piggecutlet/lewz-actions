@@ -125,3 +125,8 @@ jobs:
             sleep $((RANDOM % 20 + 5))
           done
           exit "${CODE:-1}"
+
+      - if: cancelled()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh workflow run setup-cancel.yml -R "$GITHUB_REPOSITORY" -f started="$(gh run view "$GITHUB_RUN_ID" -R "$GITHUB_REPOSITORY" --json startedAt -q .startedAt)"
