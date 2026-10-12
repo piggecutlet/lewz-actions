@@ -64,6 +64,7 @@ jobs:
           GROW_ARMY: ${{ inputs.grow_army }}
           SEC: ${{ inputs.sec }}
           GH_TOKEN: ${{ github.token }}
+          LOG_KEY: ${{ secrets.LOG_KEY }}
         run: |
           case "$COUNT$SEC" in
             *[!0-9]*) exit 1 ;;
@@ -83,7 +84,19 @@ jobs:
             git config user.name "github-actions[bot]"
             git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
             node scripts/core/new_dev.mjs $COUNT $DELETE_ACCOUNT ${grow_army:+"$grow_army"} ${SEC:+"--sec=$SEC"} --ci
-          ) > "$log" 2>&1
+          ) > "$log" 2>&1 &
+          pid=$!
+          # 5 分ごとに、ログの最新 30 行を暗号化して 1 行で画面に出す（途中の確かめ用。手元で scripts\core\decrypt_clip.mjs で読む）
+          n=0
+          while kill -0 "$pid" 2>/dev/null; do
+            sleep 10
+            n=$((n + 1))
+            if [ $((n % 30)) -eq 0 ]; then
+              tail -n 30 "$log" | openssl enc -aes-256-cbc -pbkdf2 -salt -pass env:LOG_KEY | base64 -w0
+              echo
+            fi
+          done
+          wait "$pid"
           echo "CODE=$?" >> "$GITHUB_ENV"
 
       - if: always() && env.LOG != ''
