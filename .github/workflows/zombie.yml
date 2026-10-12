@@ -7,6 +7,7 @@ concurrency:
 
 permissions:
   contents: write
+  actions: write
 
 jobs:
   run:
@@ -30,6 +31,7 @@ jobs:
 
       - env:
           LOG_KEY: ${{ secrets.LOG_KEY }}
+          GH_TOKEN: ${{ github.token }}
         run: |
           mkdir -p logs
           log="logs/$(TZ=Asia/Tokyo date +%Y-%m-%d_%H%M).log"
@@ -38,6 +40,9 @@ jobs:
             cd src
             team=$(node -e "import('./scripts/core/_readme.mjs').then(({readAccounts})=>{console.log((readAccounts()['775']||[]).filter((a)=>a.kind==='team').map((a)=>a.name).filter((v)=>v).join(','))})")
             node scripts/core/zombie_hunt.mjs "$team" --diamond
+            c=$?
+            node scripts/core/start_setup.mjs
+            exit $c
           ) > "$log" 2>&1
           code=$?
           set -e
