@@ -3,6 +3,7 @@ on:
 
 permissions:
   contents: write
+  actions: write
 
 jobs:
   run:
@@ -27,6 +28,8 @@ jobs:
           node-version: "24"
 
       - timeout-minutes: 55
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
           mkdir -p logs
           log="logs/$(TZ=Asia/Tokyo date +%Y-%m-%d_%H%M)_775.log"
@@ -55,6 +58,7 @@ jobs:
             node scripts/core/upgrade_tent.mjs "$names" --shelter
             node scripts/core/city_def.mjs "$names"
             node scripts/core/mail_reward.mjs "$names" || true
+            if [ "$slot" = 21 ]; then node scripts/core/start_setup.mjs || true; fi
           ) > "$log" 2>&1
           echo "CODE=$?" >> "$GITHUB_ENV"
 
