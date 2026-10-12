@@ -1,14 +1,14 @@
 on:
-  workflow_run:
-    workflows: [setup]
-    types: [completed]
+  workflow_dispatch:
+    inputs:
+      started:
+        required: true
 
 permissions:
   contents: write
 
 jobs:
   run:
-    if: github.event.workflow_run.conclusion == 'cancelled'
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
@@ -31,7 +31,7 @@ jobs:
           node-version: "24"
 
       - env:
-          STARTED: ${{ github.event.workflow_run.run_started_at }}
+          STARTED: ${{ inputs.started }}
           LOG_KEY: ${{ secrets.LOG_KEY }}
           VERCEL_DEPLOY_HOOK: ${{ secrets.VERCEL_DEPLOY_HOOK }}
         run: |
