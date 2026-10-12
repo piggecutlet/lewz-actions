@@ -22,6 +22,7 @@ on:
           - Lv.9 車両
           - Lv.10 車両
           - Lv.10 射手
+          - Lv.9 射手
       sec:
         required: false
         default: ""
@@ -71,7 +72,7 @@ jobs:
           esac
           case "$GROW_ARMY" in
             "" | なし) grow_army="" ;;
-            4種 | Lv.1 | ゾンビのみ | "Lv.10 車両" | "Lv.10 射手") grow_army="--grow-army=$GROW_ARMY" ;;
+            4種 | Lv.1 | ゾンビのみ | "Lv.10 車両" | "Lv.10 射手" | "Lv.9 射手") grow_army="--grow-army=$GROW_ARMY" ;;
             "Lv.9 車両") grow_army="--grow-army=ハーベスター" ;;
             *) exit 1 ;;
           esac
