@@ -13,7 +13,7 @@ on:
       grow_army:
         description: grow-army
         type: choice
-        default: Lv.10 射手
+        default: Lv.9 車両
         options:
           - なし
           - 4種
