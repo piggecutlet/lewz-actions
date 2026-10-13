@@ -40,7 +40,7 @@ jobs:
             "" | *[!A-Za-z0-9,]*) exit 1 ;;
           esac
           mkdir -p logs
-          log="logs/$(TZ=Asia/Tokyo date +%Y-%m-%d_%H%M)_pray-gold.log"
+          log="logs/$(TZ=Asia/Tokyo date +%Y-%m-%d_%H%M)_pray-gold_${GITHUB_RUN_ID}.log"
           set +e
           (cd src && node scripts/core/pray_gold.mjs "$names") > "$log" 2>&1
           code=$?

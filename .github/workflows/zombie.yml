@@ -34,7 +34,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           mkdir -p logs
-          log="logs/$(TZ=Asia/Tokyo date +%Y-%m-%d_%H%M).log"
+          log="logs/$(TZ=Asia/Tokyo date +%Y-%m-%d_%H%M)_${GITHUB_RUN_ID}.log"
           set +e
           (
             cd src
