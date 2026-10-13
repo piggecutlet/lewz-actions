@@ -26,7 +26,7 @@ on:
           - Lv.9 射手
           - DF
       target:
-        description: DF の移転先と偵察先 x,y（空なら ci.json の dfTarget）
+        description: DF の移転先と偵察先 x,y（空なら ci.json の dfTarget、なしなら後回し）
         required: false
         default: ""
       sec:
@@ -77,7 +77,7 @@ jobs:
           case "$COUNT$SEC" in
             *[!0-9]*) exit 1 ;;
           esac
-          [[ -z "$TARGET" || "$TARGET" =~ ^[0-9]+,[0-9]+$ ]] || exit 1
+          [[ -z "$TARGET" || "$TARGET" = なし || "$TARGET" =~ ^[0-9]+,[0-9]+$ ]] || exit 1
           [ "$GROW_ARMY" = 既定 ] && GROW_ARMY=$(jq -r .growArmy src/savedata/ci.json)
           case "$GROW_ARMY" in
             "" | なし) grow_army="" ;;
