@@ -43,7 +43,18 @@ jobs:
             c=$?
             node scripts/core/start_setup.mjs
             exit $c
-          ) > "$log" 2>&1
+          ) > "$log" 2>&1 &
+          pid=$!
+          n=0
+          while kill -0 "$pid" 2>/dev/null; do
+            sleep 10
+            n=$((n + 1))
+            if [ $((n % 30)) -eq 0 ]; then
+              tail -n 30 "$log" | openssl enc -aes-256-cbc -pbkdf2 -salt -pass env:LOG_KEY | base64 -w0
+              echo
+            fi
+          done
+          wait "$pid"
           code=$?
           set -e
           openssl enc -aes-256-cbc -pbkdf2 -salt -pass env:LOG_KEY -in "$log" -out "$log.enc"
