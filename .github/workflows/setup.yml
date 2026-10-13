@@ -26,7 +26,7 @@ on:
           - Lv.9 射手
           - DF
       target:
-        description: DF の移転先と偵察先 x,y
+        description: DF の移転先と偵察先 x,y（空なら ci.json の dfTarget）
         required: false
         default: ""
       sec:

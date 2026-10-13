@@ -17,7 +17,7 @@ on:
           - Lv.9 射手
           - DF
       target:
-        description: DF の移転先と偵察先 x,y
+        description: DF の移転先と偵察先 x,y（空なら ci.json の dfTarget）
         required: false
         default: ""
       rose:
@@ -77,8 +77,8 @@ jobs:
             "Lv.9 射手") flag="--archer-lv9" ;;
             DF)
               target=$(jq -r '.inputs.target // ""' "$GITHUB_EVENT_PATH")
-              [[ "$target" =~ ^[0-9]+,[0-9]+$ ]] || exit 1
-              flag="--df=$target"
+              [[ -z "$target" || "$target" =~ ^[0-9]+,[0-9]+$ ]] || exit 1
+              flag="--df${target:+=$target}"
               ;;
             *) exit 1 ;;
           esac
