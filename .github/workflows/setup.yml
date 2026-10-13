@@ -13,8 +13,9 @@ on:
       grow_army:
         description: grow-army
         type: choice
-        default: Lv.9 車両
+        default: 既定
         options:
+          - 既定
           - なし
           - 4種
           - Lv.1
@@ -70,6 +71,7 @@ jobs:
           case "$COUNT$SEC" in
             *[!0-9]*) exit 1 ;;
           esac
+          [ "$GROW_ARMY" = 既定 ] && GROW_ARMY=$(jq -r .growArmy src/savedata/ci.json)
           case "$GROW_ARMY" in
             "" | なし) grow_army="" ;;
             4種 | Lv.1 | ゾンビのみ | "Lv.10 車両" | "Lv.10 射手" | "Lv.9 射手") grow_army="--grow-army=$GROW_ARMY" ;;

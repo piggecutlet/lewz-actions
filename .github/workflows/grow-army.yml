@@ -5,8 +5,9 @@ on:
         required: true
       mode:
         type: choice
-        default: Lv.9 車両
+        default: 既定
         options:
+          - 既定
           - 4種
           - Lv.1
           - ゾンビのみ
@@ -57,7 +58,9 @@ jobs:
           case "$names" in
             "" | *[!A-Za-z0-9,]*) exit 1 ;;
           esac
-          case "$(jq -r .inputs.mode "$GITHUB_EVENT_PATH")" in
+          mode=$(jq -r .inputs.mode "$GITHUB_EVENT_PATH")
+          [ "$mode" = 既定 ] && mode=$(jq -r .growArmy src/savedata/ci.json)
+          case "$mode" in
             4種) flag="" ;;
             Lv.1) flag="--lv1" ;;
             ゾンビのみ) flag="--zombie-only" ;;
