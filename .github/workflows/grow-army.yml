@@ -104,7 +104,7 @@ jobs:
             sleep 10
             n=$((n + 1))
             if [ $((n % 30)) -eq 0 ]; then
-              tail -n 30 "$log" | openssl enc -aes-256-cbc -pbkdf2 -salt -pass env:LOG_KEY | base64 -w0
+              tail -n 30 "$log" | openssl enc -aes-256-cbc -pbkdf2 -salt -pass env:LOG_KEY | base64 -w 1000
               echo
             fi
           done
