@@ -3,7 +3,11 @@ on:
     inputs:
       defender:
         required: true
-      attacker:
+      attackers:
+        description: 表示名,表示名,...
+        required: true
+      target:
+        description: x,y
         required: true
 
 permissions:
@@ -35,14 +39,17 @@ jobs:
           LOG_KEY: ${{ secrets.LOG_KEY }}
         run: |
           defender=$(jq -r .inputs.defender "$GITHUB_EVENT_PATH")
-          attacker=$(jq -r .inputs.attacker "$GITHUB_EVENT_PATH")
-          case "$defender$attacker" in
+          attackers=$(jq -r .inputs.attackers "$GITHUB_EVENT_PATH")
+          target=$(jq -r .inputs.target "$GITHUB_EVENT_PATH")
+          case "$defender" in
             "" | *[!A-Za-z0-9]*) exit 1 ;;
           esac
+          [[ "$attackers" =~ ^[A-Za-z0-9]+(,[A-Za-z0-9]+)*$ ]] || exit 1
+          [[ "$target" =~ ^[0-9]+,[0-9]+$ ]] || exit 1
           mkdir -p logs
           log="logs/$(TZ=Asia/Tokyo date +%Y-%m-%d_%H%M)_resource-war_${GITHUB_RUN_ID}.log"
           set +e
-          (cd src && node work/resource_war775.mjs "$defender" "$attacker") > "$log" 2>&1 &
+          (cd src && node work/resource_war775.mjs "$defender" "$attackers" "$target") > "$log" 2>&1 &
           pid=$!
           n=0
           while kill -0 "$pid" 2>/dev/null; do
