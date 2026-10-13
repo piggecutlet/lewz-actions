@@ -1,0 +1,75 @@
+# レスポンスコア用アカウント（kind core）でゾンビを倒し続け、レスポンスコアが落ちるかを確かめる（scripts/core/core_hunt.mjs）
+#   5 時間で区切り、続きがあれば自分をもう一度起動する。落ちたら終了コード 2 で止まる
+on:
+  workflow_dispatch:
+
+concurrency:
+  group: core-hunt
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+  actions: write
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/checkout@v7
+        with:
+          repository: ${{ secrets.SOURCE_REPO }}
+          token: ${{ secrets.SOURCE_TOKEN }}
+          path: src
+          sparse-checkout: |
+            api
+            scripts/core
+            savedata
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: "24"
+
+      - env:
+          LOG_KEY: ${{ secrets.LOG_KEY }}
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p logs
+          log="logs/$(TZ=Asia/Tokyo date +%Y-%m-%d_%H%M)_core-hunt_${GITHUB_RUN_ID}.log"
+          set +e
+          (
+            cd src
+            node scripts/core/core_hunt.mjs
+            c=$?
+            # 3 は時間切れ。続きを起動する（同じ concurrency なので、この run が終わってから始まる）
+            if [ $c -eq 3 ]; then
+              gh workflow run core-hunt.yml -R "$GITHUB_REPOSITORY" && echo "続きを起動した"
+              c=0
+            fi
+            exit $c
+          ) > "$log" 2>&1 &
+          pid=$!
+          n=0
+          while kill -0 "$pid" 2>/dev/null; do
+            sleep 10
+            n=$((n + 1))
+            if [ $((n % 30)) -eq 0 ]; then
+              tail -n 30 "$log" | openssl enc -aes-256-cbc -pbkdf2 -salt -pass env:LOG_KEY | base64 -w0
+              echo
+            fi
+          done
+          wait "$pid"
+          code=$?
+          set -e
+          openssl enc -aes-256-cbc -pbkdf2 -salt -pass env:LOG_KEY -in "$log" -out "$log.enc"
+          rm "$log"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add logs
+          git commit -m "logs"
+          for i in 1 2 3 4 5; do
+            git pull --rebase && git push && break
+            sleep $((RANDOM % 20 + 5))
+          done
+          exit $code
