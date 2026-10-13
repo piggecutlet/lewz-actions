@@ -15,6 +15,11 @@ on:
           - Lv.10 車両
           - Lv.10 射手
           - Lv.9 射手
+          - DF
+      target:
+        description: DF の移転先と偵察先 x,y
+        required: false
+        default: ""
       rose:
         required: false
         default: ""
@@ -43,6 +48,8 @@ jobs:
             /scripts/core/
             /savedata/
             /work/skill_box_train_verify775.mjs
+            /work/scout775.mjs
+            /obb/assets/WorldMap.tmx
             /device/files/ja/ja_ilocalize_base.json
             /device/files/WarZDoc/config/database.activity.xml
 
@@ -68,6 +75,11 @@ jobs:
             "Lv.10 車両") flag="--vehicle-lv10" ;;
             "Lv.10 射手") flag="--archer-lv10" ;;
             "Lv.9 射手") flag="--archer-lv9" ;;
+            DF)
+              target=$(jq -r '.inputs.target // ""' "$GITHUB_EVENT_PATH")
+              [[ "$target" =~ ^[0-9]+,[0-9]+$ ]] || exit 1
+              flag="--df=$target"
+              ;;
             *) exit 1 ;;
           esac
           rose=$(jq -r '.inputs.rose // ""' "$GITHUB_EVENT_PATH")
