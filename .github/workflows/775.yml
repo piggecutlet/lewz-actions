@@ -39,6 +39,7 @@ jobs:
           (
             set -e
             cd src
+            gh workflow run vip.yml -R "$GITHUB_REPOSITORY" || true
             hour=$(TZ=JST-9 date +%H)
             if [ "$hour" -lt 12 ]; then slot=09; else slot=21; fi
             now=$(TZ=JST-9 date +%Y-%m-%d)T$slot
