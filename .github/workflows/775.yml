@@ -30,6 +30,7 @@ jobs:
       - timeout-minutes: 55
         env:
           GH_TOKEN: ${{ github.token }}
+          LOG_KEY: ${{ secrets.LOG_KEY }}
         run: |
           mkdir -p logs
           log="logs/$(TZ=Asia/Tokyo date +%Y-%m-%d_%H%M)_775_${GITHUB_RUN_ID}.log"
@@ -59,7 +60,18 @@ jobs:
             node scripts/core/city_def.mjs "$names"
             node scripts/core/mail_reward.mjs "$names" || true
             if [ "$slot" = 21 ]; then node scripts/core/start_setup.mjs || true; fi
-          ) > "$log" 2>&1
+          ) > "$log" 2>&1 &
+          pid=$!
+          n=0
+          while kill -0 "$pid" 2>/dev/null; do
+            sleep 10
+            n=$((n + 1))
+            if [ $((n % 30)) -eq 0 ]; then
+              tail -n 30 "$log" | openssl enc -aes-256-cbc -pbkdf2 -salt -pass env:LOG_KEY | base64 -w0
+              echo
+            fi
+          done
+          wait "$pid"
           echo "CODE=$?" >> "$GITHUB_ENV"
 
       - if: always() && env.LOG != ''
