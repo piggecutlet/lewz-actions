@@ -36,7 +36,7 @@ jobs:
           VERCEL_DEPLOY_HOOK: ${{ secrets.VERCEL_DEPLOY_HOOK }}
         run: |
           mkdir -p logs
-          log="logs/$(TZ=Asia/Tokyo date +%Y-%m-%d_%H%M)_setup-cancel.log"
+          log="logs/$(TZ=Asia/Tokyo date +%Y-%m-%d_%H%M)_setup-cancel_${GITHUB_RUN_ID}.log"
           set +e
           (
             cd src
