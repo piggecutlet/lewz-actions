@@ -42,7 +42,18 @@ jobs:
           mkdir -p logs
           log="logs/$(TZ=Asia/Tokyo date +%Y-%m-%d_%H%M)_pray-gold_${GITHUB_RUN_ID}.log"
           set +e
-          (cd src && node scripts/core/pray_gold.mjs "$names") > "$log" 2>&1
+          (cd src && node scripts/core/pray_gold.mjs "$names") > "$log" 2>&1 &
+          pid=$!
+          n=0
+          while kill -0 "$pid" 2>/dev/null; do
+            sleep 10
+            n=$((n + 1))
+            if [ $((n % 30)) -eq 0 ]; then
+              tail -n 30 "$log" | openssl enc -aes-256-cbc -pbkdf2 -salt -pass env:LOG_KEY | base64 -w0
+              echo
+            fi
+          done
+          wait "$pid"
           code=$?
           set -e
           openssl enc -aes-256-cbc -pbkdf2 -salt -pass env:LOG_KEY -in "$log" -out "$log.enc"
