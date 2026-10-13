@@ -61,7 +61,7 @@ jobs:
             git config user.name "github-actions[bot]"
             git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
             if [ "$TELEPORT" = "true" ]; then
-              node scripts/core/teleport_near.mjs "$target" "$names" || { node -e "import('./scripts/core/_ci.mjs').then(({pushAccounts})=>pushAccounts('chore: CI の attack で accounts.json を更新する'))"; exit 1; }
+              node scripts/core/teleport_near.mjs "$target" "$names" --diamond || { node -e "import('./scripts/core/_ci.mjs').then(({pushAccounts})=>pushAccounts('chore: CI の attack で accounts.json を更新する'))"; exit 1; }
             fi
             out=$(node scripts/core/attack.mjs "$names" --target="$target")
             echo "$out"
