@@ -8,7 +8,7 @@ on:
         required: false
         default: ""
       teleport:
-        description: 1071,793 の近くへ移転する表示名をカンマ区切り（空なら移転しない）
+        description: 手動アカウントの付近（1071,793）へ移転する表示名をカンマ区切り（空なら移転しない）
         required: false
         default: ""
       dry_run:
