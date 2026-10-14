@@ -8,7 +8,7 @@ on:
         required: false
         default: ""
       teleport:
-        description: 55,1112 の近くへ移転する表示名をカンマ区切り（空なら移転しない）
+        description: 1071,793 の近くへ移転する表示名をカンマ区切り（空なら移転しない）
         required: false
         default: ""
       dry_run:
@@ -68,7 +68,7 @@ jobs:
             git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
             if [ "$DRY_RUN" = "true" ]; then
               if [ -n "$teleport" ]; then
-                node scripts/core/teleport_near.mjs 55,1112 "$teleport" --dry-run
+                node scripts/core/teleport_near.mjs 1071,793 "$teleport" --dry-run
               fi
               node work/send_res_even775.mjs "$names" $kinds --buy --dry
               exit $?
@@ -76,7 +76,7 @@ jobs:
             node scripts/core/join_alliance.mjs "$names"
             code=0
             if [ -n "$teleport" ]; then
-              node scripts/core/teleport_near.mjs 55,1112 "$teleport" || code=1
+              node scripts/core/teleport_near.mjs 1071,793 "$teleport" || code=1
             fi
             node -e "import('./scripts/core/_ci.mjs').then(({pushAccounts})=>pushAccounts('chore: CI の resource-support で accounts.json を更新する'))"
             [ $code -eq 0 ] || exit 1
