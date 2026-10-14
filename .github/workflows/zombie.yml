@@ -1,5 +1,10 @@
 on:
   workflow_dispatch:
+    inputs:
+      limit:
+        description: 試し用。出撃の回数（全件の合計）。入れると日課を見ずにこの回数で止め、setup を起動しない
+        required: false
+        default: ""
 
 concurrency:
   group: zombie
@@ -32,13 +37,21 @@ jobs:
       - env:
           LOG_KEY: ${{ secrets.LOG_KEY }}
           GH_TOKEN: ${{ github.token }}
+          LIMIT: ${{ inputs.limit }}
         run: |
+          case "$LIMIT" in
+            *[!0-9]*) exit 1 ;;
+          esac
           mkdir -p logs
           log="logs/$(TZ=Asia/Tokyo date +%Y-%m-%d_%H%M)_${GITHUB_RUN_ID}.log"
           set +e
           (
             cd src
             team=$(node -e "import('./scripts/core/_readme.mjs').then(({readAccounts})=>{console.log((readAccounts()['775']||[]).filter((a)=>a.kind==='team').map((a)=>a.name).filter((v)=>v).join(','))})")
+            if [ -n "$LIMIT" ]; then
+              node scripts/core/zombie_hunt.mjs "$team" "$LIMIT" --diamond --ignore-task
+              exit $?
+            fi
             node scripts/core/zombie_hunt.mjs "$team" --diamond
             c=$?
             node scripts/core/start_setup.mjs
