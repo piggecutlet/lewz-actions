@@ -2,6 +2,11 @@
 #   5 時間で区切り、続きがあれば自分をもう一度起動する。落ちたら終了コード 2 で止まる
 on:
   workflow_dispatch:
+    inputs:
+      high:
+        description: 低い Lv ではなく狙える一番高い Lv から倒す（--high）
+        type: boolean
+        default: false
 
 concurrency:
   group: core-hunt
@@ -37,14 +42,20 @@ jobs:
         run: |
           mkdir -p logs
           log="logs/$(TZ=Asia/Tokyo date +%Y-%m-%d_%H%M)_core-hunt_${GITHUB_RUN_ID}.log"
+          high=$(jq -r '.inputs.high // "false"' "$GITHUB_EVENT_PATH")
+          case "$high" in
+            true) flag="--high" ;;
+            false) flag="" ;;
+            *) exit 1 ;;
+          esac
           set +e
           (
             cd src
-            node scripts/core/core_hunt.mjs
+            node scripts/core/core_hunt.mjs $flag
             c=$?
             # 3 は時間切れ。続きを起動する（同じ concurrency なので、この run が終わってから始まる）
             if [ $c -eq 3 ]; then
-              gh workflow run core-hunt.yml -R "$GITHUB_REPOSITORY" && echo "続きを起動した"
+              gh workflow run core-hunt.yml -R "$GITHUB_REPOSITORY" -f high="$high" && echo "続きを起動した"
               c=0
             fi
             exit $c
