@@ -3,6 +3,8 @@ on:
     inputs:
       names:
         required: true
+      leader:
+        required: false
 
 permissions:
   contents: write
@@ -34,6 +36,10 @@ jobs:
           case "$names" in
             "" | *[!A-Za-z0-9,]*) exit 1 ;;
           esac
+          leader=$(jq -r '.inputs.leader // ""' "$GITHUB_EVENT_PATH")
+          case "$leader" in
+            *[!A-Za-z0-9]*) exit 1 ;;
+          esac
           mkdir -p logs
           log="logs/$(TZ=Asia/Tokyo date +%Y-%m-%d_%H%M)_join-alliance_${GITHUB_RUN_ID}.log"
           set +e
@@ -41,7 +47,7 @@ jobs:
             cd src
             git config user.name "github-actions[bot]"
             git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-            node scripts/core/join_alliance.mjs "$names"
+            node scripts/core/join_alliance.mjs "$names" ${leader:+"--leader=$leader"}
             code=$?
             node -e "import('./scripts/core/_ci.mjs').then(({pushAccounts})=>pushAccounts('chore: CI で同盟へ加入させ、accounts.json を更新する'))"
             exit $code
