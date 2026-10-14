@@ -2,7 +2,9 @@ on:
   workflow_dispatch:
     inputs:
       names:
-        required: true
+        description: 空なら 7 日たった行へ 2 回目の申請
+        required: false
+        default: ""
 
 concurrency:
   group: delete-account
@@ -23,10 +25,12 @@ jobs:
           repository: ${{ secrets.SOURCE_REPO }}
           token: ${{ secrets.SOURCE_TOKEN }}
           path: src
+          sparse-checkout-cone-mode: false
           sparse-checkout: |
-            api
-            scripts/core
-            savedata
+            /api/
+            /scripts/core/
+            /savedata/
+            /work/leave_random_move775.mjs
 
       - uses: actions/setup-node@v7
         with:
@@ -36,9 +40,9 @@ jobs:
           LOG_KEY: ${{ secrets.LOG_KEY }}
           VERCEL_DEPLOY_HOOK: ${{ secrets.VERCEL_DEPLOY_HOOK }}
         run: |
-          names=$(jq -r .inputs.names "$GITHUB_EVENT_PATH")
+          names=$(jq -r '.inputs.names // ""' "$GITHUB_EVENT_PATH")
           case "$names" in
-            "" | *[!A-Za-z0-9,]*) exit 1 ;;
+            *[!A-Za-z0-9,]*) exit 1 ;;
           esac
           mkdir -p logs
           log="logs/$(TZ=Asia/Tokyo date +%Y-%m-%d_%H%M)_delete_${GITHUB_RUN_ID}.log"
@@ -47,8 +51,15 @@ jobs:
             cd src
             git config user.name "github-actions[bot]"
             git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-            node scripts/core/delete_account_ci.mjs "$names"
-            code=$?
+            if [ -n "$names" ]; then
+              node work/leave_random_move775.mjs "$names" || exit 1
+              node scripts/core/delete_account_ci.mjs "$names"
+              code=$?
+            else
+              node scripts/core/delete_account.mjs
+              code=$?
+              node -e "import('./scripts/core/_ci.mjs').then(({pushAccounts})=>pushAccounts('chore: CI の 2 回目の削除申請で accounts.json を更新する'))"
+            fi
             if [ -n "$VERCEL_DEPLOY_HOOK" ]; then
               curl -fsS -X POST "$VERCEL_DEPLOY_HOOK"
             fi
