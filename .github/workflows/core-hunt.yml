@@ -7,9 +7,12 @@ on:
         description: 低い Lv ではなく狙える一番高い Lv から倒す（--high）
         type: boolean
         default: false
+      kind:
+        description: 回す kind（カンマ区切り）。kind ごとに別の run で同時に回せる
+        default: core,sng
 
 concurrency:
-  group: core-hunt
+  group: core-hunt-${{ inputs.kind || 'core,sng' }}
   cancel-in-progress: false
 
 permissions:
@@ -41,21 +44,25 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           mkdir -p logs
-          log="logs/$(TZ=Asia/Tokyo date +%Y-%m-%d_%H%M)_core-hunt_${GITHUB_RUN_ID}.log"
           high=$(jq -r '.inputs.high // "false"' "$GITHUB_EVENT_PATH")
           case "$high" in
             true) flag="--high" ;;
             false) flag="" ;;
             *) exit 1 ;;
           esac
+          kind=$(jq -r '.inputs.kind // "core,sng"' "$GITHUB_EVENT_PATH")
+          case "$kind" in
+            "" | *[!a-z,]*) exit 1 ;;
+          esac
+          log="logs/$(TZ=Asia/Tokyo date +%Y-%m-%d_%H%M)_core-hunt_${kind//,/-}_${GITHUB_RUN_ID}.log"
           set +e
           (
             cd src
-            node scripts/core/core_hunt.mjs $flag
+            node scripts/core/core_hunt.mjs $flag --kind="$kind"
             c=$?
             # 3 は時間切れ。続きを起動する（同じ concurrency なので、この run が終わってから始まる）
             if [ $c -eq 3 ]; then
-              gh workflow run core-hunt.yml -R "$GITHUB_REPOSITORY" -f high="$high" && echo "続きを起動した"
+              gh workflow run core-hunt.yml -R "$GITHUB_REPOSITORY" -f high="$high" -f kind="$kind" && echo "続きを起動した"
               c=0
             fi
             exit $c
