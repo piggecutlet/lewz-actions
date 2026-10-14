@@ -1,4 +1,4 @@
-# DOĞUKAN 1905 の今の同盟と城の座標を読む（読み取りのみ。work/dogukan/now.mjs）
+# DOĞUKAN 1905 の今の同盟を読む（読み取りのみ。work/dogukan/now.mjs）
 on:
   workflow_dispatch:
     inputs:
