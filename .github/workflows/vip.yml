@@ -4,6 +4,10 @@ on:
       names:
         description: 表示名（省くと R3 / VIP 10 の全件）
         required: false
+      morning:
+        description: 時刻に関係なく 9 時の回（解禁・商店・加速・派遣）を流す
+        type: boolean
+        default: false
 
 permissions:
   contents: write
@@ -40,6 +44,7 @@ jobs:
           LOG_KEY: ${{ secrets.LOG_KEY }}
         run: |
           names=$(jq -r '.inputs.names // ""' "$GITHUB_EVENT_PATH")
+          morning=$(jq -r '.inputs.morning // "false"' "$GITHUB_EVENT_PATH")
           case "$names" in
             *[!A-Za-z0-9,]*) exit 1 ;;
           esac
@@ -52,7 +57,7 @@ jobs:
               names=$(node -e "import('./scripts/core/_readme.mjs').then(({readAccounts})=>{console.log((readAccounts()['775']||[]).filter((a)=>a.note==='R3 / VIP 10').map((a)=>a.name).join(','))})")
             fi
             node scripts/core/shield.mjs "$names" || true
-            if [ "$(TZ=JST-9 date +%H)" -lt 12 ]; then
+            if [ "$morning" = "true" ] || [ "$(TZ=JST-9 date +%H)" -lt 12 ]; then
               node scripts/core/vip_unlock.mjs "$names" || true
               node scripts/core/vip_store.mjs "$names" || true
               node scripts/core/use_skill.mjs "$names" || true
