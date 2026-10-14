@@ -2,7 +2,7 @@ on:
   workflow_dispatch:
     inputs:
       points:
-        description: 足す都市の座標（x,y をスペース区切り。空なら状態だけ最新にする）
+        description: 足す都市の座標（x,y をスペース区切り。空なら表の値と状態を最新にするだけ）
         required: false
         default: ""
 
@@ -51,10 +51,7 @@ jobs:
             mkdir -p app/assets/WarZResources/local
             cp device/files/WarZDoc/config/database.local.xml device/files/WarZDoc/config/text_ja.ini app/assets/WarZResources/local/
             code=0
-            for p in $points; do
-              node scripts/core/city_info.mjs "$p" --write || code=1
-            done
-            node scripts/core/city_status.mjs || code=1
+            node scripts/core/city_info.mjs $points --write || code=1
             npx --yes prettier@3 --write documents/都市.md
             git add documents/都市.md
             if ! git diff --cached --quiet; then
