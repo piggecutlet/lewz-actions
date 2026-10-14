@@ -32,6 +32,26 @@ on:
       sec:
         required: false
         default: ""
+      seats:
+        description: 使う枠の持ち主の表示名,...（空なら accounts.json の小隊用アカウント）
+        required: false
+        default: ""
+      skip_build_base:
+        description: build-base を飛ばす
+        type: boolean
+        default: false
+      officer:
+        description: 教官をランク 5
+        type: boolean
+        default: false
+      force:
+        description: 小隊の結晶の確かめを飛ばす
+        type: boolean
+        default: false
+      dry_run:
+        description: 1 周目に脱退させる件・作る件数・使う枠を出すだけ（何もしない）
+        type: boolean
+        default: false
 
 concurrency:
   group: setup
@@ -71,11 +91,19 @@ jobs:
           GROW_ARMY: ${{ inputs.grow_army }}
           SEC: ${{ inputs.sec }}
           TARGET: ${{ inputs.target }}
+          SEATS: ${{ inputs.seats }}
+          SKIP_BUILD_BASE: ${{ inputs.skip_build_base && '--skip-build-base' || '' }}
+          OFFICER: ${{ inputs.officer && '--officer' || '' }}
+          FORCE: ${{ inputs.force && '--force' || '' }}
+          DRY_RUN: ${{ inputs.dry_run && '--dry-run' || '' }}
           GH_TOKEN: ${{ github.token }}
           LOG_KEY: ${{ secrets.LOG_KEY }}
         run: |
           case "$COUNT$SEC" in
             *[!0-9]*) exit 1 ;;
+          esac
+          case "$SEATS" in
+            *[!A-Za-z0-9,:]*) exit 1 ;;
           esac
           [[ -z "$TARGET" || "$TARGET" = なし || "$TARGET" =~ ^[0-9]+,[0-9]+$ ]] || exit 1
           [ "$GROW_ARMY" = 既定 ] && GROW_ARMY=$(jq -r .growArmy src/savedata/ci.json)
@@ -94,7 +122,7 @@ jobs:
             cd src
             git config user.name "github-actions[bot]"
             git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-            node scripts/core/new_dev.mjs $COUNT $DELETE_ACCOUNT ${grow_army:+"$grow_army"} ${TARGET:+"--target=$TARGET"} ${SEC:+"--sec=$SEC"} --ci
+            node scripts/core/new_dev.mjs $COUNT $DELETE_ACCOUNT ${grow_army:+"$grow_army"} ${TARGET:+"--target=$TARGET"} ${SEC:+"--sec=$SEC"} ${SEATS:+"--seats=$SEATS"} $SKIP_BUILD_BASE $OFFICER $FORCE $DRY_RUN --ci
           ) > "$log" 2>&1 &
           pid=$!
           # 5 分ごとに、ログの最新 30 行を暗号化して 1 行で画面に出す（途中の確かめ用。手元で scripts\core\decrypt_clip.mjs で読む）

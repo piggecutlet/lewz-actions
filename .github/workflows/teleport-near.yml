@@ -10,6 +10,10 @@ on:
         description: 高級移転が無ければダイヤ
         type: boolean
         default: false
+      dry_run:
+        description: 候補を近い順に 5 件出すだけ（移転しない）
+        type: boolean
+        default: false
 
 permissions:
   contents: write
@@ -39,6 +43,7 @@ jobs:
       - env:
           LOG_KEY: ${{ secrets.LOG_KEY }}
           DIAMOND: ${{ inputs.diamond }}
+          DRY_RUN: ${{ inputs.dry_run }}
         run: |
           names=$(jq -r .inputs.names "$GITHUB_EVENT_PATH")
           case "$names" in
@@ -50,6 +55,9 @@ jobs:
           if [ "$DIAMOND" = "true" ]; then
             opt="--diamond"
           fi
+          if [ "$DRY_RUN" = "true" ]; then
+            opt="$opt --dry-run"
+          fi
           mkdir -p logs
           log="logs/$(TZ=Asia/Tokyo date +%Y-%m-%d_%H%M)_teleport-near_${GITHUB_RUN_ID}.log"
           set +e
@@ -59,6 +67,9 @@ jobs:
             git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
             node scripts/core/teleport_near.mjs "$target" "$names" $opt
             code=$?
+            if [ "$DRY_RUN" = "true" ]; then
+              exit $code
+            fi
             node -e "import('./scripts/core/_ci.mjs').then(({pushAccounts})=>pushAccounts('chore: CI の teleport-near で accounts.json を更新する'))"
             exit $code
           ) > "$log" 2>&1 &

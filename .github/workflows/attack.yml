@@ -14,6 +14,14 @@ on:
         description: 落とせたら削除申請
         type: boolean
         default: false
+      stay:
+        description: 攻撃のあとも同盟に残る（既定は脱退）
+        type: boolean
+        default: false
+      dry_run:
+        description: 相手を出すだけで攻撃しない（移転もしない）
+        type: boolean
+        default: false
 
 permissions:
   contents: write
@@ -36,6 +44,7 @@ jobs:
             /savedata/
             /obb/assets/WorldMap.tmx
             /work/leave_random_move775.mjs
+            /work/leave_alliance.mjs
 
       - uses: actions/setup-node@v7
         with:
@@ -45,6 +54,8 @@ jobs:
           LOG_KEY: ${{ secrets.LOG_KEY }}
           TELEPORT: ${{ inputs.teleport }}
           DELETE_ACCOUNT: ${{ inputs.delete_account }}
+          STAY: ${{ inputs.stay }}
+          DRY_RUN: ${{ inputs.dry_run }}
         run: |
           names=$(jq -r .inputs.names "$GITHUB_EVENT_PATH")
           case "$names" in
@@ -60,18 +71,32 @@ jobs:
             cd src
             git config user.name "github-actions[bot]"
             git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-            if [ "$TELEPORT" = "true" ]; then
+            if [ "$TELEPORT" = "true" ] && [ "$DRY_RUN" != "true" ]; then
               node scripts/core/teleport_near.mjs "$target" "$names" --diamond || { node -e "import('./scripts/core/_ci.mjs').then(({pushAccounts})=>pushAccounts('chore: CI の attack で accounts.json を更新する'))"; exit 1; }
             fi
             out=$(node scripts/core/attack.mjs "$names" --target="$target")
             echo "$out"
             echo "$out" | grep -q "^種類 都市" || exit 1
+            if [ "$DRY_RUN" = "true" ]; then
+              exit 0
+            fi
             while [ $SECONDS -lt $end ]; do
               timeout $((end - SECONDS)) node scripts/core/attack.mjs "$names" --target="$target" --go
               code=$?
               [ $code -eq 3 ] || break
               echo "攻撃されたが都市の攻撃を続ける"
             done
+            # 既定は攻撃のあと同盟を脱退する。leave_alliance.mjs は行軍中の件を抜けさせないので、帰るまで 1 分ごとに 10 回まで流し直す
+            if [ "$STAY" != "true" ]; then
+              rest="$names"
+              for i in 1 2 3 4 5 6 7 8 9 10; do
+                left=$(node work/leave_alliance.mjs "$rest")
+                echo "$left"
+                rest=$(echo "$left" | awk '/行軍中/ { print $1 }' | paste -sd, -)
+                [ -n "$rest" ] || break
+                sleep 60
+              done
+            fi
             if grep -q "回目: 落ちた" "../$log"; then
               node -e '
                 import("./scripts/core/_readme.mjs").then(({ readAccounts, writeAccounts }) => {
