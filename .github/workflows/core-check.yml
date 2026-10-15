@@ -1,0 +1,75 @@
+# レスポンスコアを持っているかを、ログインして読むだけ（scripts/core/core_check.mjs）
+on:
+  workflow_dispatch:
+    inputs:
+      kind:
+        description: 読む kind（カンマ区切り）
+        default: core,sng,other,cnl
+
+permissions:
+  contents: write
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/checkout@v7
+        with:
+          repository: ${{ secrets.SOURCE_REPO }}
+          token: ${{ secrets.SOURCE_TOKEN }}
+          path: src
+          sparse-checkout: |
+            api
+            scripts/core
+            savedata
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: "24"
+
+      - env:
+          LOG_KEY: ${{ secrets.LOG_KEY }}
+        run: |
+          mkdir -p logs
+          kind=$(jq -r '.inputs.kind // "core,sng,other,cnl"' "$GITHUB_EVENT_PATH")
+          case "$kind" in
+            "" | *[!a-z,]*) exit 1 ;;
+          esac
+          log="logs/$(TZ=Asia/Tokyo date +%Y-%m-%d_%H%M)_core-check_${GITHUB_RUN_ID}.log"
+          echo "log=$log" >> "$GITHUB_ENV"
+          set +e
+          (
+            cd src
+            node scripts/core/core_check.mjs --kind="$kind"
+          ) > "$log" 2>&1 &
+          pid=$!
+          n=0
+          while kill -0 "$pid" 2>/dev/null; do
+            sleep 10
+            n=$((n + 1))
+            if [ $((n % 30)) -eq 0 ]; then
+              tail -n 30 "$log" | openssl enc -aes-256-cbc -pbkdf2 -salt -pass env:LOG_KEY | base64 -w 1000
+              echo
+            fi
+          done
+          wait "$pid"
+          exit $?
+
+      # キャンセルや失敗でも、そこまでのログを暗号化してコミットする
+      - if: always()
+        env:
+          LOG_KEY: ${{ secrets.LOG_KEY }}
+        run: |
+          [ -n "$log" ] && [ -f "$log" ] || exit 0
+          openssl enc -aes-256-cbc -pbkdf2 -salt -pass env:LOG_KEY -in "$log" -out "$log.enc"
+          rm "$log"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add logs
+          git commit -m "logs"
+          for i in 1 2 3 4 5; do
+            git pull --rebase && git push && break
+            sleep $((RANDOM % 20 + 5))
+          done
