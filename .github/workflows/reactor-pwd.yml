@@ -25,7 +25,7 @@ jobs:
             /api/
             /scripts/core/
             /savedata/
-            /work/reactor_pwd.mjs
+            /scripts/core/reactor_pwd.mjs
 
       - uses: actions/setup-node@v7
         with:
@@ -48,7 +48,7 @@ jobs:
           set +e
           (
             cd src
-            node work/reactor_pwd.mjs "$names" "$pwd"
+            node scripts/core/reactor_pwd.mjs "$names" "$pwd"
             exit $?
           ) > "$log" 2>&1 &
           pid=$!
