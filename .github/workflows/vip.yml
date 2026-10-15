@@ -34,6 +34,7 @@ jobs:
             /savedata/
             /device/files/ja/ja_ilocalize_base.json
             /device/files/WarZDoc/config/database.activity.xml
+            /work/gold_shield775.mjs
 
       - uses: actions/setup-node@v7
         with:
@@ -68,6 +69,11 @@ jobs:
             else
               node scripts/core/train_army.mjs "$names" || true
             fi
+            # 最後にダイヤを読み直して accounts.json の gold へ書き、本体へ push する（gold-shield.yml と同じ）
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            node work/gold_shield775.mjs "$names" || true
+            node -e "import('./scripts/core/_ci.mjs').then(({pushAccounts})=>pushAccounts('chore: CI の vip でダイヤを読み、accounts.json を更新する'))"
           ) > "$log" 2>&1 &
           pid=$!
           n=0
