@@ -5,6 +5,10 @@ on:
         description: 空なら 7 日たった行へ 2 回目の申請
         required: false
         default: ""
+      move:
+        description: 申請の前に脱退と移転をする（同盟に入っていないなら不要）
+        type: boolean
+        default: true
 
 concurrency:
   group: delete-account
@@ -51,7 +55,9 @@ jobs:
             git config user.name "github-actions[bot]"
             git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
             if [ -n "$names" ]; then
-              node work/leave_random_move775.mjs "$names" || exit 1
+              if [ "$(jq -r '.inputs.move // true' "$GITHUB_EVENT_PATH")" != false ]; then
+                node work/leave_random_move775.mjs "$names" || exit 1
+              fi
               node scripts/core/delete_account_ci.mjs "$names"
               code=$?
             else
