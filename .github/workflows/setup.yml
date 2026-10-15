@@ -7,7 +7,7 @@ on:
       delete_account:
         description: 削除申請
         type: boolean
-        default: true
+        default: false
       grow_army:
         description: grow-army
         type: choice
