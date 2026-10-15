@@ -55,6 +55,8 @@ jobs:
             "" | *[!a-z,]*) exit 1 ;;
           esac
           log="logs/$(TZ=Asia/Tokyo date +%Y-%m-%d_%H%M)_core-hunt_${kind//,/-}_${GITHUB_RUN_ID}.log"
+          # 途中で止めても次のステップで途中までのログを残せるように渡す
+          echo "log=$log" >> "$GITHUB_ENV"
           set +e
           (
             cd src
@@ -78,8 +80,14 @@ jobs:
             fi
           done
           wait "$pid"
-          code=$?
-          set -e
+          exit $?
+
+      # キャンセルや失敗でも、そこまでのログを暗号化してコミットする
+      - if: always()
+        env:
+          LOG_KEY: ${{ secrets.LOG_KEY }}
+        run: |
+          [ -n "$log" ] && [ -f "$log" ] || exit 0
           openssl enc -aes-256-cbc -pbkdf2 -salt -pass env:LOG_KEY -in "$log" -out "$log.enc"
           rm "$log"
           git config user.name "github-actions[bot]"
@@ -90,4 +98,3 @@ jobs:
             git pull --rebase && git push && break
             sleep $((RANDOM % 20 + 5))
           done
-          exit $code
