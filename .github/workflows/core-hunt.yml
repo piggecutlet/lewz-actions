@@ -9,10 +9,10 @@ on:
         default: false
       kind:
         description: 回す kind（カンマ区切り）。kind ごとに別の run で同時に回せる
-        default: core,sng,other
+        default: core,sng,other,cnl
 
 concurrency:
-  group: core-hunt-${{ inputs.kind || 'core,sng,other' }}
+  group: core-hunt-${{ inputs.kind || 'core,sng,other,cnl' }}
   cancel-in-progress: false
 
 permissions:
@@ -50,7 +50,7 @@ jobs:
             false) flag="" ;;
             *) exit 1 ;;
           esac
-          kind=$(jq -r '.inputs.kind // "core,sng,other"' "$GITHUB_EVENT_PATH")
+          kind=$(jq -r '.inputs.kind // "core,sng,other,cnl"' "$GITHUB_EVENT_PATH")
           case "$kind" in
             "" | *[!a-z,]*) exit 1 ;;
           esac
