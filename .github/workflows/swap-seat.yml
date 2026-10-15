@@ -53,7 +53,6 @@ jobs:
           set +e
           (
             cd src
-            # 1 組ずつ入れ替える（swap_seat.mjs は入れなければ元の側で入り直す）
             for pair in ${pairs//,/ }; do
               node work/swap_seat.mjs "${pair%%:*}" "${pair##*:}" "$team" || exit 1
             done

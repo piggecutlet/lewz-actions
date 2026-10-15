@@ -86,7 +86,6 @@ jobs:
               [ $code -eq 3 ] || break
               echo "攻撃されたが都市の攻撃を続ける"
             done
-            # 既定は攻撃のあと同盟を脱退する。leave_alliance.mjs は行軍中の件を抜けさせないので、帰るまで 1 分ごとに 10 回まで流し直す
             if [ "$STAY" != "true" ]; then
               rest="$names"
               for i in 1 2 3 4 5 6 7 8 9 10; do
