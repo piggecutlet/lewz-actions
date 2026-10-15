@@ -42,6 +42,7 @@ jobs:
       - env:
           LOG_KEY: ${{ secrets.LOG_KEY }}
           VERCEL_DEPLOY_HOOK: ${{ secrets.VERCEL_DEPLOY_HOOK }}
+          MOVE: ${{ inputs.move }}
         run: |
           names=$(jq -r '.inputs.names // ""' "$GITHUB_EVENT_PATH")
           case "$names" in
@@ -55,7 +56,7 @@ jobs:
             git config user.name "github-actions[bot]"
             git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
             if [ -n "$names" ]; then
-              if [ "$(jq -r '.inputs.move // true' "$GITHUB_EVENT_PATH")" != false ]; then
+              if [ "$MOVE" != false ]; then
                 node work/leave_random_move775.mjs "$names" || exit 1
               fi
               node scripts/core/delete_account_ci.mjs "$names"
