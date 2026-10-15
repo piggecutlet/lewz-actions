@@ -1,5 +1,3 @@
-name: setrank
-
 on:
   workflow_dispatch:
     inputs:

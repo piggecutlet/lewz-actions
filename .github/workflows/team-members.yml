@@ -1,5 +1,3 @@
-name: team-members
-
 on:
   workflow_dispatch:
     inputs:
