@@ -69,7 +69,6 @@ jobs:
             else
               node scripts/core/train_army.mjs "$names" || true
             fi
-            # 最後にダイヤを読み直して accounts.json の gold へ書き、本体へ push する（gold-shield.yml と同じ）
             git config user.name "github-actions[bot]"
             git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
             node work/gold_shield775.mjs "$names" || true
