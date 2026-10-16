@@ -78,11 +78,19 @@ jobs:
             echo "timeout=1" >> "$GITHUB_ENV"
             code=0
           fi
+          if [ $code -eq 2 ]; then
+            echo "dropped=1" >> "$GITHUB_ENV"
+            code=0
+          fi
           exit $code
 
       - name: 時間切れ
         if: env.timeout == '1'
         run: echo "時間切れ"
+
+      - name: レスポンスコアが落ちた
+        if: env.dropped == '1'
+        run: exit 1
 
       - if: always()
         env:
@@ -102,7 +110,7 @@ jobs:
 
   next:
     needs: run
-    if: success()
+    if: always()
     runs-on: ubuntu-latest
     steps:
       - env:
@@ -110,7 +118,7 @@ jobs:
         run: |
           high=$(jq -r '.inputs.high // "false"' "$GITHUB_EVENT_PATH")
           kinds=$(jq -r '.inputs.kinds // "[\"core,sng,other\",\"cnl\"]"' "$GITHUB_EVENT_PATH")
-          n=$(gh api "repos/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID/jobs" --jq '[.jobs[].steps[] | select(.name == "時間切れ" and .conclusion == "success")] | length')
+          n=$(gh api "repos/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID/jobs" --jq '[.jobs[].steps[] | select((.name == "時間切れ" and .conclusion == "success") or (.name == "レスポンスコアが落ちた" and .conclusion == "failure"))] | length')
           if [ "$n" -gt 0 ]; then
             gh workflow run core-hunt.yml -R "$GITHUB_REPOSITORY" -f high="$high" -f kinds="$kinds"
             echo "続きを起動した"
