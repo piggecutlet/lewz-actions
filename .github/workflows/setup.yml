@@ -5,9 +5,13 @@ on:
         required: false
         default: ""
       delete_account:
-        description: 削除申請
+        description: 1 回目の削除申請（この run で作った件）
         type: boolean
         default: false
+      second_delete:
+        description: 2 回目の削除申請（7 日たった件）
+        type: boolean
+        default: true
       grow_army:
         description: grow-army
         type: choice
@@ -86,6 +90,7 @@ jobs:
       - env:
           COUNT: ${{ inputs.count }}
           DELETE_ACCOUNT: ${{ inputs.delete_account && '--delete-account' || '' }}
+          SECOND_DELETE: ${{ inputs.second_delete && '--second-delete' || '' }}
           GROW_ARMY: ${{ inputs.grow_army }}
           SEC: ${{ inputs.sec }}
           TARGET: ${{ inputs.target }}
@@ -120,7 +125,7 @@ jobs:
             cd src
             git config user.name "github-actions[bot]"
             git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-            node scripts/core/new_dev.mjs $COUNT $DELETE_ACCOUNT ${grow_army:+"$grow_army"} ${TARGET:+"--target=$TARGET"} ${SEC:+"--sec=$SEC"} ${SEATS:+"--seats=$SEATS"} $SKIP_BUILD_BASE $OFFICER $FORCE $DRY_RUN --ci
+            node scripts/core/new_dev.mjs $COUNT $DELETE_ACCOUNT $SECOND_DELETE ${grow_army:+"$grow_army"} ${TARGET:+"--target=$TARGET"} ${SEC:+"--sec=$SEC"} ${SEATS:+"--seats=$SEATS"} $SKIP_BUILD_BASE $OFFICER $FORCE $DRY_RUN --ci
           ) > "$log" 2>&1 &
           pid=$!
           n=0
