@@ -7,6 +7,8 @@ on:
         default: Empire055be775
       pwd:
         default: ""
+      goods:
+        default: ""
 
 permissions:
   contents: write
@@ -46,12 +48,16 @@ jobs:
             "" | [0-9][0-9][0-9][0-9][0-9][0-9]) ;;
             *) exit 1 ;;
           esac
+          goods=$(jq -r '.inputs.goods // ""' "$GITHUB_EVENT_PATH")
+          case "$goods" in
+            *[!a-z0-9:,]*) exit 1 ;;
+          esac
           mkdir -p logs
           log="logs/$(TZ=Asia/Tokyo date +%Y-%m-%d_%H%M)_deal-probe_${GITHUB_RUN_ID}.log"
           set +e
           (
             cd src
-            node scripts/core/deal_probe.mjs "$from" "$to" $pwd
+            node scripts/core/deal_probe.mjs "$from" "$to" "$pwd" "$goods"
             exit $?
           ) > "$log" 2>&1 &
           pid=$!
