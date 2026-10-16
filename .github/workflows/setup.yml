@@ -7,7 +7,7 @@ on:
       delete_account:
         description: 1 回目の削除申請（この run で作った件）
         type: boolean
-        default: false
+        default: true
       second_delete:
         description: 2 回目の削除申請（7 日たった件）
         type: boolean
