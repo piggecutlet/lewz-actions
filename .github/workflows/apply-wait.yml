@@ -7,12 +7,11 @@ on:
         required: true
 
 concurrency:
-  group: core-hunt-join-${{ inputs.name }}
+  group: apply-wait-${{ inputs.name }}
   cancel-in-progress: false
 
 permissions:
   contents: write
-  actions: write
 
 jobs:
   run:
@@ -46,13 +45,12 @@ jobs:
           case "$alliance" in
             "" | *[!0-9a-f]*) exit 1 ;;
           esac
-          log="logs/$(TZ=Asia/Tokyo date +%Y-%m-%d_%H%M)_core-hunt-join_${GITHUB_RUN_ID}.log"
+          log="logs/$(TZ=Asia/Tokyo date +%Y-%m-%d_%H%M)_apply-wait_${GITHUB_RUN_ID}.log"
           echo "log=$log" >> "$GITHUB_ENV"
           set +e
           (
             cd src
-            node scripts/core/apply_wait.mjs "$name" "$alliance" || exit $?
-            node scripts/core/core_hunt.mjs "$name"
+            node scripts/core/apply_wait.mjs "$name" "$alliance"
           ) > "$log" 2>&1 &
           pid=$!
           n=0
@@ -65,16 +63,7 @@ jobs:
             fi
           done
           wait "$pid"
-          code=$?
-          if [ $code -eq 3 ]; then
-            echo "timeout=1" >> "$GITHUB_ENV"
-            code=0
-          fi
-          exit $code
-
-      - name: 時間切れ
-        if: env.timeout == '1'
-        run: echo "時間切れ"
+          exit $?
 
       - if: always()
         env:
@@ -91,19 +80,3 @@ jobs:
             git pull --rebase && git push && break
             sleep $((RANDOM % 20 + 5))
           done
-
-  next:
-    needs: run
-    if: success()
-    runs-on: ubuntu-latest
-    steps:
-      - env:
-          GH_TOKEN: ${{ secrets.DISPATCH_TOKEN || github.token }}
-        run: |
-          name=$(jq -r .inputs.name "$GITHUB_EVENT_PATH")
-          alliance=$(jq -r .inputs.alliance "$GITHUB_EVENT_PATH")
-          n=$(gh api "repos/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID/jobs" --jq '[.jobs[].steps[] | select(.name == "時間切れ" and .conclusion == "success")] | length')
-          if [ "$n" -gt 0 ]; then
-            gh workflow run core-hunt-join.yml -R "$GITHUB_REPOSITORY" -f name="$name" -f alliance="$alliance"
-            echo "続きを起動した"
-          fi
