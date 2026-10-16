@@ -8,6 +8,10 @@ on:
         description: 時刻に関係なく 9 時の回（解禁・商店・加速・派遣）を流す
         type: boolean
         default: false
+      only_send_lv10_zombie:
+        description: 送るのを Lv.10 ゾンビ ネメシスだけにする（1 万体に足りなければ送らない）
+        type: boolean
+        default: false
 
 permissions:
   contents: write
@@ -46,6 +50,11 @@ jobs:
         run: |
           names=$(jq -r '.inputs.names // ""' "$GITHUB_EVENT_PATH")
           morning=$(jq -r '.inputs.morning // "false"' "$GITHUB_EVENT_PATH")
+          only_zombie=$(jq -r '.inputs.only_send_lv10_zombie // "false"' "$GITHUB_EVENT_PATH")
+          send_opt=""
+          if [ "$only_zombie" = "true" ]; then
+            send_opt="--only-send-lv10-zombie"
+          fi
           case "$names" in
             *[!A-Za-z0-9,]*) exit 1 ;;
           esac
@@ -65,7 +74,7 @@ jobs:
               node scripts/core/train_army.mjs "$names" || true
               node scripts/core/vip_boost.mjs "$names" || true
               node scripts/core/train_army.mjs "$names" || true
-              node scripts/core/vip_send.mjs "$names" || true
+              node scripts/core/vip_send.mjs "$names" $send_opt || true
             else
               node scripts/core/train_army.mjs "$names" || true
             fi
