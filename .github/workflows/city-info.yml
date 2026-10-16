@@ -25,7 +25,6 @@ jobs:
             /api/
             /scripts/core/
             /savedata/
-            /documents/都市.md
             /device/files/WarZDoc/config/database.local.xml
             /device/files/WarZDoc/config/text_ja.ini
             /device/files/WarZDoc/config/totalwar.xml
@@ -52,10 +51,9 @@ jobs:
             cp device/files/WarZDoc/config/database.local.xml device/files/WarZDoc/config/text_ja.ini app/assets/WarZResources/local/
             code=0
             node scripts/core/city_info.mjs $points --write || code=1
-            npx --yes prettier@3 --write documents/都市.md
-            git add documents/都市.md
+            git add savedata/cities.json
             if ! git diff --cached --quiet; then
-              git commit -m "docs: CI で都市の表を更新する"
+              git commit -m "chore: CI で都市の表（cities.json）を更新する"
               for i in 1 2 3 4 5; do
                 git pull --rebase && git push && break
                 sleep $((RANDOM % 20 + 5))
