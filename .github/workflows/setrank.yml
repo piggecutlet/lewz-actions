@@ -6,6 +6,8 @@ on:
       rank:
         description: 階級 2〜4
         required: true
+      leader:
+        required: false
 
 permissions:
   contents: write
@@ -44,12 +46,16 @@ jobs:
             2 | 3 | 4) ;;
             *) exit 1 ;;
           esac
+          leader=$(jq -r '.inputs.leader // ""' "$GITHUB_EVENT_PATH")
+          case "$leader" in
+            *[!A-Za-z0-9]*) exit 1 ;;
+          esac
           mkdir -p logs
           log="logs/$(TZ=Asia/Tokyo date +%Y-%m-%d_%H%M)_setrank_${GITHUB_RUN_ID}.log"
           set +e
           (
             cd src
-            node work/setrank775.mjs "$names" "$rank"
+            node work/setrank775.mjs "$names" "$rank" ${leader:+"--leader=$leader"}
           ) > "$log" 2>&1 &
           pid=$!
           n=0
