@@ -118,7 +118,7 @@ jobs:
             "Lv.9 車両") grow_army="--grow-army=ハーベスター" ;;
             DF) grow_army="--grow-army=DF" ;;
             core) grow_army="--grow-army=core" ;;
-            VIP) grow_army=""; DELETE_ACCOUNT=""; OFFICER="--officer" ;;
+            VIP) grow_army=""; DELETE_ACCOUNT=""; OFFICER="--officer"; FIRE="--fire-initial" ;;
             *) exit 1 ;;
           esac
           mkdir -p logs
@@ -129,7 +129,7 @@ jobs:
             cd src
             git config user.name "github-actions[bot]"
             git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-            node scripts/core/new_dev.mjs $COUNT $DELETE_ACCOUNT $SECOND_DELETE ${grow_army:+"$grow_army"} ${TARGET:+"--target=$TARGET"} ${SEC:+"--sec=$SEC"} ${SEATS:+"--seats=$SEATS"} $SKIP_BUILD_BASE $OFFICER $FORCE $DRY_RUN --ci
+            node scripts/core/new_dev.mjs $COUNT $DELETE_ACCOUNT $SECOND_DELETE ${grow_army:+"$grow_army"} ${TARGET:+"--target=$TARGET"} ${SEC:+"--sec=$SEC"} ${SEATS:+"--seats=$SEATS"} $SKIP_BUILD_BASE $OFFICER $FIRE $FORCE $DRY_RUN --ci
           ) > "$log" 2>&1 &
           pid=$!
           n=0
