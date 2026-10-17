@@ -74,7 +74,9 @@ jobs:
               node scripts/core/train_army.mjs "$names" || true
               node scripts/core/vip_boost.mjs "$names" || true
               node scripts/core/train_army.mjs "$names" || true
-              node scripts/core/vip_send.mjs "$names" $send_opt || true
+              if [ "$(TZ=JST-9 date +%F)" != "2026-10-18" ]; then
+                node scripts/core/vip_send.mjs "$names" $send_opt || true
+              fi
             else
               node scripts/core/train_army.mjs "$names" || true
             fi
