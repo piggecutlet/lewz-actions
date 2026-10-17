@@ -16,6 +16,7 @@ on:
           - Lv.10 射手
           - Lv.9 射手
           - DF
+          - core
       target:
         description: DF の移転先と偵察先 x,y（空なら ci.json の dfTarget、なしなら後回し）
         required: false
@@ -81,6 +82,7 @@ jobs:
             "Lv.10 車両") flag="--vehicle-lv10" ;;
             "Lv.10 射手") flag="--archer-lv10" ;;
             "Lv.9 射手") flag="--archer-lv9" ;;
+            core) flag="--core" ;;
             DF)
               target=$(jq -r '.inputs.target // ""' "$GITHUB_EVENT_PATH")
               [ "$target" = なし ] && target=none
