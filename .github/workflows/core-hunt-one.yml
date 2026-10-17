@@ -3,6 +3,13 @@ on:
     inputs:
       name:
         required: true
+      size:
+        description: 1 部隊の体数の上限（--size。空なら待機兵を均等に割る）
+        default: ""
+      high:
+        description: 狙える一番高い Lv から倒す（--high）
+        type: boolean
+        default: false
 
 concurrency:
   group: core-hunt-one-${{ inputs.name }}
@@ -40,12 +47,19 @@ jobs:
           case "$name" in
             "" | *[!A-Za-z0-9]*) exit 1 ;;
           esac
+          size=$(jq -r '.inputs.size // ""' "$GITHUB_EVENT_PATH")
+          case "$size" in
+            *[!0-9]*) exit 1 ;;
+          esac
+          opts=""
+          [ -n "$size" ] && opts="$opts --size=$size"
+          [ "$(jq -r '.inputs.high // false' "$GITHUB_EVENT_PATH")" = "true" ] && opts="$opts --high"
           log="logs/$(TZ=Asia/Tokyo date +%Y-%m-%d_%H%M)_core-hunt-one_${GITHUB_RUN_ID}.log"
           echo "log=$log" >> "$GITHUB_ENV"
           set +e
           (
             cd src
-            node scripts/core/core_hunt.mjs "$name"
+            node scripts/core/core_hunt.mjs "$name" $opts
           ) > "$log" 2>&1 &
           pid=$!
           n=0
@@ -96,6 +110,8 @@ jobs:
           name=$(jq -r .inputs.name "$GITHUB_EVENT_PATH")
           n=$(gh api "repos/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID/jobs" --jq '[.jobs[].steps[] | select(.name == "時間切れ" and .conclusion == "success")] | length')
           if [ "$n" -gt 0 ]; then
-            gh workflow run core-hunt-one.yml -R "$GITHUB_REPOSITORY" -f name="$name"
+            size=$(jq -r '.inputs.size // ""' "$GITHUB_EVENT_PATH")
+            high=$(jq -r '.inputs.high // false' "$GITHUB_EVENT_PATH")
+            gh workflow run core-hunt-one.yml -R "$GITHUB_REPOSITORY" -f name="$name" -f size="$size" -f high="$high"
             echo "続きを起動した"
           fi
