@@ -4,10 +4,9 @@ on:
       name:
         description: 送る側の表示名
         required: true
-      room_id:
-        description: ルーム ID
+      to:
+        description: 送信先（国際 か 同盟の略称）
         required: true
-        default: alliance_775_4f5d5ff2578649e2b80081d9ecbd68f4
       msg:
         description: 本文
         required: true
@@ -39,7 +38,7 @@ jobs:
       - env:
           LOG_KEY: ${{ secrets.LOG_KEY }}
           NAME: ${{ inputs.name }}
-          ROOM_ID: ${{ inputs.room_id }}
+          TO: ${{ inputs.to }}
           MSG: ${{ inputs.msg }}
         run: |
           mkdir -p logs
@@ -47,7 +46,7 @@ jobs:
           set +e
           (
             cd src
-            node scripts/core/chat_send.mjs "$NAME" "$ROOM_ID" "$MSG"
+            node scripts/core/chat_send.mjs "$TO" "$NAME" "$MSG"
           ) > "$log" 2>&1 &
           pid=$!
           n=0
