@@ -1,10 +1,6 @@
 on:
   workflow_dispatch:
     inputs:
-      high:
-        description: 低い Lv ではなく狙える一番高い Lv から倒す（--high）
-        type: boolean
-        default: false
       kinds:
         description: ジョブごとに回す kind（JSON の配列。要素はカンマ区切りの kind）
         default: '["core,sng,other","cnl"]'
@@ -45,12 +41,6 @@ jobs:
           KIND: ${{ matrix.kind }}
         run: |
           mkdir -p logs
-          high=$(jq -r '.inputs.high // "false"' "$GITHUB_EVENT_PATH")
-          case "$high" in
-            true) flag="--high" ;;
-            false) flag="" ;;
-            *) exit 1 ;;
-          esac
           kind="$KIND"
           case "$kind" in
             "" | *[!a-z,]*) exit 1 ;;
@@ -60,7 +50,7 @@ jobs:
           set +e
           (
             cd src
-            node scripts/core/core_hunt.mjs $flag --kind="$kind"
+            node scripts/core/core_hunt.mjs --kind="$kind"
           ) > "$log" 2>&1 &
           pid=$!
           n=0
@@ -116,10 +106,9 @@ jobs:
       - env:
           GH_TOKEN: ${{ secrets.DISPATCH_TOKEN || github.token }}
         run: |
-          high=$(jq -r '.inputs.high // "false"' "$GITHUB_EVENT_PATH")
           kinds=$(jq -r '.inputs.kinds // "[\"core,sng,other\",\"cnl\"]"' "$GITHUB_EVENT_PATH")
           n=$(gh api "repos/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID/jobs" --jq '[.jobs[].steps[] | select((.name == "時間切れ" and .conclusion == "success") or (.name == "レスポンスコアが落ちた" and .conclusion == "failure"))] | length')
           if [ "$n" -gt 0 ]; then
-            gh workflow run core-hunt.yml -R "$GITHUB_REPOSITORY" -f high="$high" -f kinds="$kinds"
+            gh workflow run core-hunt.yml -R "$GITHUB_REPOSITORY" -f kinds="$kinds"
             echo "続きを起動した"
           fi
