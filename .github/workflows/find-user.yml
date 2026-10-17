@@ -8,7 +8,7 @@ on:
         required: true
 
 concurrency:
-  group: rose-find
+  group: find-user
   cancel-in-progress: false
 
 permissions:
@@ -30,7 +30,7 @@ jobs:
             /api/
             /scripts/core/
             /savedata/
-            /work/rose_find.mjs
+            /work/find_user.mjs
 
       - uses: actions/setup-node@v7
         with:
@@ -42,13 +42,13 @@ jobs:
           TARGET: ${{ inputs.target }}
         run: |
           mkdir -p logs
-          log="logs/$(TZ=Asia/Tokyo date +%Y-%m-%d_%H%M)_rose-find_${GITHUB_RUN_ID}.log"
+          log="logs/$(TZ=Asia/Tokyo date +%Y-%m-%d_%H%M)_find-user_${GITHUB_RUN_ID}.log"
           set +e
           (
             cd src
             git config user.name "github-actions[bot]"
             git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-            node work/rose_find.mjs "$LOGIN" "$TARGET"
+            node work/find_user.mjs "$LOGIN" "$TARGET"
           ) > "$log" 2>&1 &
           pid=$!
           n=0
