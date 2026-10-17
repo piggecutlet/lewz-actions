@@ -6,6 +6,9 @@ on:
         required: true
       names:
         required: true
+      write:
+        type: boolean
+        default: false
 
 permissions:
   contents: write
@@ -37,6 +40,7 @@ jobs:
         run: |
           login=$(jq -r .inputs.login "$GITHUB_EVENT_PATH")
           names=$(jq -r .inputs.names "$GITHUB_EVENT_PATH")
+          write=$(jq -r .inputs.write "$GITHUB_EVENT_PATH")
           case "$login" in
             "" | *[!A-Za-z0-9]*) exit 1 ;;
           esac
@@ -50,8 +54,14 @@ jobs:
             cd src
             git config user.name "github-actions[bot]"
             git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-            node work/xy_from_rank775.mjs "$login" "$names"
-            code=$?
+            if [ "$write" = "true" ]; then
+              node work/xy_from_rank775.mjs "$login" "$names" --write
+              code=$?
+              node -e "import('./scripts/core/_ci.mjs').then(({pushAccounts})=>pushAccounts('chore: CI で同盟の座標とランクを accounts.json に書く'))"
+            else
+              node work/xy_from_rank775.mjs "$login" "$names"
+              code=$?
+            fi
             exit $code
           ) > "$log" 2>&1 &
           pid=$!
