@@ -29,6 +29,7 @@ on:
           - DF
           - core
           - VIP
+          - NEW_VIP_ALLIANCE
       target:
         description: DF の移転先と偵察先 x,y（空なら ci.json の dfTarget、なしなら後回し）
         required: false
@@ -119,6 +120,7 @@ jobs:
             DF) grow_army="--grow-army=DF" ;;
             core) grow_army="--grow-army=core" ;;
             VIP) grow_army=""; DELETE_ACCOUNT=""; OFFICER="--officer"; FIRE="--fire-initial" ;;
+            NEW_VIP_ALLIANCE) grow_army=""; DELETE_ACCOUNT=""; OFFICER="--officer"; FIRE="--fire-initial --no-teleport" ;;
             *) exit 1 ;;
           esac
           mkdir -p logs
