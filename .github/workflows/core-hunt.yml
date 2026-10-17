@@ -3,10 +3,10 @@ on:
     inputs:
       kinds:
         description: ジョブごとに回す kind（JSON の配列。要素はカンマ区切りの kind）
-        default: '["core,other","cnl"]'
+        default: '["other,cnl"]'
 
 concurrency:
-  group: core-hunt-${{ inputs.kinds || '["core,other","cnl"]' }}
+  group: core-hunt-${{ inputs.kinds || '["other,cnl"]' }}
   cancel-in-progress: false
 
 permissions:
@@ -18,7 +18,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        kind: ${{ fromJSON(inputs.kinds || '["core,other","cnl"]') }}
+        kind: ${{ fromJSON(inputs.kinds || '["other,cnl"]') }}
     steps:
       - uses: actions/checkout@v7
 
@@ -106,7 +106,7 @@ jobs:
       - env:
           GH_TOKEN: ${{ secrets.DISPATCH_TOKEN || github.token }}
         run: |
-          kinds=$(jq -r '.inputs.kinds // "[\"core,other\",\"cnl\"]"' "$GITHUB_EVENT_PATH")
+          kinds=$(jq -r '.inputs.kinds // "[\"other,cnl\"]"' "$GITHUB_EVENT_PATH")
           n=$(gh api "repos/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID/jobs" --jq '[.jobs[].steps[] | select((.name == "時間切れ" and .conclusion == "success") or (.name == "レスポンスコアが落ちた" and .conclusion == "failure"))] | length')
           if [ "$n" -gt 0 ]; then
             gh workflow run core-hunt.yml -R "$GITHUB_REPOSITORY" -f kinds="$kinds"
