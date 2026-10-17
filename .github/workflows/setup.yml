@@ -28,6 +28,7 @@ on:
           - Lv.9 射手
           - DF
           - core
+          - VIP
       target:
         description: DF の移転先と偵察先 x,y（空なら ci.json の dfTarget、なしなら後回し）
         required: false
@@ -117,6 +118,7 @@ jobs:
             "Lv.9 車両") grow_army="--grow-army=ハーベスター" ;;
             DF) grow_army="--grow-army=DF" ;;
             core) grow_army="--grow-army=core" ;;
+            VIP) grow_army=""; DELETE_ACCOUNT=""; OFFICER="--officer" ;;
             *) exit 1 ;;
           esac
           mkdir -p logs
