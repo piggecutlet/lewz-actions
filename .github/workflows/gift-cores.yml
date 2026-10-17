@@ -33,7 +33,7 @@ jobs:
         run: |
           names=$(jq -r .inputs.names "$GITHUB_EVENT_PATH")
           case "$names" in
-            "" | *[!A-Za-z0-9,]*) exit 1 ;;
+            "" | *[[:space:]]* | *\"* | *\'* | *\`* | *\$* | *'\'*) exit 1 ;;
           esac
           mkdir -p logs
           log="logs/$(TZ=Asia/Tokyo date +%Y-%m-%d_%H%M)_gift-cores_${GITHUB_RUN_ID}.log"
