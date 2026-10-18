@@ -52,7 +52,10 @@ jobs:
           xy=$(jq -r '.inputs.xy // ""' "$GITHUB_EVENT_PATH")
           arm=$(jq -r '.inputs.arm // "107309"' "$GITHUB_EVENT_PATH")
           accounts=$(jq -r '.inputs.accounts // "20"' "$GITHUB_EVENT_PATH")
-          case "$name$arm$accounts" in
+          if [ -z "$name" ]; then
+            exit 1
+          fi
+          case "$arm$accounts" in
             *[!A-Za-z0-9]*) exit 1 ;;
           esac
           case "$xy" in
