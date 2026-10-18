@@ -50,7 +50,9 @@ jobs:
           set +e
           (
             cd src
-            node scripts/core/core_hunt.mjs --kind="$kind"
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            node scripts/core/core_hunt.mjs --kind="$kind" --ci
           ) > "$log" 2>&1 &
           pid=$!
           n=0
