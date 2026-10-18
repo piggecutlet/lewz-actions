@@ -35,7 +35,7 @@ jobs:
         with:
           node-version: "24"
 
-      - timeout-minutes: 60
+      - timeout-minutes: 120
         env:
           LOG_KEY: ${{ secrets.LOG_KEY }}
         run: |
@@ -51,6 +51,7 @@ jobs:
             if [ -z "$names" ]; then
               names=$(node -e "import('./scripts/core/_readme.mjs').then(({readAccounts})=>{console.log((readAccounts()['775']||[]).filter((a)=>a.note==='VIP 10').map((a)=>a.name).join(','))})")
             fi
+            node scripts/core/vip_boost.mjs "$names" || true
             node scripts/core/vip_send.mjs "$names"
             code=$?
             git config user.name "github-actions[bot]"
