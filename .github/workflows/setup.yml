@@ -112,7 +112,8 @@ jobs:
             *[!A-Za-z0-9,:]*) exit 1 ;;
           esac
           [[ -z "$TARGET" || "$TARGET" = なし || "$TARGET" =~ ^[0-9]+,[0-9]+$ ]] || exit 1
-          [ "$GROW_ARMY" = 既定 ] && GROW_ARMY=$(jq -r .growArmy src/savedata/ci.json)
+          GROW_ARMY_DEFAULT=""
+          [ "$GROW_ARMY" = 既定 ] && GROW_ARMY=$(jq -r .growArmy src/savedata/ci.json) && GROW_ARMY_DEFAULT="--grow-army-default"
           case "$GROW_ARMY" in
             "" | なし) grow_army="" ;;
             4種 | Lv.1 | ゾンビのみ | "Lv.10 車両" | "Lv.10 射手" | "Lv.9 射手") grow_army="--grow-army=$GROW_ARMY" ;;
@@ -131,7 +132,7 @@ jobs:
             cd src
             git config user.name "github-actions[bot]"
             git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-            node scripts/core/new_dev.mjs $COUNT $DELETE_ACCOUNT $SECOND_DELETE ${grow_army:+"$grow_army"} ${TARGET:+"--target=$TARGET"} ${SEC:+"--sec=$SEC"} ${SEATS:+"--seats=$SEATS"} $SKIP_BUILD_BASE $OFFICER $FIRE $FORCE $DRY_RUN --ci
+            node scripts/core/new_dev.mjs $COUNT $DELETE_ACCOUNT $SECOND_DELETE ${grow_army:+"$grow_army"} $GROW_ARMY_DEFAULT ${TARGET:+"--target=$TARGET"} ${SEC:+"--sec=$SEC"} ${SEATS:+"--seats=$SEATS"} $SKIP_BUILD_BASE $OFFICER $FIRE $FORCE $DRY_RUN --ci
           ) > "$log" 2>&1 &
           pid=$!
           n=0
