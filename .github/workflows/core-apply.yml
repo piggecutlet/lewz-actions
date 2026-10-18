@@ -6,13 +6,17 @@ on:
         options:
           - apply
           - watch
+          - cancel
         default: watch
+      name:
+        type: string
+        default: ""
       dry_run:
         type: boolean
         default: false
 
 concurrency:
-  group: core-apply
+  group: core-apply${{ inputs.mode == 'cancel' && '-cancel' || '' }}
   cancel-in-progress: false
 
 permissions:
@@ -43,12 +47,14 @@ jobs:
 
       - env:
           MODE: ${{ inputs.mode }}
+          NAME: ${{ inputs.name }}
           DRY_RUN: ${{ inputs.dry_run && '--dry-run' || '' }}
           GH_TOKEN: ${{ github.token }}
           LOG_KEY: ${{ secrets.LOG_KEY }}
         run: |
           case "$MODE" in
-            apply | watch) ;;
+            apply | watch) NAME="" ;;
+            cancel) [ -n "$NAME" ] || exit 1 ;;
             *) exit 1 ;;
           esac
           mkdir -p logs
@@ -59,7 +65,7 @@ jobs:
             cd src
             git config user.name "github-actions[bot]"
             git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-            node scripts/core/core_apply.mjs "$MODE" $DRY_RUN --ci
+            node scripts/core/core_apply.mjs "$MODE" $NAME $DRY_RUN --ci
           ) > "$log" 2>&1 &
           pid=$!
           n=0
