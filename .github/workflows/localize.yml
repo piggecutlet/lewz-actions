@@ -4,7 +4,7 @@ on:
       languages:
         description: 取る言語（アプリの言語コードをスペース区切り）
         required: false
-        default: "en zh_CN ru tr"
+        default: "en zh_CN ru tr ar"
 
 permissions:
   contents: write
@@ -40,7 +40,7 @@ jobs:
       - env:
           LOG_KEY: ${{ secrets.LOG_KEY }}
         run: |
-          languages=$(jq -r '.inputs.languages // "en zh_CN ru tr"' "$GITHUB_EVENT_PATH")
+          languages=$(jq -r '.inputs.languages // "en zh_CN ru tr ar"' "$GITHUB_EVENT_PATH")
           for l in $languages; do
             [[ "$l" =~ ^[A-Za-z_]+$ ]] || exit 1
           done
