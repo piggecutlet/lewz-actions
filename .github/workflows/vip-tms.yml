@@ -73,16 +73,16 @@ jobs:
               node scripts/core/vip_unlock.mjs "$names" || true
               node scripts/core/vip_store.mjs "$names" || true
               node scripts/core/use_skill.mjs "$names" || true
-              node scripts/core/train_army.mjs "$names" || true
-              node scripts/core/vip_boost.mjs "$names" || true
-              node scripts/core/train_army.mjs "$names" || true
+              node scripts/core/train_army.mjs "$names" --zombie-only || true
+              node scripts/core/vip_boost.mjs "$names" --train-zombie || true
+              node scripts/core/train_army.mjs "$names" --zombie-only || true
               node work/leave_alliance.mjs "$names" || true
               node scripts/core/join_alliance.mjs "$names" || true
               node scripts/core/vip_send.mjs "$names" || true
               node work/leave_alliance.mjs "$names" || true
               node scripts/core/join_alliance.mjs "$names" --leader=Empire064d8775 || true
             else
-              node scripts/core/train_army.mjs "$names" || true
+              node scripts/core/train_army.mjs "$names" --zombie-only || true
             fi
             git config user.name "piggecutlet"
             git config user.email "234113501+piggecutlet@users.noreply.github.com"
