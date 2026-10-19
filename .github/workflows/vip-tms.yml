@@ -81,6 +81,7 @@ jobs:
               node scripts/core/vip_send.mjs "$names" || true
               node work/leave_alliance.mjs "$names" || true
               node scripts/core/join_alliance.mjs "$names" --leader=Empire064d8775 || true
+              restart=1
             else
               node scripts/core/train_army.mjs "$names" --zombie-only || true
             fi
@@ -89,7 +90,7 @@ jobs:
             node work/gold_shield775.mjs "$names" || true
             node -e "import('./scripts/core/_ci.mjs').then(({pushAccounts})=>pushAccounts('chore: CI の vip-tms でダイヤを読み、accounts.json を更新する'))"
             if [ -n "$restart" ]; then
-              echo "止めていた tms.yml を起動し直す"
+              echo "tms.yml を起動する"
               gh workflow run tms.yml -R "$GITHUB_REPOSITORY" || true
             fi
           ) > "$log" 2>&1 &
