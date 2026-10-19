@@ -30,6 +30,7 @@ jobs:
           (
             set -e
             gh workflow run vip.yml -R "$GITHUB_REPOSITORY" || true
+            gh workflow run vip-tms.yml -R "$GITHUB_REPOSITORY" || true
             gh workflow run cmp.yml -R "$GITHUB_REPOSITORY"
             if [ "$(TZ=Asia/Tokyo date +%H)" = 09 ]; then
               gh workflow run zombie.yml -R "$GITHUB_REPOSITORY"
