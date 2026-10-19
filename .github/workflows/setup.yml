@@ -70,6 +70,15 @@ jobs:
   run:
     runs-on: ubuntu-latest
     steps:
+      - env:
+          SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+        run: |
+          echo "$SSH_PRIVATE_KEY" > "$HOME/sign_key"
+          chmod 600 "$HOME/sign_key"
+          git config --global gpg.format ssh
+          git config --global user.signingkey "$HOME/sign_key"
+          if ssh-keygen -y -P "" -f "$HOME/sign_key" > /dev/null; then git config --global commit.gpgsign true; fi
+
       - uses: actions/checkout@v7
 
       - uses: actions/checkout@v7
@@ -102,7 +111,7 @@ jobs:
           OFFICER: ${{ inputs.officer && '--officer' || '' }}
           FORCE: ${{ inputs.force && '--force' || '' }}
           DRY_RUN: ${{ inputs.dry_run && '--dry-run' || '' }}
-          GH_TOKEN: ${{ github.token }}
+          GH_TOKEN: ${{ secrets.DISPATCH_TOKEN }}
           LOG_KEY: ${{ secrets.LOG_KEY }}
         run: |
           case "$COUNT$SEC" in
@@ -130,8 +139,8 @@ jobs:
           set +e
           (
             cd src
-            git config user.name "github-actions[bot]"
-            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git config user.name "piggecutlet"
+            git config user.email "234113501+piggecutlet@users.noreply.github.com"
             node scripts/core/new_dev.mjs $COUNT $DELETE_ACCOUNT $SECOND_DELETE ${grow_army:+"$grow_army"} $GROW_ARMY_DEFAULT ${TARGET:+"--target=$TARGET"} ${SEC:+"--sec=$SEC"} ${SEATS:+"--seats=$SEATS"} $SKIP_BUILD_BASE $OFFICER $FIRE $FORCE $DRY_RUN --ci
           ) > "$log" 2>&1 &
           pid=$!
@@ -163,8 +172,8 @@ jobs:
           set -e
           openssl enc -aes-256-cbc -pbkdf2 -salt -pass env:LOG_KEY -in "$LOG" -out "$LOG.enc"
           rm "$LOG"
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git config user.name "piggecutlet"
+          git config user.email "234113501+piggecutlet@users.noreply.github.com"
           git add logs
           git commit -m "logs"
           for i in 1 2 3 4 5; do
@@ -175,5 +184,5 @@ jobs:
 
       - if: cancelled()
         env:
-          GH_TOKEN: ${{ github.token }}
+          GH_TOKEN: ${{ secrets.DISPATCH_TOKEN }}
         run: gh workflow run setup-cancel.yml -R "$GITHUB_REPOSITORY" -f started="$(gh run view "$GITHUB_RUN_ID" -R "$GITHUB_REPOSITORY" --json startedAt -q .startedAt)"

@@ -20,6 +20,15 @@ jobs:
       matrix:
         kind: ${{ fromJSON(inputs.kinds || '["other,cnl"]') }}
     steps:
+      - env:
+          SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+        run: |
+          echo "$SSH_PRIVATE_KEY" > "$HOME/sign_key"
+          chmod 600 "$HOME/sign_key"
+          git config --global gpg.format ssh
+          git config --global user.signingkey "$HOME/sign_key"
+          if ssh-keygen -y -P "" -f "$HOME/sign_key" > /dev/null; then git config --global commit.gpgsign true; fi
+
       - uses: actions/checkout@v7
 
       - uses: actions/checkout@v7
@@ -50,8 +59,8 @@ jobs:
           set +e
           (
             cd src
-            git config user.name "github-actions[bot]"
-            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git config user.name "piggecutlet"
+            git config user.email "234113501+piggecutlet@users.noreply.github.com"
             node scripts/core/core_hunt.mjs --kind="$kind" --ci
           ) > "$log" 2>&1 &
           pid=$!
@@ -91,8 +100,8 @@ jobs:
           [ -n "$log" ] && [ -f "$log" ] || exit 0
           openssl enc -aes-256-cbc -pbkdf2 -salt -pass env:LOG_KEY -in "$log" -out "$log.enc"
           rm "$log"
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git config user.name "piggecutlet"
+          git config user.email "234113501+piggecutlet@users.noreply.github.com"
           git add logs
           git commit -m "logs"
           for i in 1 2 3 4 5; do
