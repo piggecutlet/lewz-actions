@@ -118,8 +118,26 @@ jobs:
           GH_TOKEN: ${{ secrets.DISPATCH_TOKEN || github.token }}
         run: |
           kinds=$(jq -r '.inputs.kinds // "[\"other,cnl\"]"' "$GITHUB_EVENT_PATH")
-          n=$(gh api "repos/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID/jobs" --jq '[.jobs[].steps[] | select((.name == "時間切れ" and .conclusion == "success") or (.name == "レスポンスコアが落ちた" and .conclusion == "failure"))] | length')
+          n=""
+          for i in 1 2 3 4 5; do
+            n=$(gh api "repos/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID/jobs" --jq '[.jobs[].steps[] | select((.name == "時間切れ" and .conclusion == "success") or (.name == "レスポンスコアが落ちた" and .conclusion == "failure"))] | length') && break
+            n=""
+            echo "run の結果を読めなかったので 30 秒後にやり直す（$i 回目）"
+            sleep 30
+          done
+          if [ -z "$n" ]; then
+            echo "run の結果を 5 回とも読めなかった"
+            exit 1
+          fi
           if [ "$n" -gt 0 ]; then
-            gh workflow run core-hunt.yml -R "$GITHUB_REPOSITORY" -f kinds="$kinds"
-            echo "続きを起動した"
+            for i in 1 2 3 4 5; do
+              if gh workflow run core-hunt.yml -R "$GITHUB_REPOSITORY" -f kinds="$kinds"; then
+                echo "続きを起動した"
+                exit 0
+              fi
+              echo "続きを起動できなかったので 30 秒後にやり直す（$i 回目）"
+              sleep 30
+            done
+            echo "続きを 5 回とも起動できなかった"
+            exit 1
           fi
