@@ -1,0 +1,91 @@
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  actions: write
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/checkout@v7
+        with:
+          repository: ${{ secrets.SOURCE_REPO }}
+          token: ${{ secrets.SOURCE_TOKEN }}
+          path: src
+          sparse-checkout-cone-mode: false
+          sparse-checkout: |
+            /api/
+            /scripts/core/
+            /savedata/
+            /CI_SKIP
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: "24"
+
+      - timeout-minutes: 55
+        env:
+          GH_TOKEN: ${{ github.token }}
+          LOG_KEY: ${{ secrets.LOG_KEY }}
+        run: |
+          mkdir -p logs
+          log="logs/$(TZ=Asia/Tokyo date +%Y-%m-%d_%H%M)_cmp_${GITHUB_RUN_ID}.log"
+          echo "LOG=$log" >> "$GITHUB_ENV"
+          set +e
+          (
+            set -e
+            cd src
+            hour=$(TZ=JST-9 date +%H)
+            if [ "$hour" -lt 12 ]; then slot=09; else slot=21; fi
+            now=$(TZ=JST-9 date +%Y-%m-%d)T$slot
+            if [ -f CI_SKIP ] && tr -d '\r' < CI_SKIP | grep -qx "$now"; then
+              echo "skip $now"
+              exit 0
+            fi
+            names=$(node -e "import('./scripts/core/_readme.mjs').then(({readAccounts})=>{console.log((readAccounts()['775']||[]).filter((a)=>a.kind==='manual').map((a)=>a.name).filter((v)=>v).join(','))})")
+            node scripts/core/train_army.mjs "$names"
+            node scripts/core/heal.mjs "$names"
+            node scripts/core/build_trap.mjs "$names"
+            node scripts/core/use_skill.mjs "$names" 240038 690006
+            if [ "$(date -u +%H)" -lt 6 ]; then
+              node scripts/core/use_skill.mjs "$names"
+              node scripts/core/use_skill.mjs "$names" 240046 690013
+            fi
+            node scripts/core/science.mjs "$names" || true
+            node scripts/core/upgrade_tent.mjs "$names" --shelter
+            node scripts/core/city_def.mjs "$names"
+            node scripts/core/mail_reward.mjs "$names" || true
+            if [ "$slot" = 21 ]; then node scripts/core/start_setup.mjs || true; fi
+          ) > "$log" 2>&1 &
+          pid=$!
+          n=0
+          while kill -0 "$pid" 2>/dev/null; do
+            sleep 10
+            n=$((n + 1))
+            if [ $((n % 30)) -eq 0 ]; then
+              tail -n 30 "$log" | openssl enc -aes-256-cbc -pbkdf2 -salt -pass env:LOG_KEY | base64 -w 1000
+              echo
+            fi
+          done
+          wait "$pid"
+          echo "CODE=$?" >> "$GITHUB_ENV"
+
+      - if: always() && env.LOG != ''
+        env:
+          LOG_KEY: ${{ secrets.LOG_KEY }}
+        run: |
+          openssl enc -aes-256-cbc -pbkdf2 -salt -pass env:LOG_KEY -in "$LOG" -out "$LOG.enc"
+          rm "$LOG"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add logs
+          git commit -m "logs"
+          for i in 1 2 3 4 5; do
+            git pull --rebase && git push && break
+            sleep $((RANDOM % 20 + 5))
+          done
+          exit "${CODE:-1}"
