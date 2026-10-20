@@ -1,5 +1,9 @@
 on:
   workflow_dispatch:
+    inputs:
+      id:
+        required: false
+        default: "259000"
 
 permissions:
   contents: write
@@ -38,12 +42,16 @@ jobs:
       - env:
           LOG_KEY: ${{ secrets.LOG_KEY }}
         run: |
+          id=$(jq -r '.inputs.id // "259000"' "$GITHUB_EVENT_PATH")
+          case "$id" in
+            "" | *[!0-9]*) exit 1 ;;
+          esac
           mkdir -p logs
           log="logs/$(TZ=Asia/Tokyo date +%Y-%m-%d_%H%M)_research_${GITHUB_RUN_ID}.log"
           set +e
           (
             cd src
-            node work/science/research_259000.mjs
+            node work/science/research_259000.mjs "$id"
           ) > "$log" 2>&1 &
           pid=$!
           n=0
