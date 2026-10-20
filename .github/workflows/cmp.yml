@@ -55,7 +55,7 @@ jobs:
               echo "skip $now"
               exit 0
             fi
-            names=$(node -e "import('./scripts/core/_readme.mjs').then(({readAccounts})=>{console.log((readAccounts()['775']||[]).filter((a)=>a.kind==='manual').map((a)=>a.name).filter((v)=>v).join(','))})")
+            names=$(node -e "import('./scripts/core/_state.mjs').then(({stateOf})=>{console.log(stateOf('775').manual.join(','))})")
             node scripts/core/train_army.mjs "$names"
             node scripts/core/heal.mjs "$names"
             node scripts/core/build_trap.mjs "$names"
