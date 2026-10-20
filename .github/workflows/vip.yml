@@ -79,6 +79,7 @@ jobs:
             if [ "$morning" = "true" ] || [ "$(TZ=JST-9 date +%H)" -lt 12 ]; then
               node scripts/core/vip_unlock.mjs "$names" || true
               node scripts/core/vip_store.mjs "$names" || true
+              node scripts/core/vip_store.mjs Empire062775 || true
               node scripts/core/use_skill.mjs "$names" || true
               node scripts/core/train_army.mjs "$names" || true
               node scripts/core/vip_boost.mjs "$names" || true
