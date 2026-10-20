@@ -65,7 +65,7 @@ jobs:
           set +e
           (
             cd src
-            team=$(node -e "import('./scripts/core/_readme.mjs').then(({readAccounts})=>{console.log((readAccounts()['775']||[]).filter((a)=>a.kind==='team').map((a)=>a.name).filter((v)=>v).join(','))})")
+            team=$(node -e "Promise.all([import('./scripts/core/_readme.mjs'),import('./scripts/core/_kinds.mjs')]).then(([{readAccounts},{KIND}])=>{console.log((readAccounts()['775']||[]).filter((a)=>a.kind===KIND.TEAM).map((a)=>a.name).filter((v)=>v).join(','))})")
             if [ -n "$NAMES" ]; then
               team="$NAMES"
             fi
