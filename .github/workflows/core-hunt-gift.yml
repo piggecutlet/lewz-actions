@@ -1,0 +1,122 @@
+on:
+  workflow_dispatch:
+
+concurrency:
+  group: core-hunt-["other"]
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+  actions: write
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    steps:
+      - env:
+          SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+        run: |
+          echo "$SSH_PRIVATE_KEY" > "$HOME/sign_key"
+          chmod 600 "$HOME/sign_key"
+          git config --global gpg.format ssh
+          git config --global user.signingkey "$HOME/sign_key"
+          if ssh-keygen -y -P "" -f "$HOME/sign_key" > /dev/null; then git config --global commit.gpgsign true; fi
+
+      - uses: actions/checkout@v7
+
+      - uses: actions/checkout@v7
+        with:
+          repository: ${{ secrets.SOURCE_REPO }}
+          token: ${{ secrets.SOURCE_TOKEN }}
+          path: src
+          sparse-checkout: |
+            api
+            scripts/core
+            savedata
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: "24"
+
+      - env:
+          LOG_KEY: ${{ secrets.LOG_KEY }}
+        run: |
+          mkdir -p logs
+          log="logs/$(TZ=Asia/Tokyo date +%Y-%m-%d_%H%M)_core-hunt-gift_${GITHUB_RUN_ID}.log"
+          echo "log=$log" >> "$GITHUB_ENV"
+          set +e
+          (
+            cd src
+            git config user.name "piggecutlet"
+            git config user.email "234113501+piggecutlet@users.noreply.github.com"
+            node scripts/core/core_hunt_gift.mjs --ci
+          ) > "$log" 2>&1 &
+          pid=$!
+          n=0
+          while kill -0 "$pid" 2>/dev/null; do
+            sleep 10
+            n=$((n + 1))
+            if [ $((n % 30)) -eq 0 ]; then
+              tail -n 30 "$log" | openssl enc -aes-256-cbc -pbkdf2 -salt -pass env:LOG_KEY | base64 -w 1000
+              echo
+            fi
+          done
+          wait "$pid"
+          code=$?
+          if [ $code -eq 3 ]; then
+            echo "timeout=1" >> "$GITHUB_ENV"
+            code=0
+          fi
+          exit $code
+
+      - name: 時間切れ
+        if: env.timeout == '1'
+        run: echo "時間切れ"
+
+      - if: always()
+        env:
+          LOG_KEY: ${{ secrets.LOG_KEY }}
+        run: |
+          [ -n "$log" ] && [ -f "$log" ] || exit 0
+          openssl enc -aes-256-cbc -pbkdf2 -salt -pass env:LOG_KEY -in "$log" -out "$log.enc"
+          rm "$log"
+          git config user.name "piggecutlet"
+          git config user.email "234113501+piggecutlet@users.noreply.github.com"
+          git add logs
+          git commit -m "logs"
+          for i in 1 2 3 4 5; do
+            git pull --rebase && git push && break
+            sleep $((RANDOM % 20 + 5))
+          done
+
+  next:
+    needs: run
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - env:
+          GH_TOKEN: ${{ secrets.DISPATCH_TOKEN || github.token }}
+        run: |
+          n=""
+          for i in 1 2 3 4 5; do
+            n=$(gh api "repos/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID/jobs" --jq '[.jobs[].steps[] | select(.name == "時間切れ" and .conclusion == "success")] | length') && break
+            n=""
+            echo "run の結果を読めなかったので 30 秒後にやり直す（$i 回目）"
+            sleep 30
+          done
+          if [ -z "$n" ]; then
+            echo "run の結果を 5 回とも読めなかった"
+            exit 1
+          fi
+          if [ "$n" -gt 0 ]; then
+            for i in 1 2 3 4 5; do
+              if gh workflow run core-hunt-gift.yml -R "$GITHUB_REPOSITORY"; then
+                echo "続きを起動した"
+                exit 0
+              fi
+              echo "続きを起動できなかったので 30 秒後にやり直す（$i 回目）"
+              sleep 30
+            done
+            echo "続きを 5 回とも起動できなかった"
+            exit 1
+          fi
