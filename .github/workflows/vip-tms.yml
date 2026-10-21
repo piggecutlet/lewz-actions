@@ -43,6 +43,7 @@ jobs:
             /device/files/WarZDoc/config/database.activity.xml
             /work/gold_shield775.mjs
             /work/leave_alliance.mjs
+            /.SKIP_GIFT
 
       - uses: actions/setup-node@v7
         with:
@@ -76,11 +77,15 @@ jobs:
               node scripts/core/train_army.mjs "$names" --zombie-only || true
               node scripts/core/vip_boost.mjs "$names" --train-zombie || true
               node scripts/core/train_army.mjs "$names" --zombie-only || true
-              node work/leave_alliance.mjs "$names" || true
-              node scripts/core/join_alliance.mjs "$names" || true
-              node scripts/core/vip_send.mjs "$names" || true
-              node work/leave_alliance.mjs "$names" || true
-              node scripts/core/join_alliance.mjs "$names" --leader=Empire064d8775 || true
+              if [ "$(tr -d '\r\n ' < .SKIP_GIFT 2>/dev/null)" = "true" ]; then
+                echo ".SKIP_GIFT が true なので CMP へ入って贈るのを飛ばす"
+              else
+                node work/leave_alliance.mjs "$names" || true
+                node scripts/core/join_alliance.mjs "$names" || true
+                node scripts/core/vip_send.mjs "$names" || true
+                node work/leave_alliance.mjs "$names" || true
+                node scripts/core/join_alliance.mjs "$names" --leader=Empire064d8775 || true
+              fi
               restart=1
             else
               node scripts/core/train_army.mjs "$names" --zombie-only || true
