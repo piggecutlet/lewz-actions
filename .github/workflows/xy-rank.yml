@@ -5,7 +5,7 @@ on:
         description: ログインする表示名（この人の同盟のメンバーを読む）
         required: true
       names:
-        required: true
+        required: false
       write:
         type: boolean
         default: false
@@ -48,13 +48,13 @@ jobs:
           LOG_KEY: ${{ secrets.LOG_KEY }}
         run: |
           login=$(jq -r .inputs.login "$GITHUB_EVENT_PATH")
-          names=$(jq -r .inputs.names "$GITHUB_EVENT_PATH")
+          names=$(jq -r '.inputs.names // ""' "$GITHUB_EVENT_PATH")
           write=$(jq -r .inputs.write "$GITHUB_EVENT_PATH")
           case "$login" in
             "" | *[!A-Za-z0-9]*) exit 1 ;;
           esac
           case "$names" in
-            "" | *[!A-Za-z0-9,]*) exit 1 ;;
+            *[!A-Za-z0-9,]*) exit 1 ;;
           esac
           mkdir -p logs
           log="logs/$(TZ=Asia/Tokyo date +%Y-%m-%d_%H%M)_xy-rank_${GITHUB_RUN_ID}.log"
