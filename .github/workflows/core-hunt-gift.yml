@@ -49,7 +49,7 @@ jobs:
             cd src
             git config user.name "piggecutlet"
             git config user.email "234113501+piggecutlet@users.noreply.github.com"
-            node scripts/core/core_hunt_gift.mjs --ci
+            node scripts/core/core_hunt_gift.mjs
           ) > "$log" 2>&1 &
           pid=$!
           n=0
@@ -72,6 +72,16 @@ jobs:
       - name: 時間切れ
         if: env.timeout == '1'
         run: echo "時間切れ"
+
+      - if: always()
+        run: |
+          [ -n "$log" ] && [ -f "$log" ] && [ -d src ] || exit 0
+          (
+            cd src
+            git config user.name "piggecutlet"
+            git config user.email "234113501+piggecutlet@users.noreply.github.com"
+            node scripts/core/core_hunt_gift.mjs --push
+          ) >> "$log" 2>&1 || true
 
       - if: always()
         env:
