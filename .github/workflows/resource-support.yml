@@ -7,10 +7,22 @@ on:
         description: 食料 / 燃料 / 鉄鋼 / 合金 をカンマ区切り（空なら 4 種）
         required: false
         default: ""
-      teleport:
-        description: 手動アカウントの付近（1071,793）へ移転する表示名をカンマ区切り（空なら移転しない）
+      to:
+        description: 送り先の表示名（Empire061775 以外なら同盟 CMP への加入をしない）
+        required: false
+        default: Empire061775
+      amount:
+        description: 送り先に届けたい 1 種類あたりの量（税 10% を上乗せして送る。空なら E100174 まで）
         required: false
         default: ""
+      teleport:
+        description: center の付近へ移転する表示名をカンマ区切り（空なら移転しない）
+        required: false
+        default: ""
+      center:
+        description: 移転先の中心の座標 x,y
+        required: false
+        default: 1071,793
       dry_run:
         description: 加入しない。移転の候補と手持ち・補給の残り・ダイヤを出すだけ
         type: boolean
@@ -68,6 +80,14 @@ jobs:
           case "$teleport" in
             *[!A-Za-z0-9,]*) exit 1 ;;
           esac
+          to=$(jq -r '.inputs.to // "Empire061775"' "$GITHUB_EVENT_PATH")
+          case "$to" in
+            "" | *[!A-Za-z0-9]*) exit 1 ;;
+          esac
+          amount=$(jq -r '.inputs.amount // ""' "$GITHUB_EVENT_PATH")
+          [[ -z "$amount" || "$amount" =~ ^[0-9]+$ ]] || exit 1
+          center=$(jq -r '.inputs.center // "1071,793"' "$GITHUB_EVENT_PATH")
+          [[ "$center" =~ ^[0-9]+,[0-9]+$ ]] || exit 1
           mkdir -p logs
           log="logs/$(TZ=Asia/Tokyo date +%Y-%m-%d_%H%M)_resource-support_${GITHUB_RUN_ID}.log"
           set +e
@@ -77,19 +97,21 @@ jobs:
             git config user.email "234113501+piggecutlet@users.noreply.github.com"
             if [ "$DRY_RUN" = "true" ]; then
               if [ -n "$teleport" ]; then
-                node scripts/core/teleport_near.mjs 1071,793 "$teleport" --dry-run
+                node scripts/core/teleport_near.mjs "$center" "$teleport" --dry-run
               fi
-              node work/send_res_even775.mjs "$names" $kinds --buy --dry
+              node work/send_res_even775.mjs "$names" $kinds --to="$to" --amount="$amount" --buy --dry
               exit $?
             fi
-            node scripts/core/join_alliance.mjs "$names"
+            if [ "$to" = "Empire061775" ]; then
+              node scripts/core/join_alliance.mjs "$names"
+            fi
             code=0
             if [ -n "$teleport" ]; then
-              node scripts/core/teleport_near.mjs 1071,793 "$teleport" || code=1
+              node scripts/core/teleport_near.mjs "$center" "$teleport" || code=1
             fi
             node -e "import('./scripts/core/_ci.mjs').then(({pushAccounts})=>pushAccounts('chore: CI の resource-support で accounts.json を更新する'))"
             [ $code -eq 0 ] || exit 1
-            node work/send_res_even775.mjs "$names" $kinds --buy
+            node work/send_res_even775.mjs "$names" $kinds --to="$to" --amount="$amount" --buy
           ) > "$log" 2>&1 &
           pid=$!
           n=0
