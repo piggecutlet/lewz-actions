@@ -2,7 +2,7 @@ on:
   workflow_dispatch:
     inputs:
       names:
-        description: 表示名（カンマ区切り。省くと VIP 10 の全件）
+        description: 表示名（カンマ区切り。省くと備考が VIP の自動アカウントの全件）
         required: false
 
 permissions:
@@ -58,7 +58,7 @@ jobs:
           (
             cd src
             if [ -z "$names" ]; then
-              names=$(node -e "import('./scripts/core/_readme.mjs').then(({readAccounts})=>{console.log((readAccounts()['775']||[]).filter((a)=>a.note==='VIP 10').map((a)=>a.name).join(','))})")
+              names=$(node -e "Promise.all([import('./scripts/core/_readme.mjs'),import('./scripts/core/_kinds.mjs')]).then(([{readAccounts},{KIND}])=>{console.log((readAccounts()['775']||[]).filter((a)=>a.kind===KIND.AUTO&&a.note==='VIP').map((a)=>a.name).join(','))})")
             fi
             node scripts/core/vip_boost.mjs "$names" || true
             node scripts/core/vip_send.mjs "$names"
