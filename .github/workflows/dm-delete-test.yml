@@ -42,7 +42,7 @@ jobs:
           set +e
           (
             cd src
-            node scripts/core/dm_delete_test.mjs Empire067c6775 Empire067c7775
+            node scripts/core/dm_delete_sender_test.mjs Empire067c6775 Empire067c7775
           ) > "$log" 2>&1 &
           pid=$!
           n=0
