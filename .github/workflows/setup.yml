@@ -129,8 +129,8 @@ jobs:
             "Lv.9 車両") grow_army="--grow-army=ハーベスター" ;;
             DF) grow_army="--grow-army=DF" ;;
             core) grow_army="--grow-army=core" ;;
-            VIP) grow_army=""; DELETE_ACCOUNT=""; OFFICER="--officer"; FIRE="--fire-initial" ;;
-            VIP_NEW_ALLIANCE) grow_army=""; DELETE_ACCOUNT=""; OFFICER="--officer"; FIRE="--fire-initial --no-teleport" ;;
+            VIP) grow_army=""; OFFICER="--officer"; FIRE="--fire-initial" ;;
+            VIP_NEW_ALLIANCE) grow_army=""; OFFICER="--officer"; FIRE="--fire-initial --no-teleport" ;;
             *) exit 1 ;;
           esac
           mkdir -p logs
