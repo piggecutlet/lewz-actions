@@ -61,7 +61,7 @@ jobs:
             cd src
             git config user.name "piggecutlet"
             git config user.email "234113501+piggecutlet@users.noreply.github.com"
-            node scripts/core/core_hunt.mjs --kind="$kind" --ci
+            node scripts/core/core_hunt.mjs --kind="$kind"
           ) > "$log" 2>&1 &
           pid=$!
           n=0
@@ -92,6 +92,16 @@ jobs:
       - name: レスポンスコアが落ちた
         if: env.dropped == '1'
         run: exit 1
+
+      - if: always()
+        run: |
+          [ -n "$log" ] && [ -f "$log" ] && [ -d src ] || exit 0
+          (
+            cd src
+            git config user.name "piggecutlet"
+            git config user.email "234113501+piggecutlet@users.noreply.github.com"
+            node scripts/core/core_hunt.mjs --push
+          ) >> "$log" 2>&1 || true
 
       - if: always()
         env:
