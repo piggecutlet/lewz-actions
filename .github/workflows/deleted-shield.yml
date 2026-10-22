@@ -3,7 +3,7 @@ on:
     inputs:
       grow_army:
         required: false
-      server:
+      state:
         description: 州
         default: "775"
 
@@ -45,9 +45,9 @@ jobs:
 
       - env:
           LOG_KEY: ${{ secrets.LOG_KEY }}
-          SERVER: ${{ inputs.server || '775' }}
+          STATE: ${{ inputs.state || '775' }}
         run: |
-          case "$SERVER" in
+          case "$STATE" in
             *[!0-9]*) exit 1 ;;
           esac
           grow=$(jq -r '.inputs.grow_army // ""' "$GITHUB_EVENT_PATH")
@@ -58,7 +58,7 @@ jobs:
             cd src
             git config user.name "piggecutlet"
             git config user.email "234113501+piggecutlet@users.noreply.github.com"
-            node scripts/core/deleted_shield.mjs --ci ${grow:+"--grow-army=$grow"} --server="$SERVER"
+            node scripts/core/deleted_shield.mjs --ci ${grow:+"--grow-army=$grow"} --state="$STATE"
           ) > "$log" 2>&1 &
           pid=$!
           n=0

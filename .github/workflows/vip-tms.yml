@@ -5,7 +5,7 @@ on:
         description: 時刻に関係なく 9 時の回（解禁・商店・加速・CMP へ入って派遣・TMS へ戻す）を流す
         type: boolean
         default: false
-      server:
+      state:
         description: 州
         default: "775"
       approver:
@@ -68,24 +68,24 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
           LOG_KEY: ${{ secrets.LOG_KEY }}
-          SERVER: ${{ inputs.server || '775' }}
+          STATE: ${{ inputs.state || '775' }}
           APPROVER: ${{ inputs.approver }}
           CAPTAIN: ${{ inputs.captain }}
           ABBR: ${{ inputs.abbr }}
         run: |
-          case "$SERVER" in
+          case "$STATE" in
             *[!0-9]*) exit 1 ;;
           esac
           case "$APPROVER$CAPTAIN$ABBR" in
             *[!A-Za-z0-9]*) exit 1 ;;
           esac
-          if [ "$SERVER" != 775 ] && { [ -z "$APPROVER" ] || [ -z "$CAPTAIN" ] || [ -z "$ABBR" ]; }; then
-            echo "州 $SERVER では approver / captain / abbr を入れてください"
+          if [ "$STATE" != 775 ] && { [ -z "$APPROVER" ] || [ -z "$CAPTAIN" ] || [ -z "$ABBR" ]; }; then
+            echo "州 $STATE では approver / captain / abbr を入れてください"
             exit 1
           fi
           roles=()
-          if [ "$SERVER" != 775 ]; then
-            roles=(-f server="$SERVER" -f approver="$APPROVER" -f captain="$CAPTAIN" -f abbr="$ABBR")
+          if [ "$STATE" != 775 ]; then
+            roles=(-f state="$STATE" -f approver="$APPROVER" -f captain="$CAPTAIN" -f abbr="$ABBR")
           fi
           morning=$(jq -r '.inputs.morning // "false"' "$GITHUB_EVENT_PATH")
           mkdir -p logs
@@ -101,7 +101,7 @@ jobs:
               restart=1
               sleep 10
             done
-            names=$(node -e "Promise.all([import('./scripts/core/_readme.mjs'),import('./scripts/core/_kinds.mjs')]).then(([{readAccounts},{KIND}])=>{console.log((readAccounts()[process.argv[1]]||[]).filter((a)=>a.kind===KIND.VMS&&a.note==='VIP').map((a)=>a.name).join(','))})" "$SERVER")
+            names=$(node -e "Promise.all([import('./scripts/core/_readme.mjs'),import('./scripts/core/_kinds.mjs')]).then(([{readAccounts},{KIND}])=>{console.log((readAccounts()[process.argv[1]]||[]).filter((a)=>a.kind===KIND.VMS&&a.note==='VIP').map((a)=>a.name).join(','))})" "$STATE")
             node scripts/core/shield.mjs "$names" || true
             if [ "$morning" = "true" ] || [ "$(TZ=JST-9 date +%H)" -lt 12 ]; then
               node scripts/core/vip_unlock.mjs "$names" || true
@@ -125,7 +125,7 @@ jobs:
             fi
             git config user.name "piggecutlet"
             git config user.email "234113501+piggecutlet@users.noreply.github.com"
-            node work/gold_shield775.mjs "$names" --server="$SERVER" || true
+            node work/gold_shield775.mjs "$names" --state="$STATE" || true
             node -e "import('./scripts/core/_ci.mjs').then(({pushAccounts})=>pushAccounts('chore: CI の vip-tms でダイヤを読み、accounts.json を更新する'))"
             if [ -n "$restart" ]; then
               echo "tms.yml を起動する"

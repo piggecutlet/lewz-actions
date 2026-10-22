@@ -7,7 +7,7 @@ on:
       dry_run:
         type: boolean
         default: false
-      server:
+      state:
         description: 州
         default: "775"
       approver:
@@ -69,7 +69,7 @@ jobs:
           DRY_RUN: ${{ inputs.dry_run && '--dry-run' || '' }}
           GH_TOKEN: ${{ secrets.DISPATCH_TOKEN }}
           LOG_KEY: ${{ secrets.LOG_KEY }}
-          SERVER: ${{ inputs.server || '775' }}
+          STATE: ${{ inputs.state || '775' }}
           APPROVER: ${{ inputs.approver }}
           CAPTAIN: ${{ inputs.captain }}
           ABBR: ${{ inputs.abbr }}
@@ -77,7 +77,7 @@ jobs:
           case "$COUNT" in
             *[!0-9]*) exit 1 ;;
           esac
-          case "$SERVER" in
+          case "$STATE" in
             *[!0-9]*) exit 1 ;;
           esac
           case "$APPROVER$CAPTAIN$ABBR" in
@@ -91,7 +91,7 @@ jobs:
             cd src
             git config user.name "piggecutlet"
             git config user.email "234113501+piggecutlet@users.noreply.github.com"
-            node scripts/core/tms.mjs $COUNT $DRY_RUN --ci --server="$SERVER" ${APPROVER:+"--approver=$APPROVER"} ${CAPTAIN:+"--captain=$CAPTAIN"} ${ABBR:+"--abbr=$ABBR"}
+            node scripts/core/tms.mjs $COUNT $DRY_RUN --ci --state="$STATE" ${APPROVER:+"--approver=$APPROVER"} ${CAPTAIN:+"--captain=$CAPTAIN"} ${ABBR:+"--abbr=$ABBR"}
           ) > "$log" 2>&1 &
           pid=$!
           n=0

@@ -5,7 +5,7 @@ on:
         description: 見つける件数（ダイヤ 30 万以上の削除申請済みを kind temp にする）
         required: true
         default: "8"
-      server:
+      state:
         description: 州
         default: "775"
 
@@ -48,12 +48,12 @@ jobs:
       - env:
           COUNT: ${{ inputs.count }}
           LOG_KEY: ${{ secrets.LOG_KEY }}
-          SERVER: ${{ inputs.server || '775' }}
+          STATE: ${{ inputs.state || '775' }}
         run: |
           case "$COUNT" in
             "" | *[!0-9]*) exit 1 ;;
           esac
-          case "$SERVER" in
+          case "$STATE" in
             *[!0-9]*) exit 1 ;;
           esac
           mkdir -p logs
@@ -63,7 +63,7 @@ jobs:
             cd src
             git config user.name "piggecutlet"
             git config user.email "234113501+piggecutlet@users.noreply.github.com"
-            node scripts/core/find_gold_deleted.mjs "$COUNT" --ci --server="$SERVER"
+            node scripts/core/find_gold_deleted.mjs "$COUNT" --ci --state="$STATE"
           ) > "$log" 2>&1 &
           pid=$!
           n=0

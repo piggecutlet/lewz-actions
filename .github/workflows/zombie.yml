@@ -9,7 +9,7 @@ on:
         description: 試し用。表示名（カンマ区切り）。入れると小隊用アカウントの代わりに使う。小隊に入っていないアカウントは日課を読めないので limit が必須
         required: false
         default: ""
-      server:
+      state:
         description: 州
         default: "775"
 
@@ -55,12 +55,12 @@ jobs:
           GH_TOKEN: ${{ secrets.DISPATCH_TOKEN }}
           LIMIT: ${{ inputs.limit }}
           NAMES: ${{ inputs.names }}
-          SERVER: ${{ inputs.server || '775' }}
+          STATE: ${{ inputs.state || '775' }}
         run: |
           case "$LIMIT" in
             *[!0-9]*) exit 1 ;;
           esac
-          case "$SERVER" in
+          case "$STATE" in
             *[!0-9]*) exit 1 ;;
           esac
           if [ -n "$NAMES" ] && [ -z "$LIMIT" ]; then
@@ -72,7 +72,7 @@ jobs:
           set +e
           (
             cd src
-            team=$(node -e "Promise.all([import('./scripts/core/_readme.mjs'),import('./scripts/core/_kinds.mjs')]).then(([{readAccounts},{KIND}])=>{console.log((readAccounts()[process.argv[1]]||[]).filter((a)=>a.kind===KIND.TEAM).map((a)=>a.name).filter((v)=>v).join(','))})" "$SERVER")
+            team=$(node -e "Promise.all([import('./scripts/core/_readme.mjs'),import('./scripts/core/_kinds.mjs')]).then(([{readAccounts},{KIND}])=>{console.log((readAccounts()[process.argv[1]]||[]).filter((a)=>a.kind===KIND.TEAM).map((a)=>a.name).filter((v)=>v).join(','))})" "$STATE")
             if [ -n "$NAMES" ]; then
               team="$NAMES"
             fi
@@ -82,7 +82,7 @@ jobs:
             fi
             node scripts/core/zombie_hunt.mjs "$team" --diamond
             c=$?
-            node scripts/core/start_setup.mjs --server="$SERVER"
+            node scripts/core/start_setup.mjs --state="$STATE"
             exit $c
           ) > "$log" 2>&1 &
           pid=$!

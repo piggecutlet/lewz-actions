@@ -4,7 +4,7 @@ on:
       names:
         description: 表示名（カンマ区切り。省くと備考が VIP の自動アカウントの全件）
         required: false
-      server:
+      state:
         description: 州（表示名を省いたときの州）
         default: "775"
 
@@ -50,9 +50,9 @@ jobs:
       - timeout-minutes: 120
         env:
           LOG_KEY: ${{ secrets.LOG_KEY }}
-          SERVER: ${{ inputs.server || '775' }}
+          STATE: ${{ inputs.state || '775' }}
         run: |
-          case "$SERVER" in
+          case "$STATE" in
             *[!0-9]*) exit 1 ;;
           esac
           names=$(jq -r '.inputs.names // ""' "$GITHUB_EVENT_PATH")
@@ -65,7 +65,7 @@ jobs:
           (
             cd src
             if [ -z "$names" ]; then
-              names=$(node -e "Promise.all([import('./scripts/core/_readme.mjs'),import('./scripts/core/_kinds.mjs')]).then(([{readAccounts},{KIND}])=>{console.log((readAccounts()[process.argv[1]]||[]).filter((a)=>a.kind===KIND.AUTO&&a.note==='VIP').map((a)=>a.name).join(','))})" "$SERVER")
+              names=$(node -e "Promise.all([import('./scripts/core/_readme.mjs'),import('./scripts/core/_kinds.mjs')]).then(([{readAccounts},{KIND}])=>{console.log((readAccounts()[process.argv[1]]||[]).filter((a)=>a.kind===KIND.AUTO&&a.note==='VIP').map((a)=>a.name).join(','))})" "$STATE")
             fi
             node scripts/core/vip_boost.mjs "$names" || true
             node scripts/core/vip_send.mjs "$names"

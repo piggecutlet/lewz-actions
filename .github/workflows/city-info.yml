@@ -5,7 +5,7 @@ on:
         description: 足す都市の座標（x,y をスペース区切り。空なら表の値と状態を最新にするだけ）
         required: false
         default: ""
-      server:
+      state:
         description: 州
         default: "775"
 
@@ -47,9 +47,9 @@ jobs:
 
       - env:
           LOG_KEY: ${{ secrets.LOG_KEY }}
-          SERVER: ${{ inputs.server || '775' }}
+          STATE: ${{ inputs.state || '775' }}
         run: |
-          case "$SERVER" in
+          case "$STATE" in
             *[!0-9]*) exit 1 ;;
           esac
           points=$(jq -r '.inputs.points // ""' "$GITHUB_EVENT_PATH")
@@ -66,7 +66,7 @@ jobs:
             mkdir -p app/assets/WarZResources/local
             cp device/files/WarZDoc/config/database.local.xml device/files/WarZDoc/config/text_ja.ini app/assets/WarZResources/local/
             code=0
-            node scripts/core/city_info.mjs $points --write --server="$SERVER" || code=1
+            node scripts/core/city_info.mjs $points --write --state="$STATE" || code=1
             git add savedata/cities.json
             if ! git diff --cached --quiet; then
               git commit -m "chore: CI で都市の表（cities.json）を更新する"

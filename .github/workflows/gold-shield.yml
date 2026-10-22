@@ -3,7 +3,7 @@ on:
     inputs:
       names:
         required: true
-      server:
+      state:
         description: 州
         default: "775"
 
@@ -43,9 +43,9 @@ jobs:
 
       - env:
           LOG_KEY: ${{ secrets.LOG_KEY }}
-          SERVER: ${{ inputs.server || '775' }}
+          STATE: ${{ inputs.state || '775' }}
         run: |
-          case "$SERVER" in
+          case "$STATE" in
             *[!0-9]*) exit 1 ;;
           esac
           names=$(jq -r .inputs.names "$GITHUB_EVENT_PATH")
@@ -59,7 +59,7 @@ jobs:
             cd src
             git config user.name "piggecutlet"
             git config user.email "234113501+piggecutlet@users.noreply.github.com"
-            node work/gold_shield775.mjs "$names" --server="$SERVER"
+            node work/gold_shield775.mjs "$names" --state="$STATE"
             code=$?
             node -e "import('./scripts/core/_ci.mjs').then(({pushAccounts})=>pushAccounts('chore: CI でダイヤを読み、accounts.json を更新する'))"
             exit $code

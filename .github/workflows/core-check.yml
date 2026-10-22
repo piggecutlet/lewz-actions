@@ -4,7 +4,7 @@ on:
       kind:
         description: 読む kind（カンマ区切り）
         default: core,sng,other,cnl
-      server:
+      state:
         description: 州
         default: "775"
 
@@ -42,9 +42,9 @@ jobs:
 
       - env:
           LOG_KEY: ${{ secrets.LOG_KEY }}
-          SERVER: ${{ inputs.server || '775' }}
+          STATE: ${{ inputs.state || '775' }}
         run: |
-          case "$SERVER" in
+          case "$STATE" in
             *[!0-9]*) exit 1 ;;
           esac
           mkdir -p logs
@@ -57,7 +57,7 @@ jobs:
           set +e
           (
             cd src
-            node scripts/core/core_check.mjs --kind="$kind" --server="$SERVER"
+            node scripts/core/core_check.mjs --kind="$kind" --state="$STATE"
           ) > "$log" 2>&1 &
           pid=$!
           n=0

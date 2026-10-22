@@ -32,7 +32,7 @@ on:
         description: 高級移転を 2 個まで買う
         type: boolean
         default: false
-      server:
+      state:
         description: 州
         default: "775"
 
@@ -79,9 +79,9 @@ jobs:
           LOG_KEY: ${{ secrets.LOG_KEY }}
           DELETE_ACCOUNT: ${{ inputs.delete_account && '--delete-account' || '' }}
           DOUBLE_ADVANCED: ${{ inputs.double_advanced && '--double-advanced' || '' }}
-          SERVER: ${{ inputs.server || '775' }}
+          STATE: ${{ inputs.state || '775' }}
         run: |
-          case "$SERVER" in
+          case "$STATE" in
             *[!0-9]*) exit 1 ;;
           esac
           names=$(jq -r .inputs.names "$GITHUB_EVENT_PATH")
@@ -118,7 +118,7 @@ jobs:
             cd src
             git config user.name "piggecutlet"
             git config user.email "234113501+piggecutlet@users.noreply.github.com"
-            node work/skill_box_train_verify775.mjs "$names" $flag --leave --parallel=60 ${rose:+"--rose=$rose"} $DELETE_ACCOUNT $DOUBLE_ADVANCED --server="$SERVER"
+            node work/skill_box_train_verify775.mjs "$names" $flag --leave --parallel=60 ${rose:+"--rose=$rose"} $DELETE_ACCOUNT $DOUBLE_ADVANCED --state="$STATE"
             code=$?
             node -e "import('./scripts/core/_ci.mjs').then(({pushAccounts})=>pushAccounts('chore: CI の grow-army で accounts.json を更新する'))"
             exit $code
