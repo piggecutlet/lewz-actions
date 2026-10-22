@@ -2,7 +2,7 @@ on:
   workflow_dispatch:
 
 concurrency:
-  group: core-hunt-["other"]
+  group: core-hunt-gift
   cancel-in-progress: false
 
 permissions:
