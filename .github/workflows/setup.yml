@@ -174,6 +174,9 @@ jobs:
         env:
           LOG_KEY: ${{ secrets.LOG_KEY }}
           VERCEL_DEPLOY_HOOK: ${{ secrets.VERCEL_DEPLOY_HOOK }}
+          JOB_STATUS: ${{ job.status }}
+          GH_TOKEN: ${{ secrets.DISPATCH_TOKEN }}
+          STATE: ${{ inputs.state || '775' }}
         run: |
           set +e
           (
@@ -183,6 +186,13 @@ jobs:
               curl -fsS -X POST "$VERCEL_DEPLOY_HOOK"
             fi
           ) >> "$LOG" 2>&1
+          if [ "$JOB_STATUS" = cancelled ]; then
+            if gh workflow run setup-cancel.yml -R "$GITHUB_REPOSITORY" -f started="$(gh run view "$GITHUB_RUN_ID" -R "$GITHUB_REPOSITORY" --json startedAt -q .startedAt)" -f state="$STATE" >> "$LOG" 2>&1; then
+              echo "setup-cancel.yml を起動した" >> "$LOG"
+            else
+              echo "setup-cancel.yml を起動できなかった。この run で作った件が同盟に残っていないか確かめる" >> "$LOG"
+            fi
+          fi
           set -e
           openssl enc -aes-256-cbc -pbkdf2 -salt -pass env:LOG_KEY -in "$LOG" -out "${LOG%.log}"
           rm "$LOG"
@@ -196,7 +206,7 @@ jobs:
           done
           exit "${CODE:-1}"
 
-      - if: cancelled()
+      - if: cancelled() && env.LOG == ''
         env:
           GH_TOKEN: ${{ secrets.DISPATCH_TOKEN }}
           STATE: ${{ inputs.state || '775' }}
