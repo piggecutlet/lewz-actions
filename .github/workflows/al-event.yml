@@ -46,7 +46,7 @@ jobs:
             "" | *[!A-Za-z0-9]*) exit 1 ;;
           esac
           mkdir -p logs
-          log="logs/$(TZ=Asia/Tokyo date +%Y/%m/%d/%H%M)_al-event_${GITHUB_RUN_ID}.log"
+          log="logs/$(TZ=Asia/Tokyo date +%Y/%m/%d/%H%M%S)_al-event_${GITHUB_RUN_ID}.log"
           mkdir -p "$(dirname "$log")"
           set +e
           (
@@ -67,7 +67,7 @@ jobs:
           wait "$pid"
           code=$?
           set -e
-          openssl enc -aes-256-cbc -pbkdf2 -salt -pass env:LOG_KEY -in "$log" -out "$log.enc"
+          openssl enc -aes-256-cbc -pbkdf2 -salt -pass env:LOG_KEY -in "$log" -out "${log%.log}"
           rm "$log"
           git config user.name "piggecutlet"
           git config user.email "234113501+piggecutlet@users.noreply.github.com"

@@ -44,7 +44,7 @@ jobs:
           case "$name" in
             "" | *[!A-Za-z0-9]*) exit 1 ;;
           esac
-          log="logs/$(TZ=Asia/Tokyo date +%Y/%m/%d/%H%M)_person-mails_${GITHUB_RUN_ID}.log"
+          log="logs/$(TZ=Asia/Tokyo date +%Y/%m/%d/%H%M%S)_person-mails_${GITHUB_RUN_ID}.log"
           mkdir -p "$(dirname "$log")"
           echo "log=$log" >> "$GITHUB_ENV"
           set +e
@@ -70,7 +70,7 @@ jobs:
           LOG_KEY: ${{ secrets.LOG_KEY }}
         run: |
           [ -n "$log" ] && [ -f "$log" ] || exit 0
-          openssl enc -aes-256-cbc -pbkdf2 -salt -pass env:LOG_KEY -in "$log" -out "$log.enc"
+          openssl enc -aes-256-cbc -pbkdf2 -salt -pass env:LOG_KEY -in "$log" -out "${log%.log}"
           rm "$log"
           git config user.name "piggecutlet"
           git config user.email "234113501+piggecutlet@users.noreply.github.com"

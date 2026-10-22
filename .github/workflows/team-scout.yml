@@ -55,7 +55,7 @@ jobs:
             opt="--list"
           fi
           mkdir -p logs
-          log="logs/$(TZ=Asia/Tokyo date +%Y/%m/%d/%H%M)_team-scout_${GITHUB_RUN_ID}.log"
+          log="logs/$(TZ=Asia/Tokyo date +%Y/%m/%d/%H%M%S)_team-scout_${GITHUB_RUN_ID}.log"
           mkdir -p "$(dirname "$log")"
           set +e
           (cd src && node scripts/core/team_scout.mjs "$name" $opt) > "$log" 2>&1 &
@@ -72,7 +72,7 @@ jobs:
           wait "$pid"
           code=$?
           set -e
-          openssl enc -aes-256-cbc -pbkdf2 -salt -pass env:LOG_KEY -in "$log" -out "$log.enc"
+          openssl enc -aes-256-cbc -pbkdf2 -salt -pass env:LOG_KEY -in "$log" -out "${log%.log}"
           rm "$log"
           git config user.name "piggecutlet"
           git config user.email "234113501+piggecutlet@users.noreply.github.com"

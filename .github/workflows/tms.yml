@@ -84,7 +84,7 @@ jobs:
             *[!A-Za-z0-9]*) exit 1 ;;
           esac
           mkdir -p logs
-          log="logs/$(TZ=Asia/Tokyo date +%Y/%m/%d/%H%M)_tms_${GITHUB_RUN_ID}.log"
+          log="logs/$(TZ=Asia/Tokyo date +%Y/%m/%d/%H%M%S)_tms_${GITHUB_RUN_ID}.log"
           mkdir -p "$(dirname "$log")"
           echo "LOG=$log" >> "$GITHUB_ENV"
           set +e
@@ -117,7 +117,7 @@ jobs:
             node -e "import('./scripts/core/_ci.mjs').then(({pushAccounts})=>pushAccounts('chore: CI の tms で accounts.json を更新する'))"
           ) >> "$LOG" 2>&1
           set -e
-          openssl enc -aes-256-cbc -pbkdf2 -salt -pass env:LOG_KEY -in "$LOG" -out "$LOG.enc"
+          openssl enc -aes-256-cbc -pbkdf2 -salt -pass env:LOG_KEY -in "$LOG" -out "${LOG%.log}"
           rm "$LOG"
           git config user.name "piggecutlet"
           git config user.email "234113501+piggecutlet@users.noreply.github.com"
