@@ -87,7 +87,8 @@ jobs:
             *[!A-Za-z0-9,]*) exit 1 ;;
           esac
           mkdir -p logs
-          log="logs/$(TZ=Asia/Tokyo date +%Y-%m-%d_%H%M)_vip_${GITHUB_RUN_ID}.log"
+          log="logs/$(TZ=Asia/Tokyo date +%Y/%m/%d/%H%M)_vip_${GITHUB_RUN_ID}.log"
+          mkdir -p "$(dirname "$log")"
           set +e
           (
             cd src

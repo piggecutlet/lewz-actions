@@ -63,7 +63,8 @@ jobs:
           opts=""
           [ -n "$size" ] && opts="$opts --size=$size"
           [ "$(jq -r '.inputs.high // false' "$GITHUB_EVENT_PATH")" = "true" ] && opts="$opts --high"
-          log="logs/$(TZ=Asia/Tokyo date +%Y-%m-%d_%H%M)_core-hunt-one_${GITHUB_RUN_ID}.log"
+          log="logs/$(TZ=Asia/Tokyo date +%Y/%m/%d/%H%M)_core-hunt-one_${GITHUB_RUN_ID}.log"
+          mkdir -p "$(dirname "$log")"
           echo "log=$log" >> "$GITHUB_ENV"
           set +e
           (

@@ -55,7 +55,8 @@ jobs:
             opt="--list"
           fi
           mkdir -p logs
-          log="logs/$(TZ=Asia/Tokyo date +%Y-%m-%d_%H%M)_team-scout_${GITHUB_RUN_ID}.log"
+          log="logs/$(TZ=Asia/Tokyo date +%Y/%m/%d/%H%M)_team-scout_${GITHUB_RUN_ID}.log"
+          mkdir -p "$(dirname "$log")"
           set +e
           (cd src && node scripts/core/team_scout.mjs "$name" $opt) > "$log" 2>&1 &
           pid=$!

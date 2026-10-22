@@ -56,7 +56,8 @@ jobs:
           [[ "$attackers" =~ ^[A-Za-z0-9]+(,[A-Za-z0-9]+)*$ ]] || exit 1
           [[ "$target" =~ ^[0-9]+,[0-9]+$ ]] || exit 1
           mkdir -p logs
-          log="logs/$(TZ=Asia/Tokyo date +%Y-%m-%d_%H%M)_resource-war_${GITHUB_RUN_ID}.log"
+          log="logs/$(TZ=Asia/Tokyo date +%Y/%m/%d/%H%M)_resource-war_${GITHUB_RUN_ID}.log"
+          mkdir -p "$(dirname "$log")"
           set +e
           (cd src && node work/resource_war775.mjs "$defender" "$attackers" "$target") > "$log" 2>&1 &
           pid=$!

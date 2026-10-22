@@ -51,7 +51,8 @@ jobs:
           MSG: ${{ inputs.msg }}
         run: |
           mkdir -p logs
-          log="logs/$(TZ=Asia/Tokyo date +%Y-%m-%d_%H%M)_chat-send_${GITHUB_RUN_ID}.log"
+          log="logs/$(TZ=Asia/Tokyo date +%Y/%m/%d/%H%M)_chat-send_${GITHUB_RUN_ID}.log"
+          mkdir -p "$(dirname "$log")"
           set +e
           (
             cd src

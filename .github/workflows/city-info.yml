@@ -57,7 +57,8 @@ jobs:
             [[ "$p" =~ ^[0-9]+,[0-9]+$ ]] || exit 1
           done
           mkdir -p logs
-          log="logs/$(TZ=Asia/Tokyo date +%Y-%m-%d_%H%M)_city-info_${GITHUB_RUN_ID}.log"
+          log="logs/$(TZ=Asia/Tokyo date +%Y/%m/%d/%H%M)_city-info_${GITHUB_RUN_ID}.log"
+          mkdir -p "$(dirname "$log")"
           set +e
           (
             cd src

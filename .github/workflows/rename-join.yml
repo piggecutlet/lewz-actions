@@ -59,7 +59,8 @@ jobs:
           nicks=$(jq -r .inputs.nicks "$GITHUB_EVENT_PATH")
           [ -n "$nicks" ] || exit 1
           mkdir -p logs
-          log="logs/$(TZ=Asia/Tokyo date +%Y-%m-%d_%H%M)_rename-join_${GITHUB_RUN_ID}.log"
+          log="logs/$(TZ=Asia/Tokyo date +%Y/%m/%d/%H%M)_rename-join_${GITHUB_RUN_ID}.log"
+          mkdir -p "$(dirname "$log")"
           echo "log=$log" >> "$GITHUB_ENV"
           set +e
           (

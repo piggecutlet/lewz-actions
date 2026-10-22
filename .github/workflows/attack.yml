@@ -80,7 +80,8 @@ jobs:
           target=$(jq -r .inputs.target "$GITHUB_EVENT_PATH")
           [[ "$target" =~ ^[0-9]+,[0-9]+$ ]] || exit 1
           mkdir -p logs
-          log="logs/$(TZ=Asia/Tokyo date +%Y-%m-%d_%H%M)_attack_${GITHUB_RUN_ID}.log"
+          log="logs/$(TZ=Asia/Tokyo date +%Y/%m/%d/%H%M)_attack_${GITHUB_RUN_ID}.log"
+          mkdir -p "$(dirname "$log")"
           end=$((SECONDS + 340 * 60))
           set +e
           (
