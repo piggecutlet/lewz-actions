@@ -6,7 +6,7 @@ on:
         default: "775"
 
 concurrency:
-  group: new-state-setup
+  group: setup-new-state
   cancel-in-progress: false
 
 permissions:
@@ -49,16 +49,16 @@ jobs:
             "" | *[!0-9]*) exit 1 ;;
           esac
           mkdir -p logs
-          log="logs/$(TZ=Asia/Tokyo date +%Y/%m/%d/%H%M)_new-state-setup_${GITHUB_RUN_ID}.log"
+          log="logs/$(TZ=Asia/Tokyo date +%Y/%m/%d/%H%M)_setup-new-state_${GITHUB_RUN_ID}.log"
           mkdir -p "$(dirname "$log")"
           set +e
           (
             cd src
             git config user.name "piggecutlet"
             git config user.email "234113501+piggecutlet@users.noreply.github.com"
-            node scripts/core/new_state_setup.mjs --state="$STATE"
+            node scripts/core/setup_new_state.mjs --state="$STATE"
             code=$?
-            node -e "import('./scripts/core/_ci.mjs').then(({pushAccounts})=>pushAccounts('chore: CI の /account:new-state-setup で accounts.json を更新する'))"
+            node -e "import('./scripts/core/_ci.mjs').then(({pushAccounts})=>pushAccounts('chore: CI の /account:setup-new-state で accounts.json を更新する'))"
             exit $code
           ) > "$log" 2>&1 &
           pid=$!
