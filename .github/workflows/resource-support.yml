@@ -8,9 +8,9 @@ on:
         required: false
         default: ""
       to:
-        description: 送り先の表示名（Empire061775 以外なら同盟 CMP への加入をしない）
+        description: 送り先の表示名（空なら 775 は Empire061775、ほかの州は必須。Empire061775 以外なら同盟 CMP への加入をしない）
         required: false
-        default: Empire061775
+        default: ""
       teleport:
         description: 送り先の付近へ移転する表示名をカンマ区切り（空なら移転しない）
         required: false
@@ -19,6 +19,9 @@ on:
         description: 加入しない。移転の候補と手持ち・補給の残り・ダイヤを出すだけ
         type: boolean
         default: false
+      server:
+        description: 州
+        default: "775"
 
 permissions:
   contents: write
@@ -60,7 +63,11 @@ jobs:
       - env:
           LOG_KEY: ${{ secrets.LOG_KEY }}
           DRY_RUN: ${{ inputs.dry_run }}
+          SERVER: ${{ inputs.server || '775' }}
         run: |
+          case "$SERVER" in
+            *[!0-9]*) exit 1 ;;
+          esac
           names=$(jq -r .inputs.names "$GITHUB_EVENT_PATH")
           case "$names" in
             "" | *[!A-Za-z0-9,]*) exit 1 ;;
@@ -72,7 +79,10 @@ jobs:
           case "$teleport" in
             *[!A-Za-z0-9,]*) exit 1 ;;
           esac
-          to=$(jq -r '.inputs.to // "Empire061775"' "$GITHUB_EVENT_PATH")
+          to=$(jq -r '.inputs.to // ""' "$GITHUB_EVENT_PATH")
+          if [ -z "$to" ] && [ "$SERVER" = 775 ]; then
+            to=Empire061775
+          fi
           case "$to" in
             "" | *[!A-Za-z0-9]*) exit 1 ;;
           esac
@@ -85,25 +95,25 @@ jobs:
             git config user.email "234113501+piggecutlet@users.noreply.github.com"
             if [ "$DRY_RUN" = "true" ]; then
               if [ -n "$teleport" ]; then
-                center=$(node work/send_res_even775.mjs "$names" --to="$to" --where | tail -n 1)
+                center=$(node work/send_res_even775.mjs "$names" --server="$SERVER" --to="$to" --where | tail -n 1)
                 [[ "$center" =~ ^[0-9]+,[0-9]+$ ]] || exit 1
                 node scripts/core/teleport_near.mjs "$center" "$teleport" --dry-run
               fi
-              node work/send_res_even775.mjs "$names" $kinds --to="$to" --buy --dry
+              node work/send_res_even775.mjs "$names" --server="$SERVER" $kinds --to="$to" --buy --dry
               exit $?
             fi
-            if [ "$to" = "Empire061775" ]; then
+            if [ "$SERVER" = 775 ] && [ "$to" = "Empire061775" ]; then
               node scripts/core/join_alliance.mjs "$names"
             fi
             code=0
             if [ -n "$teleport" ]; then
-              center=$(node work/send_res_even775.mjs "$names" --to="$to" --where | tail -n 1)
+              center=$(node work/send_res_even775.mjs "$names" --server="$SERVER" --to="$to" --where | tail -n 1)
               [[ "$center" =~ ^[0-9]+,[0-9]+$ ]] || exit 1
               node scripts/core/teleport_near.mjs "$center" "$teleport" || code=1
             fi
             node -e "import('./scripts/core/_ci.mjs').then(({pushAccounts})=>pushAccounts('chore: CI の resource-support で accounts.json を更新する'))"
             [ $code -eq 0 ] || exit 1
-            node work/send_res_even775.mjs "$names" $kinds --to="$to" --buy
+            node work/send_res_even775.mjs "$names" --server="$SERVER" $kinds --to="$to" --buy
           ) > "$log" 2>&1 &
           pid=$!
           n=0

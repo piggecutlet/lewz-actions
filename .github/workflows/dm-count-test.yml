@@ -1,5 +1,9 @@
 on:
   workflow_dispatch:
+    inputs:
+      name:
+        description: 表示名
+        default: Empire062775
 
 permissions:
   contents: write
@@ -35,14 +39,18 @@ jobs:
 
       - env:
           LOG_KEY: ${{ secrets.LOG_KEY }}
+          NAME: ${{ inputs.name || 'Empire062775' }}
         run: |
+          case "$NAME" in
+            *[!A-Za-z0-9]*) exit 1 ;;
+          esac
           mkdir -p logs
           log="logs/$(TZ=Asia/Tokyo date +%Y-%m-%d_%H%M)_dm-count-test_${GITHUB_RUN_ID}.log"
           echo "log=$log" >> "$GITHUB_ENV"
           set +e
           (
             cd src
-            node scripts/core/dm_count_test.mjs Empire062775
+            node scripts/core/dm_count_test.mjs "$NAME"
           ) > "$log" 2>&1 &
           pid=$!
           n=0

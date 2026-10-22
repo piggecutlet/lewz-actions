@@ -5,6 +5,21 @@ on:
         description: 時刻に関係なく 9 時の回（解禁・商店・加速・CMP へ入って派遣・TMS へ戻す）を流す
         type: boolean
         default: false
+      server:
+        description: 州
+        default: "775"
+      approver:
+        description: TMS の加入の承認役（空なら 775 の Empire064d8775。ほかの州は必須）
+        required: false
+        default: ""
+      captain:
+        description: tms.yml へ渡す小隊長（空なら 775 の Empire064d9775。ほかの州は必須）
+        required: false
+        default: ""
+      abbr:
+        description: tms.yml へ渡す同盟の略称（空なら 775 の TMS。ほかの州は必須）
+        required: false
+        default: ""
 
 permissions:
   contents: write
@@ -53,7 +68,25 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
           LOG_KEY: ${{ secrets.LOG_KEY }}
+          SERVER: ${{ inputs.server || '775' }}
+          APPROVER: ${{ inputs.approver }}
+          CAPTAIN: ${{ inputs.captain }}
+          ABBR: ${{ inputs.abbr }}
         run: |
+          case "$SERVER" in
+            *[!0-9]*) exit 1 ;;
+          esac
+          case "$APPROVER$CAPTAIN$ABBR" in
+            *[!A-Za-z0-9]*) exit 1 ;;
+          esac
+          if [ "$SERVER" != 775 ] && { [ -z "$APPROVER" ] || [ -z "$CAPTAIN" ] || [ -z "$ABBR" ]; }; then
+            echo "州 $SERVER では approver / captain / abbr を入れてください"
+            exit 1
+          fi
+          roles=()
+          if [ "$SERVER" != 775 ]; then
+            roles=(-f server="$SERVER" -f approver="$APPROVER" -f captain="$CAPTAIN" -f abbr="$ABBR")
+          fi
           morning=$(jq -r '.inputs.morning // "false"' "$GITHUB_EVENT_PATH")
           mkdir -p logs
           log="logs/$(TZ=Asia/Tokyo date +%Y-%m-%d_%H%M)_vip-tms_${GITHUB_RUN_ID}.log"
@@ -68,7 +101,7 @@ jobs:
               restart=1
               sleep 10
             done
-            names=$(node -e "Promise.all([import('./scripts/core/_readme.mjs'),import('./scripts/core/_kinds.mjs')]).then(([{readAccounts},{KIND}])=>{console.log((readAccounts()['775']||[]).filter((a)=>a.kind===KIND.VMS&&a.note==='VIP').map((a)=>a.name).join(','))})")
+            names=$(node -e "Promise.all([import('./scripts/core/_readme.mjs'),import('./scripts/core/_kinds.mjs')]).then(([{readAccounts},{KIND}])=>{console.log((readAccounts()[process.argv[1]]||[]).filter((a)=>a.kind===KIND.VMS&&a.note==='VIP').map((a)=>a.name).join(','))})" "$SERVER")
             node scripts/core/shield.mjs "$names" || true
             if [ "$morning" = "true" ] || [ "$(TZ=JST-9 date +%H)" -lt 12 ]; then
               node scripts/core/vip_unlock.mjs "$names" || true
@@ -84,7 +117,7 @@ jobs:
                 node scripts/core/join_alliance.mjs "$names" || true
                 node scripts/core/vip_send.mjs "$names" || true
                 node work/leave_alliance.mjs "$names" || true
-                node scripts/core/join_alliance.mjs "$names" --leader=Empire064d8775 || true
+                node scripts/core/join_alliance.mjs "$names" --leader="${APPROVER:-Empire064d8775}" || true
               fi
               restart=1
             else
@@ -92,11 +125,11 @@ jobs:
             fi
             git config user.name "piggecutlet"
             git config user.email "234113501+piggecutlet@users.noreply.github.com"
-            node work/gold_shield775.mjs "$names" || true
+            node work/gold_shield775.mjs "$names" --server="$SERVER" || true
             node -e "import('./scripts/core/_ci.mjs').then(({pushAccounts})=>pushAccounts('chore: CI の vip-tms でダイヤを読み、accounts.json を更新する'))"
             if [ -n "$restart" ]; then
               echo "tms.yml を起動する"
-              gh workflow run tms.yml -R "$GITHUB_REPOSITORY" || true
+              gh workflow run tms.yml -R "$GITHUB_REPOSITORY" "${roles[@]}" || true
             fi
           ) > "$log" 2>&1 &
           pid=$!

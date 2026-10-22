@@ -1,5 +1,9 @@
 on:
   workflow_dispatch:
+    inputs:
+      server:
+        description: 州
+        default: "775"
 
 permissions:
   contents: write
@@ -23,17 +27,21 @@ jobs:
       - env:
           GH_TOKEN: ${{ secrets.DISPATCH_TOKEN }}
           LOG_KEY: ${{ secrets.LOG_KEY }}
+          SERVER: ${{ inputs.server || '775' }}
         run: |
+          case "$SERVER" in
+            *[!0-9]*) exit 1 ;;
+          esac
           mkdir -p logs
           log="logs/$(TZ=Asia/Tokyo date +%Y-%m-%d_%H%M)_775_${GITHUB_RUN_ID}.log"
           set +e
           (
             set -e
-            gh workflow run vip.yml -R "$GITHUB_REPOSITORY" || true
-            gh workflow run vip-tms.yml -R "$GITHUB_REPOSITORY" || true
-            gh workflow run cmp.yml -R "$GITHUB_REPOSITORY"
+            gh workflow run vip.yml -R "$GITHUB_REPOSITORY" -f server="$SERVER" || true
+            gh workflow run vip-tms.yml -R "$GITHUB_REPOSITORY" -f server="$SERVER" || true
+            gh workflow run cmp.yml -R "$GITHUB_REPOSITORY" -f server="$SERVER"
             if [ "$(TZ=Asia/Tokyo date +%H)" = 09 ]; then
-              gh workflow run zombie.yml -R "$GITHUB_REPOSITORY"
+              gh workflow run zombie.yml -R "$GITHUB_REPOSITORY" -f server="$SERVER"
             fi
           ) > "$log" 2>&1 &
           pid=$!

@@ -22,6 +22,9 @@ on:
         description: 相手を出すだけで攻撃しない（移転もしない）
         type: boolean
         default: false
+      server:
+        description: 州
+        default: "775"
 
 permissions:
   contents: write
@@ -65,7 +68,11 @@ jobs:
           DELETE_ACCOUNT: ${{ inputs.delete_account }}
           STAY: ${{ inputs.stay }}
           DRY_RUN: ${{ inputs.dry_run }}
+          SERVER: ${{ inputs.server || '775' }}
         run: |
+          case "$SERVER" in
+            *[!0-9]*) exit 1 ;;
+          esac
           names=$(jq -r .inputs.names "$GITHUB_EVENT_PATH")
           case "$names" in
             "" | *[!A-Za-z0-9,]*) exit 1 ;;
@@ -118,7 +125,7 @@ jobs:
                 });
               ' "$names"
               if [ "$DELETE_ACCOUNT" = "true" ]; then
-                node work/leave_random_move775.mjs "$names" || code=1
+                node work/leave_random_move775.mjs "$names" --server="$SERVER" || code=1
                 node scripts/core/delete_account_ci.mjs "$names" || code=1
               fi
             fi

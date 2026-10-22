@@ -1,5 +1,9 @@
 on:
   workflow_dispatch:
+    inputs:
+      server:
+        description: 州
+        default: "775"
 
 permissions:
   contents: write
@@ -23,13 +27,17 @@ jobs:
       - env:
           GH_TOKEN: ${{ secrets.DISPATCH_TOKEN }}
           LOG_KEY: ${{ secrets.LOG_KEY }}
+          SERVER: ${{ inputs.server || '775' }}
         run: |
+          case "$SERVER" in
+            *[!0-9]*) exit 1 ;;
+          esac
           mkdir -p logs
           log="logs/$(TZ=Asia/Tokyo date +%Y-%m-%d_%H%M)_scheduled_${GITHUB_RUN_ID}.log"
           set +e
           (
             set -e
-            gh workflow run 775.yml -R "$GITHUB_REPOSITORY"
+            gh workflow run 775.yml -R "$GITHUB_REPOSITORY" -f server="$SERVER"
           ) > "$log" 2>&1 &
           pid=$!
           n=0

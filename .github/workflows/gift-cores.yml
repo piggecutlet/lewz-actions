@@ -2,8 +2,12 @@ on:
   workflow_dispatch:
     inputs:
       names:
-        description: 送る側の表示名（カンマ区切り）。受ける側は Empire061775 に決め打ち
+        description: 送る側の表示名（カンマ区切り）
         required: true
+      to:
+        description: 受ける側の 表示名:gameUid（空なら 775 の Empire061775。ほかの州は必須）
+        required: false
+        default: ""
 
 permissions:
   contents: write
@@ -44,12 +48,16 @@ jobs:
           case "$names" in
             "" | *[[:space:]]* | *\"* | *\'* | *\`* | *\$* | *'\'*) exit 1 ;;
           esac
+          to=$(jq -r '.inputs.to // ""' "$GITHUB_EVENT_PATH")
+          case "$to" in
+            *[!A-Za-z0-9:]*) exit 1 ;;
+          esac
           mkdir -p logs
           log="logs/$(TZ=Asia/Tokyo date +%Y-%m-%d_%H%M)_gift-cores_${GITHUB_RUN_ID}.log"
           set +e
           (
             cd src
-            node scripts/core/gift_cores.mjs "$names"
+            node scripts/core/gift_cores.mjs "$names" ${to:+"--to=$to"}
           ) > "$log" 2>&1 &
           pid=$!
           n=0

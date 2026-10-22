@@ -3,6 +3,9 @@ on:
     inputs:
       started:
         required: true
+      server:
+        description: 州
+        default: "775"
 
 permissions:
   contents: write
@@ -43,7 +46,11 @@ jobs:
           STARTED: ${{ inputs.started }}
           LOG_KEY: ${{ secrets.LOG_KEY }}
           VERCEL_DEPLOY_HOOK: ${{ secrets.VERCEL_DEPLOY_HOOK }}
+          SERVER: ${{ inputs.server || '775' }}
         run: |
+          case "$SERVER" in
+            *[!0-9]*) exit 1 ;;
+          esac
           mkdir -p logs
           log="logs/$(TZ=Asia/Tokyo date +%Y-%m-%d_%H%M)_setup-cancel_${GITHUB_RUN_ID}.log"
           set +e
@@ -52,7 +59,7 @@ jobs:
             git config user.name "piggecutlet"
             git config user.email "234113501+piggecutlet@users.noreply.github.com"
             base=$(git rev-list -1 --before="$STARTED" HEAD)
-            node scripts/core/setup_cancel.mjs "$base"
+            node scripts/core/setup_cancel.mjs "$base" --server="$SERVER"
             code=$?
             if [ -n "$VERCEL_DEPLOY_HOOK" ]; then
               curl -fsS -X POST "$VERCEL_DEPLOY_HOOK"

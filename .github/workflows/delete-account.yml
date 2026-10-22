@@ -9,6 +9,9 @@ on:
         description: 申請の前に脱退と移転をする（同盟に入っていないなら不要）
         type: boolean
         default: true
+      server:
+        description: 州（脱退と移転で使う）
+        default: "775"
 
 concurrency:
   group: delete-account
@@ -52,7 +55,11 @@ jobs:
           LOG_KEY: ${{ secrets.LOG_KEY }}
           VERCEL_DEPLOY_HOOK: ${{ secrets.VERCEL_DEPLOY_HOOK }}
           MOVE: ${{ inputs.move }}
+          SERVER: ${{ inputs.server || '775' }}
         run: |
+          case "$SERVER" in
+            *[!0-9]*) exit 1 ;;
+          esac
           names=$(jq -r '.inputs.names // ""' "$GITHUB_EVENT_PATH")
           case "$names" in
             *[!A-Za-z0-9,]*) exit 1 ;;
@@ -66,7 +73,7 @@ jobs:
             git config user.email "234113501+piggecutlet@users.noreply.github.com"
             if [ -n "$names" ]; then
               if [ "$MOVE" != false ]; then
-                node work/leave_random_move775.mjs "$names" || exit 1
+                node work/leave_random_move775.mjs "$names" --server="$SERVER" || exit 1
               fi
               node scripts/core/delete_account_ci.mjs "$names"
               code=$?

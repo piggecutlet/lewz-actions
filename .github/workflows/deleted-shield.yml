@@ -3,6 +3,9 @@ on:
     inputs:
       grow_army:
         required: false
+      server:
+        description: 州
+        default: "775"
 
 concurrency:
   group: deleted-shield
@@ -42,7 +45,11 @@ jobs:
 
       - env:
           LOG_KEY: ${{ secrets.LOG_KEY }}
+          SERVER: ${{ inputs.server || '775' }}
         run: |
+          case "$SERVER" in
+            *[!0-9]*) exit 1 ;;
+          esac
           grow=$(jq -r '.inputs.grow_army // ""' "$GITHUB_EVENT_PATH")
           mkdir -p logs
           log="logs/$(TZ=Asia/Tokyo date +%Y-%m-%d_%H%M)_deleted-shield_${GITHUB_RUN_ID}.log"
@@ -51,7 +58,7 @@ jobs:
             cd src
             git config user.name "piggecutlet"
             git config user.email "234113501+piggecutlet@users.noreply.github.com"
-            node scripts/core/deleted_shield.mjs --ci ${grow:+"--grow-army=$grow"}
+            node scripts/core/deleted_shield.mjs --ci ${grow:+"--grow-army=$grow"} --server="$SERVER"
           ) > "$log" 2>&1 &
           pid=$!
           n=0

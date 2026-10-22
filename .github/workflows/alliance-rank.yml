@@ -3,6 +3,14 @@ on:
     inputs:
       name:
         required: true
+      own:
+        description: 自分の同盟の略称（空なら 775 は CMP。ほかの州は必須）
+        required: false
+        default: ""
+      mine:
+        description: 上位に入れない自分の同盟の略称をカンマ区切り（空なら 775 は CMP,CNL,TMS）
+        required: false
+        default: ""
 
 permissions:
   contents: write
@@ -40,10 +48,18 @@ jobs:
 
       - env:
           LOG_KEY: ${{ secrets.LOG_KEY }}
+          OWN: ${{ inputs.own }}
+          MINE: ${{ inputs.mine }}
         run: |
           name=$(jq -r .inputs.name "$GITHUB_EVENT_PATH")
           case "$name" in
             "" | *[!A-Za-z0-9]*) exit 1 ;;
+          esac
+          case "$OWN" in
+            *[!A-Za-z0-9]*) exit 1 ;;
+          esac
+          case "$MINE" in
+            *[!A-Za-z0-9,]*) exit 1 ;;
           esac
           mkdir -p logs
           log="logs/$(TZ=Asia/Tokyo date +%Y-%m-%d_%H%M)_alliance-rank_${GITHUB_RUN_ID}.log"
@@ -53,7 +69,7 @@ jobs:
             git config user.name "piggecutlet"
             git config user.email "234113501+piggecutlet@users.noreply.github.com"
             code=0
-            node work/alliance_rank_save.mjs "$name" || code=1
+            node work/alliance_rank_save.mjs "$name" ${OWN:+"--own=$OWN"} ${MINE:+"--mine=$MINE"} || code=1
             git add savedata/alliances.json
             if ! git diff --cached --quiet; then
               git commit -m "chore: CI で同盟の順位（alliances.json）を更新する"

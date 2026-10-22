@@ -4,6 +4,9 @@ on:
       kinds:
         description: ジョブごとに回す kind（JSON の配列。要素はカンマ区切りの kind）
         default: '["other"]'
+      server:
+        description: 州
+        default: "775"
 
 concurrency:
   group: core-hunt-${{ inputs.kinds || '["other"]' }}
@@ -48,11 +51,15 @@ jobs:
       - env:
           LOG_KEY: ${{ secrets.LOG_KEY }}
           KIND: ${{ matrix.kind }}
+          SERVER: ${{ inputs.server || '775' }}
         run: |
           mkdir -p logs
           kind="$KIND"
           case "$kind" in
             "" | *[!a-z,]*) exit 1 ;;
+          esac
+          case "$SERVER" in
+            *[!0-9]*) exit 1 ;;
           esac
           log="logs/$(TZ=Asia/Tokyo date +%Y-%m-%d_%H%M)_core-hunt_${kind//,/-}_${GITHUB_RUN_ID}.log"
           echo "log=$log" >> "$GITHUB_ENV"
@@ -61,7 +68,7 @@ jobs:
             cd src
             git config user.name "piggecutlet"
             git config user.email "234113501+piggecutlet@users.noreply.github.com"
-            node scripts/core/core_hunt.mjs --kind="$kind"
+            node scripts/core/core_hunt.mjs --kind="$kind" --server="$SERVER"
           ) > "$log" 2>&1 &
           pid=$!
           n=0
@@ -126,6 +133,7 @@ jobs:
     steps:
       - env:
           GH_TOKEN: ${{ secrets.DISPATCH_TOKEN || github.token }}
+          SERVER: ${{ inputs.server || '775' }}
         run: |
           kinds=$(jq -r '.inputs.kinds // "[\"other\"]"' "$GITHUB_EVENT_PATH")
           n=""
@@ -141,7 +149,7 @@ jobs:
           fi
           if [ "$n" -gt 0 ]; then
             for i in 1 2 3 4 5; do
-              if gh workflow run core-hunt.yml -R "$GITHUB_REPOSITORY" -f kinds="$kinds"; then
+              if gh workflow run core-hunt.yml -R "$GITHUB_REPOSITORY" -f kinds="$kinds" -f server="$SERVER"; then
                 echo "続きを起動した"
                 exit 0
               fi

@@ -17,6 +17,13 @@ on:
       to:
         type: string
         default: ""
+      server:
+        description: 州
+        default: "775"
+      mine:
+        description: 申請先から除く同盟の略称をカンマ区切り（空なら 775 は CMP,CNL,TMS,SCP,SNG。ほかの州は必須）
+        type: string
+        default: ""
 
 concurrency:
   group: core-apply${{ inputs.mode == 'cancel' && '-cancel' || '' }}
@@ -64,7 +71,15 @@ jobs:
           DRY_RUN: ${{ inputs.dry_run && '--dry-run' || '' }}
           GH_TOKEN: ${{ secrets.DISPATCH_TOKEN }}
           LOG_KEY: ${{ secrets.LOG_KEY }}
+          SERVER: ${{ inputs.server || '775' }}
+          MINE: ${{ inputs.mine }}
         run: |
+          case "$SERVER" in
+            *[!0-9]*) exit 1 ;;
+          esac
+          case "$MINE" in
+            *[!A-Za-z0-9,]*) exit 1 ;;
+          esac
           case "$MODE" in
             apply | watch) NAME="" ;;
             cancel) [ -n "$NAME" ] || exit 1 ;;
@@ -81,7 +96,7 @@ jobs:
             cd src
             git config user.name "piggecutlet"
             git config user.email "234113501+piggecutlet@users.noreply.github.com"
-            node scripts/core/core_apply.mjs "$MODE" $NAME ${TO:+"--to=$TO"} $DRY_RUN --ci
+            node scripts/core/core_apply.mjs "$MODE" $NAME ${TO:+"--to=$TO"} $DRY_RUN --ci --server="$SERVER" ${MINE:+"--mine=$MINE"}
           ) > "$log" 2>&1 &
           pid=$!
           n=0

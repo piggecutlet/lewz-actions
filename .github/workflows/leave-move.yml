@@ -11,6 +11,9 @@ on:
         description: 削除申請
         type: boolean
         default: false
+      server:
+        description: 州
+        default: "775"
 
 permissions:
   contents: write
@@ -50,7 +53,11 @@ jobs:
       - env:
           LOG_KEY: ${{ secrets.LOG_KEY }}
           DELETE_ACCOUNT: ${{ inputs.delete_account }}
+          SERVER: ${{ inputs.server || '775' }}
         run: |
+          case "$SERVER" in
+            *[!0-9]*) exit 1 ;;
+          esac
           names=$(jq -r .inputs.names "$GITHUB_EVENT_PATH")
           case "$names" in
             "" | *[!A-Za-z0-9,]*) exit 1 ;;
@@ -69,7 +76,7 @@ jobs:
             fi
             rest="$names"
             for i in 1 2 3 4 5 6 7 8 9 10; do
-              out=$(node work/leave_random_move775.mjs "$rest")
+              out=$(node work/leave_random_move775.mjs "$rest" --server="$SERVER")
               code=$?
               echo "$out"
               rest=$(echo "$out" | grep -E "行軍中|E000000" | cut -d" " -f1 | sort -u | paste -sd,)

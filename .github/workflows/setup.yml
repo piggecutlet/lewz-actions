@@ -57,6 +57,13 @@ on:
         description: 1 周目に脱退させる件・作る件数・使う枠を出すだけ（何もしない）
         type: boolean
         default: false
+      server:
+        description: 州
+        default: "775"
+      vip_center:
+        description: VIP を移す中心 x,y（空なら 775 の 1071,793。ほかの州の VIP は必須）
+        required: false
+        default: ""
 
 concurrency:
   group: setup
@@ -113,10 +120,16 @@ jobs:
           DRY_RUN: ${{ inputs.dry_run && '--dry-run' || '' }}
           GH_TOKEN: ${{ secrets.DISPATCH_TOKEN }}
           LOG_KEY: ${{ secrets.LOG_KEY }}
+          SERVER: ${{ inputs.server || '775' }}
+          VIP_CENTER: ${{ inputs.vip_center }}
         run: |
           case "$COUNT$SEC" in
             *[!0-9]*) exit 1 ;;
           esac
+          case "$SERVER" in
+            *[!0-9]*) exit 1 ;;
+          esac
+          [[ -z "$VIP_CENTER" || "$VIP_CENTER" =~ ^[0-9]+,[0-9]+$ ]] || exit 1
           case "$SEATS" in
             *[!A-Za-z0-9,:]*) exit 1 ;;
           esac
@@ -141,7 +154,7 @@ jobs:
             cd src
             git config user.name "piggecutlet"
             git config user.email "234113501+piggecutlet@users.noreply.github.com"
-            node scripts/core/new_dev.mjs $COUNT $DELETE_ACCOUNT $SECOND_DELETE ${grow_army:+"$grow_army"} $GROW_ARMY_DEFAULT ${TARGET:+"--target=$TARGET"} ${SEC:+"--sec=$SEC"} ${SEATS:+"--seats=$SEATS"} $SKIP_BUILD_BASE $OFFICER $FIRE $FORCE $DRY_RUN --ci
+            node scripts/core/new_dev.mjs $COUNT $DELETE_ACCOUNT $SECOND_DELETE ${grow_army:+"$grow_army"} $GROW_ARMY_DEFAULT ${TARGET:+"--target=$TARGET"} ${SEC:+"--sec=$SEC"} ${SEATS:+"--seats=$SEATS"} $SKIP_BUILD_BASE $OFFICER $FIRE $FORCE $DRY_RUN --ci --server="$SERVER" ${VIP_CENTER:+"--vip-center=$VIP_CENTER"}
           ) > "$log" 2>&1 &
           pid=$!
           n=0
@@ -185,4 +198,5 @@ jobs:
       - if: cancelled()
         env:
           GH_TOKEN: ${{ secrets.DISPATCH_TOKEN }}
-        run: gh workflow run setup-cancel.yml -R "$GITHUB_REPOSITORY" -f started="$(gh run view "$GITHUB_RUN_ID" -R "$GITHUB_REPOSITORY" --json startedAt -q .startedAt)"
+          SERVER: ${{ inputs.server || '775' }}
+        run: gh workflow run setup-cancel.yml -R "$GITHUB_REPOSITORY" -f started="$(gh run view "$GITHUB_RUN_ID" -R "$GITHUB_REPOSITORY" --json startedAt -q .startedAt)" -f server="$SERVER"

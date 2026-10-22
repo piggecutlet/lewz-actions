@@ -12,6 +12,13 @@ on:
         description: 送るのを Lv.10 ゾンビ ネメシスだけにする（1 万体に足りなければ送らない）
         type: boolean
         default: false
+      server:
+        description: 州
+        default: "775"
+      store:
+        description: VIP 商店も回す表示名（空なら 775 は Empire062775、ほかの州は回さない）
+        required: false
+        default: ""
 
 permissions:
   contents: write
@@ -56,7 +63,19 @@ jobs:
       - timeout-minutes: 120
         env:
           LOG_KEY: ${{ secrets.LOG_KEY }}
+          SERVER: ${{ inputs.server || '775' }}
+          STORE: ${{ inputs.store }}
         run: |
+          case "$SERVER" in
+            *[!0-9]*) exit 1 ;;
+          esac
+          case "$STORE" in
+            *[!A-Za-z0-9]*) exit 1 ;;
+          esac
+          store="$STORE"
+          if [ -z "$store" ] && [ "$SERVER" = 775 ]; then
+            store=Empire062775
+          fi
           names=$(jq -r '.inputs.names // ""' "$GITHUB_EVENT_PATH")
           morning=$(jq -r '.inputs.morning // "false"' "$GITHUB_EVENT_PATH")
           only_zombie=$(jq -r '.inputs.only_send_lv10_zombie // "false"' "$GITHUB_EVENT_PATH")
@@ -73,13 +92,15 @@ jobs:
           (
             cd src
             if [ -z "$names" ]; then
-              names=$(node -e "Promise.all([import('./scripts/core/_readme.mjs'),import('./scripts/core/_kinds.mjs')]).then(([{readAccounts},{KIND}])=>{console.log((readAccounts()['775']||[]).filter((a)=>a.kind===KIND.AUTO&&a.note==='VIP').map((a)=>a.name).join(','))})")
+              names=$(node -e "Promise.all([import('./scripts/core/_readme.mjs'),import('./scripts/core/_kinds.mjs')]).then(([{readAccounts},{KIND}])=>{console.log((readAccounts()[process.argv[1]]||[]).filter((a)=>a.kind===KIND.AUTO&&a.note==='VIP').map((a)=>a.name).join(','))})" "$SERVER")
             fi
             node scripts/core/shield.mjs "$names" || true
             if [ "$morning" = "true" ] || [ "$(TZ=JST-9 date +%H)" -lt 12 ]; then
               node scripts/core/vip_unlock.mjs "$names" || true
               node scripts/core/vip_store.mjs "$names" || true
-              node scripts/core/vip_store.mjs Empire062775 || true
+              if [ -n "$store" ]; then
+                node scripts/core/vip_store.mjs "$store" || true
+              fi
               node scripts/core/use_skill.mjs "$names" || true
               node scripts/core/train_army.mjs "$names" || true
               node scripts/core/vip_boost.mjs "$names" || true
@@ -92,7 +113,7 @@ jobs:
             fi
             git config user.name "piggecutlet"
             git config user.email "234113501+piggecutlet@users.noreply.github.com"
-            node work/gold_shield775.mjs "$names" || true
+            node work/gold_shield775.mjs "$names" --server="$SERVER" || true
             node -e "import('./scripts/core/_ci.mjs').then(({pushAccounts})=>pushAccounts('chore: CI の vip でダイヤを読み、accounts.json を更新する'))"
           ) > "$log" 2>&1 &
           pid=$!

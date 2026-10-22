@@ -1,5 +1,10 @@
 on:
   workflow_dispatch:
+    inputs:
+      gift_only:
+        description: 回す表示名をカンマ区切り（空なら Empire062775）
+        required: false
+        default: ""
 
 concurrency:
   group: core-hunt-gift
@@ -40,7 +45,11 @@ jobs:
 
       - env:
           LOG_KEY: ${{ secrets.LOG_KEY }}
+          GIFT_ONLY: ${{ inputs.gift_only }}
         run: |
+          case "$GIFT_ONLY" in
+            *[!A-Za-z0-9,]*) exit 1 ;;
+          esac
           mkdir -p logs
           log="logs/$(TZ=Asia/Tokyo date +%Y-%m-%d_%H%M)_core-hunt-gift_${GITHUB_RUN_ID}.log"
           echo "log=$log" >> "$GITHUB_ENV"
@@ -49,7 +58,7 @@ jobs:
             cd src
             git config user.name "piggecutlet"
             git config user.email "234113501+piggecutlet@users.noreply.github.com"
-            node scripts/core/core_hunt_gift.mjs
+            node scripts/core/core_hunt_gift.mjs ${GIFT_ONLY:+"--gift-only=$GIFT_ONLY"}
           ) > "$log" 2>&1 &
           pid=$!
           n=0
@@ -106,6 +115,7 @@ jobs:
     steps:
       - env:
           GH_TOKEN: ${{ secrets.DISPATCH_TOKEN || github.token }}
+          GIFT_ONLY: ${{ inputs.gift_only }}
         run: |
           n=""
           for i in 1 2 3 4 5; do
@@ -120,7 +130,7 @@ jobs:
           fi
           if [ "$n" -gt 0 ]; then
             for i in 1 2 3 4 5; do
-              if gh workflow run core-hunt-gift.yml -R "$GITHUB_REPOSITORY"; then
+              if gh workflow run core-hunt-gift.yml -R "$GITHUB_REPOSITORY" -f gift_only="$GIFT_ONLY"; then
                 echo "続きを起動した"
                 exit 0
               fi

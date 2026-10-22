@@ -1,5 +1,12 @@
 on:
   workflow_dispatch:
+    inputs:
+      from:
+        description: 送る側の表示名
+        default: Empire067c6775
+      to:
+        description: 受ける側（消す側）の表示名
+        default: Empire067c7775
 
 permissions:
   contents: write
@@ -35,14 +42,19 @@ jobs:
 
       - env:
           LOG_KEY: ${{ secrets.LOG_KEY }}
+          FROM: ${{ inputs.from || 'Empire067c6775' }}
+          TO: ${{ inputs.to || 'Empire067c7775' }}
         run: |
+          case "$FROM$TO" in
+            *[!A-Za-z0-9]*) exit 1 ;;
+          esac
           mkdir -p logs
           log="logs/$(TZ=Asia/Tokyo date +%Y-%m-%d_%H%M)_dm-delete-test_${GITHUB_RUN_ID}.log"
           echo "log=$log" >> "$GITHUB_ENV"
           set +e
           (
             cd src
-            node scripts/core/dm_delete_mod_test.mjs Empire067c6775 Empire067c7775
+            node scripts/core/dm_delete_mod_test.mjs "$FROM" "$TO"
           ) > "$log" 2>&1 &
           pid=$!
           n=0
