@@ -18,8 +18,8 @@ on:
         description: 小隊長（空なら 775 の Empire064d9775。ほかの州は必須）
         required: false
         default: ""
-      abbr:
-        description: 同盟の略称（空なら 775 の TMS。ほかの州は必須）
+      alliance:
+        description: 自分の同盟の ID（空なら 775 の 775_002。ほかの州は必須）
         required: false
         default: ""
 
@@ -72,7 +72,7 @@ jobs:
           STATE: ${{ inputs.state || '775' }}
           APPROVER: ${{ inputs.approver }}
           CAPTAIN: ${{ inputs.captain }}
-          ABBR: ${{ inputs.abbr }}
+          ALLIANCE: ${{ inputs.alliance }}
         run: |
           case "$COUNT" in
             *[!0-9]*) exit 1 ;;
@@ -80,8 +80,8 @@ jobs:
           case "$STATE" in
             *[!0-9]*) exit 1 ;;
           esac
-          case "$APPROVER$CAPTAIN$ABBR" in
-            *[!A-Za-z0-9]*) exit 1 ;;
+          case "$APPROVER$CAPTAIN$ALLIANCE" in
+            *[!A-Za-z0-9_]*) exit 1 ;;
           esac
           mkdir -p logs
           log="logs/$(TZ=Asia/Tokyo date +%Y/%m/%d/%H%M%S)_tms_${GITHUB_RUN_ID}.log"
@@ -92,7 +92,7 @@ jobs:
             cd src
             git config user.name "piggecutlet"
             git config user.email "234113501+piggecutlet@users.noreply.github.com"
-            node scripts/core/tms.mjs $COUNT $DRY_RUN --ci --state="$STATE" ${APPROVER:+"--approver=$APPROVER"} ${CAPTAIN:+"--captain=$CAPTAIN"} ${ABBR:+"--abbr=$ABBR"}
+            node scripts/core/tms.mjs $COUNT $DRY_RUN --ci --state="$STATE" ${APPROVER:+"--approver=$APPROVER"} ${CAPTAIN:+"--captain=$CAPTAIN"} ${ALLIANCE:+"--alliance=$ALLIANCE"}
           ) > "$log" 2>&1 &
           pid=$!
           n=0

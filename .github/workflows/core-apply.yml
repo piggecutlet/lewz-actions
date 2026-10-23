@@ -21,7 +21,7 @@ on:
         description: 州
         default: "775"
       mine:
-        description: 申請先から除く同盟の略称をカンマ区切り（空なら 775 は CMP,CNL,TMS,SCP,SNG。ほかの州は必須）
+        description: 申請先から除く同盟の略称をカンマ区切り（空なら 775 は CNL,SCP,SNG。alliances.json の自分の同盟はいつも除く。ほかの州は必須）
         type: string
         default: ""
 

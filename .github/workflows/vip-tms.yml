@@ -2,22 +2,22 @@ on:
   workflow_dispatch:
     inputs:
       morning:
-        description: 時刻に関係なく 9 時の回（解禁・商店・加速・CMP へ入って派遣・TMS へ戻す）を流す
+        description: 時刻に関係なく 9 時の回（解禁・商店・加速・775_001 へ入って派遣・775_002 へ戻す）を流す
         type: boolean
         default: false
       state:
         description: 州
         default: "775"
       approver:
-        description: TMS の加入の承認役（空なら 775 の Empire064d8775。ほかの州は必須）
+        description: 775_002 の加入の承認役（空なら 775 の Empire064d8775。ほかの州は必須）
         required: false
         default: ""
       captain:
         description: tms.yml へ渡す小隊長（空なら 775 の Empire064d9775。ほかの州は必須）
         required: false
         default: ""
-      abbr:
-        description: tms.yml へ渡す同盟の略称（空なら 775 の TMS。ほかの州は必須）
+      alliance:
+        description: tms.yml へ渡す自分の同盟の ID（空なら 775 の 775_002。ほかの州は必須）
         required: false
         default: ""
 
@@ -71,21 +71,21 @@ jobs:
           STATE: ${{ inputs.state || '775' }}
           APPROVER: ${{ inputs.approver }}
           CAPTAIN: ${{ inputs.captain }}
-          ABBR: ${{ inputs.abbr }}
+          ALLIANCE: ${{ inputs.alliance }}
         run: |
           case "$STATE" in
             *[!0-9]*) exit 1 ;;
           esac
-          case "$APPROVER$CAPTAIN$ABBR" in
-            *[!A-Za-z0-9]*) exit 1 ;;
+          case "$APPROVER$CAPTAIN$ALLIANCE" in
+            *[!A-Za-z0-9_]*) exit 1 ;;
           esac
-          if [ "$STATE" != 775 ] && { [ -z "$APPROVER" ] || [ -z "$CAPTAIN" ] || [ -z "$ABBR" ]; }; then
-            echo "州 $STATE では approver / captain / abbr を入れてください"
+          if [ "$STATE" != 775 ] && { [ -z "$APPROVER" ] || [ -z "$CAPTAIN" ] || [ -z "$ALLIANCE" ]; }; then
+            echo "州 $STATE では approver / captain / alliance を入れてください"
             exit 1
           fi
           roles=()
           if [ "$STATE" != 775 ]; then
-            roles=(-f state="$STATE" -f approver="$APPROVER" -f captain="$CAPTAIN" -f abbr="$ABBR")
+            roles=(-f state="$STATE" -f approver="$APPROVER" -f captain="$CAPTAIN" -f alliance="$ALLIANCE")
           fi
           morning=$(jq -r '.inputs.morning // "false"' "$GITHUB_EVENT_PATH")
           mkdir -p logs
@@ -112,7 +112,7 @@ jobs:
               node scripts/core/vip_boost.mjs "$names" --train-zombie || true
               node scripts/core/train_army.mjs "$names" --zombie-only || true
               if [ "$(tr -d '\r\n ' < .SKIP_DONATION_TMS 2>/dev/null)" = "1" ]; then
-                echo ".SKIP_DONATION_TMS が 1 なので CMP へ入って贈るのを飛ばす"
+                echo ".SKIP_DONATION_TMS が 1 なので 775_001 へ入って贈るのを飛ばす"
               else
                 for part in "$(echo "$names" | cut -d, -f1-56)" "$(echo "$names" | cut -d, -f57- -s)"; do
                   if [ -z "$part" ]; then continue; fi

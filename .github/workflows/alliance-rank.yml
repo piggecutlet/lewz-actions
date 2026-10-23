@@ -4,11 +4,11 @@ on:
       name:
         required: true
       own:
-        description: 自分の同盟の略称（空なら 775 は CMP。ほかの州は必須）
+        description: 自分の同盟の略称（alliances.json に id のある行が無い州だけ必須。775 は空でよい）
         required: false
         default: ""
       mine:
-        description: 上位に入れない自分の同盟の略称をカンマ区切り（空なら 775 は CMP,CNL,TMS）
+        description: 上位に入れない、id の無い自分の同盟の略称をカンマ区切り（空なら 775 は CNL。id のある自分の同盟はいつも除く）
         required: false
         default: ""
 

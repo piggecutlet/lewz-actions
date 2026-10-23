@@ -8,7 +8,7 @@ on:
         required: false
         default: ""
       to:
-        description: 送り先の表示名（空なら 775 は Empire061775、ほかの州は必須。Empire061775 以外なら同盟 CMP への加入をしない）
+        description: 送り先の表示名（空なら 775 は Empire061775、ほかの州は必須。Empire061775 以外なら同盟 775_001 への加入をしない）
         required: false
         default: ""
       teleport:
