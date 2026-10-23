@@ -7,6 +7,8 @@ on:
         required: true
       abbr:
         required: true
+      keys:
+        required: false
 
 permissions:
   contents: write
@@ -51,11 +53,15 @@ jobs:
           esac
           alliance=$(jq -r .inputs.alliance "$GITHUB_EVENT_PATH")
           case "$alliance" in
-            "" | *[!A-Za-z0-9]*) exit 1 ;;
+            "" | *[!A-Za-z0-9,]*) exit 1 ;;
           esac
           abbr=$(jq -r .inputs.abbr "$GITHUB_EVENT_PATH")
           case "$abbr" in
-            "" | *[!A-Za-z0-9]*) exit 1 ;;
+            "" | *[!A-Za-z0-9,]*) exit 1 ;;
+          esac
+          keys=$(jq -r ".inputs.keys // \"\"" "$GITHUB_EVENT_PATH")
+          case "$keys" in
+            *[!A-Za-z0-9,]*) exit 1 ;;
           esac
           mkdir -p logs
           log="logs/$(TZ=Asia/Tokyo date +%Y/%m/%d/%H%M%S)_alliance-create_${GITHUB_RUN_ID}.log"
@@ -65,7 +71,7 @@ jobs:
             cd src
             git config user.name "piggecutlet"
             git config user.email "234113501+piggecutlet@users.noreply.github.com"
-            node work/al_create.mjs "$name" "$alliance" "$abbr"
+            node work/al_create.mjs "$name" "$alliance" "$abbr" "$keys"
             code=$?
             node -e "import('./scripts/core/_ci.mjs').then(({pushAccounts})=>pushAccounts('chore: CI で同盟の作成を試し、accounts.json を更新する'))"
             exit $code
