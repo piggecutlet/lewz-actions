@@ -4,7 +4,7 @@ on:
       names:
         required: true
       args:
-        description: science.mjs へ表示名の後ろに渡す引数（例 none --only=259000 --gold-limit --pray-max=50 --gold-slot）
+        description: science.mjs へ表示名の後ろに渡す引数（例 none --only=259000 --gold-limit --gold-slot）
         required: false
         default: none
 
