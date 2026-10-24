@@ -1,12 +1,8 @@
 on:
   workflow_dispatch:
     inputs:
-      names:
+      name:
         required: true
-      args:
-        description: science.mjs へ表示名の後ろに渡す引数（例 none --only=259000 --gold-limit --gold-slot）
-        required: false
-        default: none
 
 permissions:
   contents: write
@@ -43,21 +39,18 @@ jobs:
       - env:
           LOG_KEY: ${{ secrets.LOG_KEY }}
         run: |
-          names=$(jq -r .inputs.names "$GITHUB_EVENT_PATH")
-          args=$(jq -r '.inputs.args // ""' "$GITHUB_EVENT_PATH")
-          case "$names" in
-            "" | *[!A-Za-z0-9,]*) exit 1 ;;
-          esac
-          case "$args" in
-            *[!A-Za-z0-9=,\ -]*) exit 1 ;;
-          esac
           mkdir -p logs
-          log="logs/$(TZ=Asia/Tokyo date +%Y/%m/%d/%H%M%S)_science_${GITHUB_RUN_ID}.log"
+          name=$(jq -r .inputs.name "$GITHUB_EVENT_PATH")
+          case "$name" in
+            "" | *[!A-Za-z0-9]*) exit 1 ;;
+          esac
+          log="logs/$(TZ=Asia/Tokyo date +%Y/%m/%d/%H%M%S)_account-president-mail-probe_${GITHUB_RUN_ID}.log"
           mkdir -p "$(dirname "$log")"
+          echo "log=$log" >> "$GITHUB_ENV"
           set +e
           (
             cd src
-            node scripts/core/science.mjs "$names" $args
+            node scripts/core/mail_update.mjs "$name"
           ) > "$log" 2>&1 &
           pid=$!
           n=0
@@ -70,8 +63,13 @@ jobs:
             fi
           done
           wait "$pid"
-          code=$?
-          set -e
+          exit $?
+
+      - if: always()
+        env:
+          LOG_KEY: ${{ secrets.LOG_KEY }}
+        run: |
+          [ -n "$log" ] && [ -f "$log" ] || exit 0
           openssl enc -aes-256-cbc -pbkdf2 -salt -pass env:LOG_KEY -in "$log" -out "${log%.log}"
           rm "$log"
           git config user.name "piggecutlet"
@@ -82,4 +80,3 @@ jobs:
             git pull --rebase && git push && break
             sleep $((RANDOM % 20 + 5))
           done
-          exit $code

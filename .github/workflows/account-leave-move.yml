@@ -43,8 +43,8 @@ jobs:
             /api/
             /scripts/core/
             /savedata/
-            /scripts/ci/leave_random_move775.mjs
-            /scripts/ci/retreat_city775.mjs
+            /scripts/ci/leave_random_move.mjs
+            /scripts/ci/retreat_city.mjs
 
       - uses: actions/setup-node@v7
         with:
@@ -65,7 +65,7 @@ jobs:
           target=$(jq -r '.inputs.target // ""' "$GITHUB_EVENT_PATH")
           [[ -z "$target" || "$target" =~ ^[0-9]+,[0-9]+$ ]] || exit 1
           mkdir -p logs
-          log="logs/$(TZ=Asia/Tokyo date +%Y/%m/%d/%H%M%S)_leave-move_${GITHUB_RUN_ID}.log"
+          log="logs/$(TZ=Asia/Tokyo date +%Y/%m/%d/%H%M%S)_account-leave-move_${GITHUB_RUN_ID}.log"
           mkdir -p "$(dirname "$log")"
           set +e
           (
@@ -73,11 +73,11 @@ jobs:
             git config user.name "piggecutlet"
             git config user.email "234113501+piggecutlet@users.noreply.github.com"
             if [ -n "$target" ]; then
-              node scripts/ci/retreat_city775.mjs "$names" "$target"
+              node scripts/ci/retreat_city.mjs "$names" "$target"
             fi
             rest="$names"
             for i in 1 2 3 4 5 6 7 8 9 10; do
-              out=$(node scripts/ci/leave_random_move775.mjs "$rest" --state="$STATE")
+              out=$(node scripts/ci/leave_random_move.mjs "$rest" --state="$STATE")
               code=$?
               echo "$out"
               rest=$(echo "$out" | grep -E "行軍中|E000000" | cut -d" " -f1 | sort -u | paste -sd,)

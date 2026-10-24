@@ -1,15 +1,13 @@
 on:
   workflow_dispatch:
     inputs:
-      from:
-        description: 今の盟主の表示名
-        required: true
-      to:
-        description: 新しい盟主の表示名
-        required: true
+      state:
+        description: 州
+        default: "775"
 
 permissions:
   contents: write
+  actions: write
 
 jobs:
   run:
@@ -36,32 +34,44 @@ jobs:
             /api/
             /scripts/core/
             /savedata/
-            /scripts/ci/leader_trans775.mjs
 
       - uses: actions/setup-node@v7
         with:
           node-version: "24"
 
-      - env:
+      - timeout-minutes: 55
+        env:
+          GH_TOKEN: ${{ secrets.DISPATCH_TOKEN }}
           LOG_KEY: ${{ secrets.LOG_KEY }}
+          STATE: ${{ inputs.state || '775' }}
         run: |
-          from=$(jq -r .inputs.from "$GITHUB_EVENT_PATH")
-          to=$(jq -r .inputs.to "$GITHUB_EVENT_PATH")
-          case "$from$to" in
-            "" | *[!A-Za-z0-9]*) exit 1 ;;
+          case "$STATE" in
+            *[!0-9]*) exit 1 ;;
           esac
           mkdir -p logs
-          log="logs/$(TZ=Asia/Tokyo date +%Y/%m/%d/%H%M%S)_leader-trans_${GITHUB_RUN_ID}.log"
+          log="logs/$(TZ=Asia/Tokyo date +%Y/%m/%d/%H%M%S)_schedule-manual-daily_${GITHUB_RUN_ID}.log"
           mkdir -p "$(dirname "$log")"
+          echo "LOG=$log" >> "$GITHUB_ENV"
           set +e
           (
+            set -e
             cd src
-            git config user.name "piggecutlet"
-            git config user.email "234113501+piggecutlet@users.noreply.github.com"
-            node scripts/ci/leader_trans775.mjs "$from" "$to"
-            code=$?
-            node -e "import('./scripts/core/_ci.mjs').then(({pushAccounts})=>pushAccounts('chore: CI で盟主を譲り、accounts.json を更新する'))"
-            exit $code
+            hour=$(TZ=JST-9 date +%H)
+            if [ "$hour" -lt 12 ]; then slot=09; else slot=21; fi
+            names=$(node -e "import('./scripts/core/_state.mjs').then(({stateOf})=>{console.log(stateOf(process.argv[1]).manual.join(','))})" "$STATE")
+            node scripts/core/train_army.mjs "$names"
+            node scripts/core/heal.mjs "$names"
+            node scripts/core/build_trap.mjs "$names"
+            node scripts/core/use_skill.mjs "$names" 240038 690006
+            if [ "$(date -u +%H)" -lt 6 ]; then
+              node scripts/core/use_skill.mjs "$names"
+              node scripts/core/use_skill.mjs "$names" 240046 690013
+            fi
+            node scripts/core/science.mjs "$names" || true
+            node scripts/core/upgrade_tent.mjs "$names" --shelter
+            node scripts/core/city_def.mjs "$names"
+            node scripts/core/mail_reward.mjs "$names" || true
+            if [ "$slot" = 21 ]; then node scripts/core/start_setup.mjs --state="$STATE" || true; fi
           ) > "$log" 2>&1 &
           pid=$!
           n=0
@@ -74,10 +84,14 @@ jobs:
             fi
           done
           wait "$pid"
-          code=$?
-          set -e
-          openssl enc -aes-256-cbc -pbkdf2 -salt -pass env:LOG_KEY -in "$log" -out "${log%.log}"
-          rm "$log"
+          echo "CODE=$?" >> "$GITHUB_ENV"
+
+      - if: always() && env.LOG != ''
+        env:
+          LOG_KEY: ${{ secrets.LOG_KEY }}
+        run: |
+          openssl enc -aes-256-cbc -pbkdf2 -salt -pass env:LOG_KEY -in "$LOG" -out "${LOG%.log}"
+          rm "$LOG"
           git config user.name "piggecutlet"
           git config user.email "234113501+piggecutlet@users.noreply.github.com"
           git add logs
@@ -86,4 +100,4 @@ jobs:
             git pull --rebase && git push && break
             sleep $((RANDOM % 20 + 5))
           done
-          exit $code
+          exit "${CODE:-1}"

@@ -44,7 +44,7 @@ jobs:
           case "$name" in
             "" | *[!A-Za-z0-9]*) exit 1 ;;
           esac
-          log="logs/$(TZ=Asia/Tokyo date +%Y/%m/%d/%H%M%S)_al-gift-list_${GITHUB_RUN_ID}.log"
+          log="logs/$(TZ=Asia/Tokyo date +%Y/%m/%d/%H%M%S)_alliance-gift-list_${GITHUB_RUN_ID}.log"
           mkdir -p "$(dirname "$log")"
           echo "log=$log" >> "$GITHUB_ENV"
           set +e

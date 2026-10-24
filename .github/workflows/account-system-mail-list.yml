@@ -1,12 +1,8 @@
 on:
   workflow_dispatch:
     inputs:
-      id:
-        required: false
-        default: "259000"
-      leader:
-        description: 研究を始める表示名（その人の同盟で始める）
-        default: Empire04c3a775
+      name:
+        required: true
 
 permissions:
   contents: write
@@ -31,12 +27,10 @@ jobs:
           repository: ${{ secrets.SOURCE_REPO }}
           token: ${{ secrets.SOURCE_TOKEN }}
           path: src
-          sparse-checkout-cone-mode: false
           sparse-checkout: |
-            /api/
-            /scripts/core/
-            /savedata/
-            /scripts/ci/research_259000.mjs
+            api
+            scripts/core
+            savedata
 
       - uses: actions/setup-node@v7
         with:
@@ -44,22 +38,19 @@ jobs:
 
       - env:
           LOG_KEY: ${{ secrets.LOG_KEY }}
-          LEADER: ${{ inputs.leader || 'Empire04c3a775' }}
         run: |
-          id=$(jq -r '.inputs.id // "259000"' "$GITHUB_EVENT_PATH")
-          case "$id" in
-            "" | *[!0-9]*) exit 1 ;;
-          esac
-          case "$LEADER" in
-            *[!A-Za-z0-9]*) exit 1 ;;
-          esac
           mkdir -p logs
-          log="logs/$(TZ=Asia/Tokyo date +%Y/%m/%d/%H%M%S)_research_${GITHUB_RUN_ID}.log"
+          name=$(jq -r .inputs.name "$GITHUB_EVENT_PATH")
+          case "$name" in
+            "" | *[!A-Za-z0-9]*) exit 1 ;;
+          esac
+          log="logs/$(TZ=Asia/Tokyo date +%Y/%m/%d/%H%M%S)_account-system-mail-list_${GITHUB_RUN_ID}.log"
           mkdir -p "$(dirname "$log")"
+          echo "log=$log" >> "$GITHUB_ENV"
           set +e
           (
             cd src
-            node scripts/ci/research_259000.mjs "$id" --leader="$LEADER"
+            node scripts/core/mail_list.mjs "$name"
           ) > "$log" 2>&1 &
           pid=$!
           n=0
@@ -72,8 +63,13 @@ jobs:
             fi
           done
           wait "$pid"
-          code=$?
-          set -e
+          exit $?
+
+      - if: always()
+        env:
+          LOG_KEY: ${{ secrets.LOG_KEY }}
+        run: |
+          [ -n "$log" ] && [ -f "$log" ] || exit 0
           openssl enc -aes-256-cbc -pbkdf2 -salt -pass env:LOG_KEY -in "$log" -out "${log%.log}"
           rm "$log"
           git config user.name "piggecutlet"
@@ -84,4 +80,3 @@ jobs:
             git pull --rebase && git push && break
             sleep $((RANDOM % 20 + 5))
           done
-          exit $code

@@ -1,8 +1,12 @@
 on:
   workflow_dispatch:
     inputs:
-      name:
+      names:
         required: true
+
+concurrency:
+  group: pray-gold
+  cancel-in-progress: false
 
 permissions:
   contents: write
@@ -10,6 +14,7 @@ permissions:
 jobs:
   run:
     runs-on: ubuntu-latest
+    timeout-minutes: 60
     steps:
       - env:
           SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
@@ -39,19 +44,15 @@ jobs:
       - env:
           LOG_KEY: ${{ secrets.LOG_KEY }}
         run: |
-          mkdir -p logs
-          name=$(jq -r .inputs.name "$GITHUB_EVENT_PATH")
-          case "$name" in
-            "" | *[!A-Za-z0-9]*) exit 1 ;;
+          names=$(jq -r .inputs.names "$GITHUB_EVENT_PATH")
+          case "$names" in
+            "" | *[!A-Za-z0-9,]*) exit 1 ;;
           esac
-          log="logs/$(TZ=Asia/Tokyo date +%Y/%m/%d/%H%M%S)_mail-update_${GITHUB_RUN_ID}.log"
+          mkdir -p logs
+          log="logs/$(TZ=Asia/Tokyo date +%Y/%m/%d/%H%M%S)_account-supply-diamond_${GITHUB_RUN_ID}.log"
           mkdir -p "$(dirname "$log")"
-          echo "log=$log" >> "$GITHUB_ENV"
           set +e
-          (
-            cd src
-            node scripts/core/mail_update.mjs "$name"
-          ) > "$log" 2>&1 &
+          (cd src && node scripts/core/pray_gold.mjs "$names") > "$log" 2>&1 &
           pid=$!
           n=0
           while kill -0 "$pid" 2>/dev/null; do
@@ -63,20 +64,14 @@ jobs:
             fi
           done
           wait "$pid"
-          exit $?
-
-      - if: always()
-        env:
-          LOG_KEY: ${{ secrets.LOG_KEY }}
-        run: |
-          [ -n "$log" ] && [ -f "$log" ] || exit 0
+          code=$?
+          set -e
           openssl enc -aes-256-cbc -pbkdf2 -salt -pass env:LOG_KEY -in "$log" -out "${log%.log}"
           rm "$log"
           git config user.name "piggecutlet"
           git config user.email "234113501+piggecutlet@users.noreply.github.com"
           git add logs
           git commit -m "logs"
-          for i in 1 2 3 4 5; do
-            git pull --rebase && git push && break
-            sleep $((RANDOM % 20 + 5))
-          done
+          git pull --rebase
+          git push
+          exit $code

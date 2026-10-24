@@ -1,12 +1,12 @@
 on:
   workflow_dispatch:
     inputs:
-      names:
-        required: true
-
-concurrency:
-  group: pray-gold
-  cancel-in-progress: false
+      id:
+        required: false
+        default: "259000"
+      leader:
+        description: 研究を始める表示名（その人の同盟で始める）
+        default: Empire04c3a775
 
 permissions:
   contents: write
@@ -14,7 +14,6 @@ permissions:
 jobs:
   run:
     runs-on: ubuntu-latest
-    timeout-minutes: 60
     steps:
       - env:
           SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
@@ -32,10 +31,12 @@ jobs:
           repository: ${{ secrets.SOURCE_REPO }}
           token: ${{ secrets.SOURCE_TOKEN }}
           path: src
+          sparse-checkout-cone-mode: false
           sparse-checkout: |
-            api
-            scripts/core
-            savedata
+            /api/
+            /scripts/core/
+            /savedata/
+            /scripts/ci/science_research.mjs
 
       - uses: actions/setup-node@v7
         with:
@@ -43,16 +44,23 @@ jobs:
 
       - env:
           LOG_KEY: ${{ secrets.LOG_KEY }}
+          LEADER: ${{ inputs.leader || 'Empire04c3a775' }}
         run: |
-          names=$(jq -r .inputs.names "$GITHUB_EVENT_PATH")
-          case "$names" in
-            "" | *[!A-Za-z0-9,]*) exit 1 ;;
+          id=$(jq -r '.inputs.id // "259000"' "$GITHUB_EVENT_PATH")
+          case "$id" in
+            "" | *[!0-9]*) exit 1 ;;
+          esac
+          case "$LEADER" in
+            *[!A-Za-z0-9]*) exit 1 ;;
           esac
           mkdir -p logs
-          log="logs/$(TZ=Asia/Tokyo date +%Y/%m/%d/%H%M%S)_pray-gold_${GITHUB_RUN_ID}.log"
+          log="logs/$(TZ=Asia/Tokyo date +%Y/%m/%d/%H%M%S)_alliance-science-research_${GITHUB_RUN_ID}.log"
           mkdir -p "$(dirname "$log")"
           set +e
-          (cd src && node scripts/core/pray_gold.mjs "$names") > "$log" 2>&1 &
+          (
+            cd src
+            node scripts/ci/science_research.mjs "$id" --leader="$LEADER"
+          ) > "$log" 2>&1 &
           pid=$!
           n=0
           while kill -0 "$pid" 2>/dev/null; do
@@ -72,6 +80,8 @@ jobs:
           git config user.email "234113501+piggecutlet@users.noreply.github.com"
           git add logs
           git commit -m "logs"
-          git pull --rebase
-          git push
+          for i in 1 2 3 4 5; do
+            git pull --rebase && git push && break
+            sleep $((RANDOM % 20 + 5))
+          done
           exit $code

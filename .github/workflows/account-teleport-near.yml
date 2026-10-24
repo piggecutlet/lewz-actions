@@ -68,7 +68,7 @@ jobs:
             opt="$opt --dry-run"
           fi
           mkdir -p logs
-          log="logs/$(TZ=Asia/Tokyo date +%Y/%m/%d/%H%M%S)_teleport-near_${GITHUB_RUN_ID}.log"
+          log="logs/$(TZ=Asia/Tokyo date +%Y/%m/%d/%H%M%S)_account-teleport-near_${GITHUB_RUN_ID}.log"
           mkdir -p "$(dirname "$log")"
           set +e
           (

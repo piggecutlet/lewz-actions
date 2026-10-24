@@ -46,7 +46,7 @@ jobs:
             "" | *[!A-Za-z0-9]*) exit 1 ;;
           esac
           mkdir -p logs
-          log="logs/$(TZ=Asia/Tokyo date +%Y/%m/%d/%H%M%S)_antimissile-build_${GITHUB_RUN_ID}.log"
+          log="logs/$(TZ=Asia/Tokyo date +%Y/%m/%d/%H%M%S)_account-antimissile-build_${GITHUB_RUN_ID}.log"
           mkdir -p "$(dirname "$log")"
           set +e
           (cd src && node scripts/ci/antimissile_build.mjs "$names") > "$log" 2>&1 &

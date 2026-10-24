@@ -2,12 +2,12 @@ on:
   workflow_dispatch:
     inputs:
       state:
-        description: 州
-        default: "775"
+        required: false
+      approver:
+        required: false
 
 permissions:
   contents: write
-  actions: write
 
 jobs:
   run:
@@ -24,26 +24,38 @@ jobs:
 
       - uses: actions/checkout@v7
 
+      - uses: actions/checkout@v7
+        with:
+          repository: ${{ secrets.SOURCE_REPO }}
+          token: ${{ secrets.SOURCE_TOKEN }}
+          path: src
+          sparse-checkout: |
+            api
+            scripts/core
+            savedata
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: "24"
+
       - env:
-          GH_TOKEN: ${{ secrets.DISPATCH_TOKEN }}
           LOG_KEY: ${{ secrets.LOG_KEY }}
-          STATE: ${{ inputs.state || '775' }}
         run: |
-          case "$STATE" in
+          state=$(jq -r '.inputs.state // ""' "$GITHUB_EVENT_PATH")
+          case "$state" in
             *[!0-9]*) exit 1 ;;
           esac
+          approver=$(jq -r '.inputs.approver // ""' "$GITHUB_EVENT_PATH")
+          case "$approver" in
+            *[!A-Za-z0-9]*) exit 1 ;;
+          esac
           mkdir -p logs
-          log="logs/$(TZ=Asia/Tokyo date +%Y/%m/%d/%H%M%S)_775_${GITHUB_RUN_ID}.log"
+          log="logs/$(TZ=Asia/Tokyo date +%Y/%m/%d/%H%M%S)_vip-alliance-rank_${GITHUB_RUN_ID}.log"
           mkdir -p "$(dirname "$log")"
           set +e
           (
-            set -e
-            gh workflow run vip.yml -R "$GITHUB_REPOSITORY" -f state="$STATE" || true
-            gh workflow run vip-tms.yml -R "$GITHUB_REPOSITORY" -f state="$STATE" || true
-            gh workflow run schedule-cmp.yml -R "$GITHUB_REPOSITORY" -f state="$STATE"
-            if [ "$(TZ=Asia/Tokyo date +%H)" = 09 ]; then
-              gh workflow run team-zombie.yml -R "$GITHUB_REPOSITORY" -f state="$STATE"
-            fi
+            cd src
+            node scripts/core/vip_alliance_rank.mjs ${state:+"--state=$state"} ${approver:+"--approver=$approver"}
           ) > "$log" 2>&1 &
           pid=$!
           n=0

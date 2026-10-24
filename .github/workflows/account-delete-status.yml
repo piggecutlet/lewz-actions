@@ -1,14 +1,9 @@
 on:
   workflow_dispatch:
     inputs:
-      login:
-        description: ログインする表示名（この人の同盟のメンバーを読む）
-        required: true
       names:
-        required: false
-      write:
-        type: boolean
-        default: false
+        description: 表示名（カンマ区切り）
+        required: true
 
 permissions:
   contents: write
@@ -33,12 +28,10 @@ jobs:
           repository: ${{ secrets.SOURCE_REPO }}
           token: ${{ secrets.SOURCE_TOKEN }}
           path: src
-          sparse-checkout-cone-mode: false
           sparse-checkout: |
-            /api/
-            /scripts/core/
-            /savedata/
-            /scripts/ci/xy_from_rank775.mjs
+            api
+            scripts/core
+            savedata
 
       - uses: actions/setup-node@v7
         with:
@@ -47,32 +40,17 @@ jobs:
       - env:
           LOG_KEY: ${{ secrets.LOG_KEY }}
         run: |
-          login=$(jq -r .inputs.login "$GITHUB_EVENT_PATH")
-          names=$(jq -r '.inputs.names // ""' "$GITHUB_EVENT_PATH")
-          write=$(jq -r .inputs.write "$GITHUB_EVENT_PATH")
-          case "$login" in
-            "" | *[!A-Za-z0-9]*) exit 1 ;;
-          esac
+          names=$(jq -r .inputs.names "$GITHUB_EVENT_PATH")
           case "$names" in
-            *[!A-Za-z0-9,]*) exit 1 ;;
+            "" | *[!A-Za-z0-9,]*) exit 1 ;;
           esac
           mkdir -p logs
-          log="logs/$(TZ=Asia/Tokyo date +%Y/%m/%d/%H%M%S)_xy-rank_${GITHUB_RUN_ID}.log"
+          log="logs/$(TZ=Asia/Tokyo date +%Y/%m/%d/%H%M%S)_account-delete-status_${GITHUB_RUN_ID}.log"
           mkdir -p "$(dirname "$log")"
           set +e
           (
             cd src
-            git config user.name "piggecutlet"
-            git config user.email "234113501+piggecutlet@users.noreply.github.com"
-            if [ "$write" = "true" ]; then
-              node scripts/ci/xy_from_rank775.mjs "$login" "$names" --write
-              code=$?
-              node -e "import('./scripts/core/_ci.mjs').then(({pushAccounts})=>pushAccounts('chore: CI で同盟の座標とランクを accounts.json に書く'))"
-            else
-              node scripts/ci/xy_from_rank775.mjs "$login" "$names"
-              code=$?
-            fi
-            exit $code
+            node scripts/core/delete_state.mjs "$names"
           ) > "$log" 2>&1 &
           pid=$!
           n=0

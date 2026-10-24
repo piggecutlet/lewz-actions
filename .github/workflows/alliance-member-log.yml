@@ -3,14 +3,6 @@ on:
     inputs:
       name:
         required: true
-      own:
-        description: 自分の同盟の略称（alliances.json に id のある行が無い州だけ必須。775 は空でよい）
-        required: false
-        default: ""
-      mine:
-        description: 上位に入れない、id の無い自分の同盟の略称をカンマ区切り（空なら 775 は CNL。id のある自分の同盟はいつも除く）
-        required: false
-        default: ""
 
 permissions:
   contents: write
@@ -40,7 +32,7 @@ jobs:
             /api/
             /scripts/core/
             /savedata/
-            /scripts/ci/alliance_rank_save.mjs
+            /scripts/ci/al_event.mjs
 
       - uses: actions/setup-node@v7
         with:
@@ -48,38 +40,19 @@ jobs:
 
       - env:
           LOG_KEY: ${{ secrets.LOG_KEY }}
-          OWN: ${{ inputs.own }}
-          MINE: ${{ inputs.mine }}
         run: |
           name=$(jq -r .inputs.name "$GITHUB_EVENT_PATH")
           case "$name" in
             "" | *[!A-Za-z0-9]*) exit 1 ;;
           esac
-          case "$OWN" in
-            *[!A-Za-z0-9]*) exit 1 ;;
-          esac
-          case "$MINE" in
-            *[!A-Za-z0-9,]*) exit 1 ;;
-          esac
           mkdir -p logs
-          log="logs/$(TZ=Asia/Tokyo date +%Y/%m/%d/%H%M%S)_alliance-rank_${GITHUB_RUN_ID}.log"
+          log="logs/$(TZ=Asia/Tokyo date +%Y/%m/%d/%H%M%S)_alliance-member-log_${GITHUB_RUN_ID}.log"
           mkdir -p "$(dirname "$log")"
           set +e
           (
             cd src
-            git config user.name "piggecutlet"
-            git config user.email "234113501+piggecutlet@users.noreply.github.com"
-            code=0
-            node scripts/ci/alliance_rank_save.mjs "$name" ${OWN:+"--own=$OWN"} ${MINE:+"--mine=$MINE"} || code=1
-            git add savedata/alliances.json
-            if ! git diff --cached --quiet; then
-              git commit -m "chore: CI で同盟の順位（alliances.json）を更新する"
-              for i in 1 2 3 4 5; do
-                git pull --rebase && git push && break
-                sleep $((RANDOM % 20 + 5))
-              done
-            fi
-            exit $code
+            node scripts/ci/al_event.mjs "$name"
+            exit $?
           ) > "$log" 2>&1 &
           pid=$!
           n=0

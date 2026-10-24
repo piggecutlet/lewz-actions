@@ -13,11 +13,11 @@ on:
         required: false
         default: ""
       captain:
-        description: vip-tms-new.yml へ渡す小隊長（空なら 775 の Empire064d9775。ほかの州は必須）
+        description: vip-alliance-gift-cycle.yml へ渡す小隊長（空なら 775 の Empire064d9775。ほかの州は必須）
         required: false
         default: ""
       alliance:
-        description: vip-tms-new.yml へ渡す自分の同盟の ID（空なら 775 の 775_002。ほかの州は必須）
+        description: vip-alliance-gift-cycle.yml へ渡す自分の同盟の ID（空なら 775 の 775_002。ほかの州は必須）
         required: false
         default: ""
 
@@ -26,7 +26,7 @@ permissions:
   actions: write
 
 concurrency:
-  group: vip-tms
+  group: vip-alliance-daily
   cancel-in-progress: false
 
 jobs:
@@ -56,9 +56,9 @@ jobs:
             /savedata/
             /decompile/device/files/ja/ja_ilocalize_base.json
             /decompile/device/files/WarZDoc/config/database.activity.xml
-            /scripts/ci/gold_shield775.mjs
+            /scripts/ci/diamond_shield_read.mjs
             /scripts/ci/leave_alliance.mjs
-            /.SKIP_DONATION_TMS
+            /.SKIP_DONATION_VIP_ALLIANCE
 
       - uses: actions/setup-node@v7
         with:
@@ -89,16 +89,16 @@ jobs:
           fi
           morning=$(jq -r '.inputs.morning // "false"' "$GITHUB_EVENT_PATH")
           mkdir -p logs
-          log="logs/$(TZ=Asia/Tokyo date +%Y/%m/%d/%H%M%S)_vip-tms_${GITHUB_RUN_ID}.log"
+          log="logs/$(TZ=Asia/Tokyo date +%Y/%m/%d/%H%M%S)_vip-alliance-daily_${GITHUB_RUN_ID}.log"
           mkdir -p "$(dirname "$log")"
           set +e
           (
             cd src
             restart=""
             for i in $(seq 1 240); do
-              busy=$(gh run list -R "$GITHUB_REPOSITORY" -w vip-tms-new.yml -L 5 --json status -q '[.[] | select(.status != "completed")] | length')
+              busy=$(gh run list -R "$GITHUB_REPOSITORY" -w vip-alliance-gift-cycle.yml -L 5 --json status -q '[.[] | select(.status != "completed")] | length')
               if [ "$busy" = "0" ]; then break; fi
-              if [ "$i" = 1 ]; then echo "vip-tms-new.yml の周が終わるまで待つ"; fi
+              if [ "$i" = 1 ]; then echo "vip-alliance-gift-cycle.yml の周が終わるまで待つ"; fi
               restart=1
               sleep 10
             done
@@ -111,8 +111,8 @@ jobs:
               node scripts/core/train_army.mjs "$names" --zombie-only || true
               node scripts/core/vip_boost.mjs "$names" --train-zombie || true
               node scripts/core/train_army.mjs "$names" --zombie-only || true
-              if [ "$(tr -d '\r\n ' < .SKIP_DONATION_TMS 2>/dev/null)" = "1" ]; then
-                echo ".SKIP_DONATION_TMS が 1 なので 775_001 へ入って贈るのを飛ばす"
+              if [ "$(tr -d '\r\n ' < .SKIP_DONATION_VIP_ALLIANCE 2>/dev/null)" = "1" ]; then
+                echo ".SKIP_DONATION_VIP_ALLIANCE が 1 なので 775_001 へ入って贈るのを飛ばす"
               else
                 for id in $(node -e "import('./scripts/core/_readme.mjs').then(({readAccounts})=>{console.log([...new Set((readAccounts()[process.argv[1]]||[]).map((a)=>a.home).filter(Boolean))].sort().join(' '))})" "$STATE"); do
                   unlocked=$(node -e "import('./scripts/core/_readme.mjs').then(({readAccounts})=>{console.log((readAccounts()[process.argv[1]]||[]).filter((a)=>a.home===process.argv[2]&&(a.note||'').includes('VIP')&&a.vipStore===1).map((a)=>a.name).join(','))})" "$STATE" "$id")
@@ -126,7 +126,7 @@ jobs:
                     node scripts/ci/leave_alliance.mjs "$part" || true
                     node scripts/core/join_alliance.mjs "$part" --leader="$approver" || true
                   done
-                  node scripts/core/tms_rank.mjs --state="$STATE" --alliance="$id" || true
+                  node scripts/core/vip_alliance_rank.mjs --state="$STATE" --alliance="$id" || true
                 done
               fi
               restart=1
@@ -135,14 +135,14 @@ jobs:
             fi
             git config user.name "piggecutlet"
             git config user.email "234113501+piggecutlet@users.noreply.github.com"
-            node scripts/ci/gold_shield775.mjs "$names" --state="$STATE" || true
+            node scripts/ci/diamond_shield_read.mjs "$names" --state="$STATE" || true
             node -e "import('./scripts/core/_ci.mjs').then(({pushAccounts})=>pushAccounts('chore: CI の vip-tms でダイヤを読み、accounts.json を更新する'))"
             if [ -n "$restart" ]; then
-              echo "vip-tms-new.yml を起動する"
-              gh workflow run vip-tms-new.yml -R "$GITHUB_REPOSITORY" "${roles[@]}" || true
+              echo "vip-alliance-gift-cycle.yml を起動する"
+              gh workflow run vip-alliance-gift-cycle.yml -R "$GITHUB_REPOSITORY" "${roles[@]}" || true
               if [ "$STATE" = 775 ]; then
                 for id in $(node -e "import('./scripts/core/_readme.mjs').then(({readAccounts})=>{console.log([...new Set((readAccounts()[process.argv[1]]||[]).map((a)=>a.home).filter(Boolean))].sort().slice(1).join(' '))})" "$STATE"); do
-                  gh workflow run vip-tms-new.yml -R "$GITHUB_REPOSITORY" -f alliance="$id" || true
+                  gh workflow run vip-alliance-gift-cycle.yml -R "$GITHUB_REPOSITORY" -f alliance="$id" || true
                 done
               fi
             fi

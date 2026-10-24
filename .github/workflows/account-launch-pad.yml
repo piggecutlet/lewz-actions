@@ -61,7 +61,7 @@ jobs:
           target=$(jq -r '.inputs.target // "600,600"' "$GITHUB_EVENT_PATH")
           [[ "$target" =~ ^[0-9]+,[0-9]+$ ]] || exit 1
           mkdir -p logs
-          log="logs/$(TZ=Asia/Tokyo date +%Y/%m/%d/%H%M%S)_launch-pad_${GITHUB_RUN_ID}.log"
+          log="logs/$(TZ=Asia/Tokyo date +%Y/%m/%d/%H%M%S)_account-launch-pad_${GITHUB_RUN_ID}.log"
           mkdir -p "$(dirname "$log")"
           set +e
           (

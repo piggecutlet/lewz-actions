@@ -45,7 +45,7 @@ jobs:
             /api/
             /scripts/core/
             /savedata/
-            /scripts/ci/leave_random_move775.mjs
+            /scripts/ci/leave_random_move.mjs
 
       - uses: actions/setup-node@v7
         with:
@@ -65,7 +65,7 @@ jobs:
             *[!A-Za-z0-9,\ ]*) exit 1 ;;
           esac
           mkdir -p logs
-          log="logs/$(TZ=Asia/Tokyo date +%Y/%m/%d/%H%M%S)_delete_${GITHUB_RUN_ID}.log"
+          log="logs/$(TZ=Asia/Tokyo date +%Y/%m/%d/%H%M%S)_account-delete_${GITHUB_RUN_ID}.log"
           mkdir -p "$(dirname "$log")"
           set +e
           (
@@ -74,7 +74,7 @@ jobs:
             git config user.email "234113501+piggecutlet@users.noreply.github.com"
             if [ -n "$names" ]; then
               if [ "$MOVE" != false ]; then
-                node scripts/ci/leave_random_move775.mjs "$names" --state="$STATE" || exit 1
+                node scripts/ci/leave_random_move.mjs "$names" --state="$STATE" || exit 1
               fi
               node scripts/core/delete_account_ci.mjs "$names"
               code=$?

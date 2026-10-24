@@ -1,8 +1,12 @@
 on:
   workflow_dispatch:
     inputs:
-      account:
+      names:
         required: true
+      args:
+        description: science.mjs へ表示名の後ろに渡す引数（例 none --only=259000 --gold-limit --gold-slot）
+        required: false
+        default: none
 
 permissions:
   contents: write
@@ -27,12 +31,10 @@ jobs:
           repository: ${{ secrets.SOURCE_REPO }}
           token: ${{ secrets.SOURCE_TOKEN }}
           path: src
-          sparse-checkout-cone-mode: false
           sparse-checkout: |
-            /api/
-            /scripts/core/
-            /savedata/
-            /scripts/ci/gather775.mjs
+            api
+            scripts/core
+            savedata
 
       - uses: actions/setup-node@v7
         with:
@@ -41,15 +43,22 @@ jobs:
       - env:
           LOG_KEY: ${{ secrets.LOG_KEY }}
         run: |
-          account=$(jq -r .inputs.account "$GITHUB_EVENT_PATH")
-          case "$account" in
-            "" | *[!A-Za-z0-9]*) exit 1 ;;
+          names=$(jq -r .inputs.names "$GITHUB_EVENT_PATH")
+          args=$(jq -r '.inputs.args // ""' "$GITHUB_EVENT_PATH")
+          case "$names" in
+            "" | *[!A-Za-z0-9,]*) exit 1 ;;
+          esac
+          case "$args" in
+            *[!A-Za-z0-9=,\ -]*) exit 1 ;;
           esac
           mkdir -p logs
-          log="logs/$(TZ=Asia/Tokyo date +%Y/%m/%d/%H%M%S)_gather_${GITHUB_RUN_ID}.log"
+          log="logs/$(TZ=Asia/Tokyo date +%Y/%m/%d/%H%M%S)_alliance-science-donate_${GITHUB_RUN_ID}.log"
           mkdir -p "$(dirname "$log")"
           set +e
-          (cd src && node scripts/ci/gather775.mjs "$account") > "$log" 2>&1 &
+          (
+            cd src
+            node scripts/core/science.mjs "$names" $args
+          ) > "$log" 2>&1 &
           pid=$!
           n=0
           while kill -0 "$pid" 2>/dev/null; do

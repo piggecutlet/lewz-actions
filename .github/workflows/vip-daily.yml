@@ -54,7 +54,7 @@ jobs:
             /savedata/
             /decompile/device/files/ja/ja_ilocalize_base.json
             /decompile/device/files/WarZDoc/config/database.activity.xml
-            /scripts/ci/gold_shield775.mjs
+            /scripts/ci/diamond_shield_read.mjs
 
       - uses: actions/setup-node@v7
         with:
@@ -87,7 +87,7 @@ jobs:
             *[!A-Za-z0-9,]*) exit 1 ;;
           esac
           mkdir -p logs
-          log="logs/$(TZ=Asia/Tokyo date +%Y/%m/%d/%H%M%S)_vip_${GITHUB_RUN_ID}.log"
+          log="logs/$(TZ=Asia/Tokyo date +%Y/%m/%d/%H%M%S)_vip-daily_${GITHUB_RUN_ID}.log"
           mkdir -p "$(dirname "$log")"
           set +e
           (
@@ -114,7 +114,7 @@ jobs:
             fi
             git config user.name "piggecutlet"
             git config user.email "234113501+piggecutlet@users.noreply.github.com"
-            node scripts/ci/gold_shield775.mjs "$names" --state="$STATE" || true
+            node scripts/ci/diamond_shield_read.mjs "$names" --state="$STATE" || true
             node -e "import('./scripts/core/_ci.mjs').then(({pushAccounts})=>pushAccounts('chore: CI の vip でダイヤを読み、accounts.json を更新する'))"
           ) > "$log" 2>&1 &
           pid=$!

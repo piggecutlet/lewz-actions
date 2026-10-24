@@ -55,7 +55,7 @@ jobs:
             /scripts/core/
             /savedata/
             /decompile/obb/assets/WorldMap.tmx
-            /scripts/ci/leave_random_move775.mjs
+            /scripts/ci/leave_random_move.mjs
             /scripts/ci/leave_alliance.mjs
 
       - uses: actions/setup-node@v7
@@ -80,7 +80,7 @@ jobs:
           target=$(jq -r .inputs.target "$GITHUB_EVENT_PATH")
           [[ "$target" =~ ^[0-9]+,[0-9]+$ ]] || exit 1
           mkdir -p logs
-          log="logs/$(TZ=Asia/Tokyo date +%Y/%m/%d/%H%M%S)_attack_${GITHUB_RUN_ID}.log"
+          log="logs/$(TZ=Asia/Tokyo date +%Y/%m/%d/%H%M%S)_account-attack_${GITHUB_RUN_ID}.log"
           mkdir -p "$(dirname "$log")"
           end=$((SECONDS + 340 * 60))
           set +e
@@ -126,7 +126,7 @@ jobs:
                 });
               ' "$names"
               if [ "$DELETE_ACCOUNT" = "true" ]; then
-                node scripts/ci/leave_random_move775.mjs "$names" --state="$STATE" || code=1
+                node scripts/ci/leave_random_move.mjs "$names" --state="$STATE" || code=1
                 node scripts/core/delete_account_ci.mjs "$names" || code=1
               fi
             fi

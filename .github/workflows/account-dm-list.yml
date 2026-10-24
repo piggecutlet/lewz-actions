@@ -1,12 +1,8 @@
 on:
   workflow_dispatch:
     inputs:
-      names:
+      name:
         required: true
-      target:
-        description: DF の移転先と偵察先 x,y（空なら scripts/ci/ci_defaults.mjs の DF_TARGET）
-        required: false
-        default: ""
 
 permissions:
   contents: write
@@ -31,15 +27,10 @@ jobs:
           repository: ${{ secrets.SOURCE_REPO }}
           token: ${{ secrets.SOURCE_TOKEN }}
           path: src
-          sparse-checkout-cone-mode: false
           sparse-checkout: |
-            /api/
-            /scripts/core/
-            /savedata/
-            /scripts/ci/df_finish775.mjs
-            /scripts/ci/ci_defaults.mjs
-            /scripts/ci/scout775.mjs
-            /decompile/obb/assets/WorldMap.tmx
+            api
+            scripts/core
+            savedata
 
       - uses: actions/setup-node@v7
         with:
@@ -48,24 +39,18 @@ jobs:
       - env:
           LOG_KEY: ${{ secrets.LOG_KEY }}
         run: |
-          names=$(jq -r .inputs.names "$GITHUB_EVENT_PATH")
-          case "$names" in
-            "" | *[!A-Za-z0-9,]*) exit 1 ;;
-          esac
-          target=$(jq -r '.inputs.target // ""' "$GITHUB_EVENT_PATH")
-          [[ -z "$target" || "$target" =~ ^[0-9]+,[0-9]+$ ]] || exit 1
           mkdir -p logs
-          log="logs/$(TZ=Asia/Tokyo date +%Y/%m/%d/%H%M%S)_df-finish_${GITHUB_RUN_ID}.log"
+          name=$(jq -r .inputs.name "$GITHUB_EVENT_PATH")
+          case "$name" in
+            "" | *[!A-Za-z0-9]*) exit 1 ;;
+          esac
+          log="logs/$(TZ=Asia/Tokyo date +%Y/%m/%d/%H%M%S)_account-dm-list_${GITHUB_RUN_ID}.log"
           mkdir -p "$(dirname "$log")"
+          echo "log=$log" >> "$GITHUB_ENV"
           set +e
           (
             cd src
-            git config user.name "piggecutlet"
-            git config user.email "234113501+piggecutlet@users.noreply.github.com"
-            node scripts/ci/df_finish775.mjs "$names" $target
-            code=$?
-            node -e "import('./scripts/core/_ci.mjs').then(({pushAccounts})=>pushAccounts('chore: CI の DF の仕上げで accounts.json を更新する'))"
-            exit $code
+            node scripts/core/person_mails.mjs "$name"
           ) > "$log" 2>&1 &
           pid=$!
           n=0
@@ -78,8 +63,13 @@ jobs:
             fi
           done
           wait "$pid"
-          code=$?
-          set -e
+          exit $?
+
+      - if: always()
+        env:
+          LOG_KEY: ${{ secrets.LOG_KEY }}
+        run: |
+          [ -n "$log" ] && [ -f "$log" ] || exit 0
           openssl enc -aes-256-cbc -pbkdf2 -salt -pass env:LOG_KEY -in "$log" -out "${log%.log}"
           rm "$log"
           git config user.name "piggecutlet"
@@ -90,4 +80,3 @@ jobs:
             git pull --rebase && git push && break
             sleep $((RANDOM % 20 + 5))
           done
-          exit $code

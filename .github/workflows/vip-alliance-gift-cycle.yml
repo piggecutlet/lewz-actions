@@ -27,7 +27,7 @@ on:
         default: ""
 
 concurrency:
-  group: tms-${{ inputs.alliance || '775_002' }}
+  group: vip-alliance-gift-${{ inputs.alliance || '775_002' }}
   cancel-in-progress: false
 
 permissions:
@@ -87,7 +87,7 @@ jobs:
             *[!A-Za-z0-9_]*) exit 1 ;;
           esac
           mkdir -p logs
-          log="logs/$(TZ=Asia/Tokyo date +%Y/%m/%d/%H%M%S)_tms_${GITHUB_RUN_ID}.log"
+          log="logs/$(TZ=Asia/Tokyo date +%Y/%m/%d/%H%M%S)_vip-alliance-gift-cycle_${GITHUB_RUN_ID}.log"
           mkdir -p "$(dirname "$log")"
           echo "LOG=$log" >> "$GITHUB_ENV"
           set +e
@@ -95,7 +95,7 @@ jobs:
             cd src
             git config user.name "piggecutlet"
             git config user.email "234113501+piggecutlet@users.noreply.github.com"
-            node scripts/core/tms.mjs $COUNT $DRY_RUN $CHAINED --ci --state="$STATE" ${APPROVER:+"--approver=$APPROVER"} ${CAPTAIN:+"--captain=$CAPTAIN"} ${ALLIANCE:+"--alliance=$ALLIANCE"}
+            node scripts/core/vip_alliance_gift.mjs $COUNT $DRY_RUN $CHAINED --ci --state="$STATE" ${APPROVER:+"--approver=$APPROVER"} ${CAPTAIN:+"--captain=$CAPTAIN"} ${ALLIANCE:+"--alliance=$ALLIANCE"}
           ) > "$log" 2>&1 &
           pid=$!
           n=0

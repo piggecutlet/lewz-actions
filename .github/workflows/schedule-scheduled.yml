@@ -33,12 +33,12 @@ jobs:
             *[!0-9]*) exit 1 ;;
           esac
           mkdir -p logs
-          log="logs/$(TZ=Asia/Tokyo date +%Y/%m/%d/%H%M%S)_scheduled_${GITHUB_RUN_ID}.log"
+          log="logs/$(TZ=Asia/Tokyo date +%Y/%m/%d/%H%M%S)_schedule-scheduled_${GITHUB_RUN_ID}.log"
           mkdir -p "$(dirname "$log")"
           set +e
           (
             set -e
-            gh workflow run schedule-775.yml -R "$GITHUB_REPOSITORY" -f state="$STATE"
+            gh workflow run schedule-state.yml -R "$GITHUB_REPOSITORY" -f state="$STATE"
           ) > "$log" 2>&1 &
           pid=$!
           n=0

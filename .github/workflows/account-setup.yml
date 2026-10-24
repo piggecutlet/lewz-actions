@@ -147,7 +147,7 @@ jobs:
             *) exit 1 ;;
           esac
           mkdir -p logs
-          log="logs/$(TZ=Asia/Tokyo date +%Y/%m/%d/%H%M%S)_setup_${GITHUB_RUN_ID}.log"
+          log="logs/$(TZ=Asia/Tokyo date +%Y/%m/%d/%H%M%S)_account-setup_${GITHUB_RUN_ID}.log"
           mkdir -p "$(dirname "$log")"
           echo "LOG=$log" >> "$GITHUB_ENV"
           set +e

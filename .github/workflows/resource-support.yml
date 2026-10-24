@@ -52,7 +52,7 @@ jobs:
             /scripts/core/
             /savedata/
             /decompile/obb/assets/WorldMap.tmx
-            /scripts/ci/send_res_even775.mjs
+            /scripts/ci/resource_support.mjs
             /decompile/device/files/ja/ja_ilocalize_base.json
             /decompile/device/files/WarZDoc/config/database.activity.xml
 
@@ -96,11 +96,11 @@ jobs:
             git config user.email "234113501+piggecutlet@users.noreply.github.com"
             if [ "$DRY_RUN" = "true" ]; then
               if [ -n "$teleport" ]; then
-                center=$(node scripts/ci/send_res_even775.mjs "$names" --state="$STATE" --to="$to" --where | tail -n 1)
+                center=$(node scripts/ci/resource_support.mjs "$names" --state="$STATE" --to="$to" --where | tail -n 1)
                 [[ "$center" =~ ^[0-9]+,[0-9]+$ ]] || exit 1
                 node scripts/core/teleport_near.mjs "$center" "$teleport" --dry-run
               fi
-              node scripts/ci/send_res_even775.mjs "$names" --state="$STATE" $kinds --to="$to" --buy --dry
+              node scripts/ci/resource_support.mjs "$names" --state="$STATE" $kinds --to="$to" --buy --dry
               exit $?
             fi
             if [ "$STATE" = 775 ] && [ "$to" = "Empire061775" ]; then
@@ -108,13 +108,13 @@ jobs:
             fi
             code=0
             if [ -n "$teleport" ]; then
-              center=$(node scripts/ci/send_res_even775.mjs "$names" --state="$STATE" --to="$to" --where | tail -n 1)
+              center=$(node scripts/ci/resource_support.mjs "$names" --state="$STATE" --to="$to" --where | tail -n 1)
               [[ "$center" =~ ^[0-9]+,[0-9]+$ ]] || exit 1
               node scripts/core/teleport_near.mjs "$center" "$teleport" || code=1
             fi
             node -e "import('./scripts/core/_ci.mjs').then(({pushAccounts})=>pushAccounts('chore: CI の resource-support で accounts.json を更新する'))"
             [ $code -eq 0 ] || exit 1
-            node scripts/ci/send_res_even775.mjs "$names" --state="$STATE" $kinds --to="$to" --buy
+            node scripts/ci/resource_support.mjs "$names" --state="$STATE" $kinds --to="$to" --buy
           ) > "$log" 2>&1 &
           pid=$!
           n=0
