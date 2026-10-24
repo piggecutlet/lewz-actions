@@ -4,7 +4,7 @@ on:
       names:
         required: true
       target:
-        description: DF の移転先と偵察先 x,y（空なら ci.json の dfTarget）
+        description: DF の移転先と偵察先 x,y（空なら scripts/ci/ci_defaults.mjs の DF_TARGET）
         required: false
         default: ""
 
@@ -37,6 +37,7 @@ jobs:
             /scripts/core/
             /savedata/
             /scripts/ci/df_finish775.mjs
+            /scripts/ci/ci_defaults.mjs
             /scripts/ci/scout775.mjs
             /decompile/obb/assets/WorldMap.tmx
 

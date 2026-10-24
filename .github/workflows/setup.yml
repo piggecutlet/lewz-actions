@@ -31,7 +31,7 @@ on:
           - VIP
           - VIP_NEW_ALLIANCE
       target:
-        description: DF の移転先と偵察先 x,y（空なら ci.json の dfTarget、なしなら後回し）
+        description: DF の移転先と偵察先 x,y（空なら scripts/ci/ci_defaults.mjs の DF_TARGET、なしなら後回し）
         required: false
         default: ""
       sec:
@@ -98,6 +98,7 @@ jobs:
             /api/
             /scripts/core/
             /savedata/
+            /scripts/ci/ci_defaults.mjs
             /decompile/device/files/ja/ja_ilocalize_base.json
             /decompile/device/files/WarZDoc/config/database.system.xml
 
@@ -134,7 +135,7 @@ jobs:
           esac
           [[ -z "$TARGET" || "$TARGET" = なし || "$TARGET" =~ ^[0-9]+,[0-9]+$ ]] || exit 1
           GROW_ARMY_DEFAULT=""
-          [ "$GROW_ARMY" = 既定 ] && GROW_ARMY=$(jq -r .growArmy src/savedata/ci.json) && GROW_ARMY_DEFAULT="--grow-army-default"
+          [ "$GROW_ARMY" = 既定 ] && GROW_ARMY=$(cd src && node --input-type=module -e 'import { GROW_ARMY } from "./scripts/ci/ci_defaults.mjs"; console.log(GROW_ARMY);') && GROW_ARMY_DEFAULT="--grow-army-default"
           case "$GROW_ARMY" in
             "" | なし) grow_army="" ;;
             4種 | Lv.1 | ゾンビのみ | "Lv.10 車両" | "Lv.10 射手" | "Lv.9 射手") grow_army="--grow-army=$GROW_ARMY" ;;

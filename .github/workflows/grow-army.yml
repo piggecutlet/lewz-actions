@@ -18,7 +18,7 @@ on:
           - DF
           - core
       target:
-        description: DF の移転先と偵察先 x,y（空なら ci.json の dfTarget、なしなら後回し）
+        description: DF の移転先と偵察先 x,y（空なら scripts/ci/ci_defaults.mjs の DF_TARGET、なしなら後回し）
         required: false
         default: ""
       rose:
@@ -65,6 +65,7 @@ jobs:
             /scripts/core/
             /savedata/
             /scripts/ci/skill_box_train_verify775.mjs
+            /scripts/ci/ci_defaults.mjs
             /scripts/ci/scout775.mjs
             /scripts/ci/df_finish775.mjs
             /decompile/obb/assets/WorldMap.tmx
@@ -89,7 +90,7 @@ jobs:
             "" | *[!A-Za-z0-9,]*) exit 1 ;;
           esac
           mode=$(jq -r .inputs.mode "$GITHUB_EVENT_PATH")
-          [ "$mode" = 既定 ] && mode=$(jq -r .growArmy src/savedata/ci.json)
+          [ "$mode" = 既定 ] && mode=$(cd src && node --input-type=module -e 'import { GROW_ARMY } from "./scripts/ci/ci_defaults.mjs"; console.log(GROW_ARMY);')
           case "$mode" in
             4種) flag="" ;;
             Lv.1) flag="--lv1" ;;
