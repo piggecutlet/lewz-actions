@@ -35,8 +35,8 @@ jobs:
             /savedata/
             /work/army_time_probe775.mjs
             /work/science/state775.mjs
-            /device/files/ja/ja_ilocalize_base.json
-            /device/files/WarZDoc/config/database.local.xml
+            /decompile/device/files/ja/ja_ilocalize_base.json
+            /decompile/device/files/WarZDoc/config/database.local.xml
 
       - uses: actions/setup-node@v7
         with:

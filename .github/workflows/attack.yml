@@ -54,7 +54,7 @@ jobs:
             /api/
             /scripts/core/
             /savedata/
-            /obb/assets/WorldMap.tmx
+            /decompile/obb/assets/WorldMap.tmx
             /work/leave_random_move775.mjs
             /work/leave_alliance.mjs
 

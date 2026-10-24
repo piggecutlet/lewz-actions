@@ -38,7 +38,7 @@ jobs:
             /savedata/
             /work/df_finish775.mjs
             /work/scout775.mjs
-            /obb/assets/WorldMap.tmx
+            /decompile/obb/assets/WorldMap.tmx
 
       - uses: actions/setup-node@v7
         with:

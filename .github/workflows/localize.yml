@@ -54,7 +54,7 @@ jobs:
             git config user.email "234113501+piggecutlet@users.noreply.github.com"
             node scripts/core/fetch_localize.mjs $languages || exit 1
             for l in $languages; do
-              git add --sparse "device/files/$l/${l}_ilocalize_base.json"
+              git add --sparse "decompile/device/files/$l/${l}_ilocalize_base.json"
             done
             if ! git diff --cached --quiet; then
               git commit -m "chore: CI で翻訳ファイルを取り直す（$languages）"

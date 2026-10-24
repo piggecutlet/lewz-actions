@@ -67,9 +67,9 @@ jobs:
             /work/skill_box_train_verify775.mjs
             /work/scout775.mjs
             /work/df_finish775.mjs
-            /obb/assets/WorldMap.tmx
-            /device/files/ja/ja_ilocalize_base.json
-            /device/files/WarZDoc/config/database.activity.xml
+            /decompile/obb/assets/WorldMap.tmx
+            /decompile/device/files/ja/ja_ilocalize_base.json
+            /decompile/device/files/WarZDoc/config/database.activity.xml
 
       - uses: actions/setup-node@v7
         with:

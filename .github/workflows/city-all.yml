@@ -34,9 +34,9 @@ jobs:
             /scripts/core/
             /savedata/
             /work/city_all.mjs
-            /device/files/WarZDoc/config/database.local.xml
-            /device/files/WarZDoc/config/text_ja.ini
-            /device/files/WarZDoc/config/totalwar.xml
+            /decompile/device/files/WarZDoc/config/database.local.xml
+            /decompile/device/files/WarZDoc/config/text_ja.ini
+            /decompile/device/files/WarZDoc/config/totalwar.xml
 
       - uses: actions/setup-node@v7
         with:
@@ -57,8 +57,8 @@ jobs:
             cd src
             git config user.name "piggecutlet"
             git config user.email "234113501+piggecutlet@users.noreply.github.com"
-            mkdir -p app/assets/WarZResources/local
-            cp device/files/WarZDoc/config/database.local.xml device/files/WarZDoc/config/text_ja.ini app/assets/WarZResources/local/
+            mkdir -p decompile/app/assets/WarZResources/local
+            cp decompile/device/files/WarZDoc/config/database.local.xml decompile/device/files/WarZDoc/config/text_ja.ini decompile/app/assets/WarZResources/local/
             code=0
             for pair in ${pairs//,/ }; do
               node work/city_all.mjs "${pair%%:*}" "${pair##*:}" || code=1

@@ -37,8 +37,8 @@ jobs:
             /api/
             /scripts/core/
             /savedata/
-            /device/files/ja/ja_ilocalize_base.json
-            /device/files/WarZDoc/config/database.activity.xml
+            /decompile/device/files/ja/ja_ilocalize_base.json
+            /decompile/device/files/WarZDoc/config/database.activity.xml
 
       - uses: actions/setup-node@v7
         with:

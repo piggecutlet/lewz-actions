@@ -43,7 +43,7 @@ jobs:
             /api/
             /scripts/core/
             /savedata/
-            /obb/assets/WorldMap.tmx
+            /decompile/obb/assets/WorldMap.tmx
 
       - uses: actions/setup-node@v7
         with:

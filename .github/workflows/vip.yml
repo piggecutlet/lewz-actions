@@ -52,8 +52,8 @@ jobs:
             /api/
             /scripts/core/
             /savedata/
-            /device/files/ja/ja_ilocalize_base.json
-            /device/files/WarZDoc/config/database.activity.xml
+            /decompile/device/files/ja/ja_ilocalize_base.json
+            /decompile/device/files/WarZDoc/config/database.activity.xml
             /work/gold_shield775.mjs
 
       - uses: actions/setup-node@v7
