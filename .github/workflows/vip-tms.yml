@@ -102,7 +102,7 @@ jobs:
               restart=1
               sleep 10
             done
-            names=$(node -e "Promise.all([import('./scripts/core/_readme.mjs'),import('./scripts/core/_kinds.mjs')]).then(([{readAccounts},{KIND}])=>{console.log((readAccounts()[process.argv[1]]||[]).filter((a)=>a.kind===KIND.VMS&&['VIP','小隊長','小隊'].includes(a.note)).map((a)=>a.name).join(','))})" "$STATE")
+            names=$(node -e "Promise.all([import('./scripts/core/_readme.mjs'),import('./scripts/core/_kinds.mjs')]).then(([{readAccounts},{KIND}])=>{console.log((readAccounts()[process.argv[1]]||[]).filter((a)=>a.kind===KIND.VMS&&(a.note||'').includes('VIP')).map((a)=>a.name).join(','))})" "$STATE")
             node scripts/core/shield.mjs "$names" || true
             if [ "$morning" = "true" ] || [ "$(TZ=JST-9 date +%H)" -lt 12 ]; then
               node scripts/core/vip_unlock.mjs "$names" || true
