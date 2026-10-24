@@ -102,7 +102,7 @@ jobs:
               restart=1
               sleep 10
             done
-            names=$(node -e "Promise.all([import('./scripts/core/_readme.mjs'),import('./scripts/core/_kinds.mjs')]).then(([{readAccounts},{KIND}])=>{console.log((readAccounts()[process.argv[1]]||[]).filter((a)=>a.kind===KIND.VMS&&(a.note||'').includes('VIP')).map((a)=>a.name).join(','))})" "$STATE")
+            names=$(node -e "Promise.all([import('./scripts/core/_readme.mjs'),import('./scripts/core/_kinds.mjs')]).then(([{readAccounts},{KIND}])=>{console.log((readAccounts()[process.argv[1]]||[]).filter((a)=>(a.home||a.kind===KIND.VMS)&&(a.note||'').includes('VIP')).map((a)=>a.name).join(','))})" "$STATE")
             node scripts/core/shield.mjs "$names" || true
             if [ "$morning" = "true" ] || [ "$(TZ=JST-9 date +%H)" -lt 12 ]; then
               node scripts/core/vip_unlock.mjs "$names" || true
@@ -114,15 +114,20 @@ jobs:
               if [ "$(tr -d '\r\n ' < .SKIP_DONATION_TMS 2>/dev/null)" = "1" ]; then
                 echo ".SKIP_DONATION_TMS が 1 なので 775_001 へ入って贈るのを飛ばす"
               else
-                for part in "$(echo "$names" | cut -d, -f1-56)" "$(echo "$names" | cut -d, -f57- -s)"; do
-                  if [ -z "$part" ]; then continue; fi
-                  node work/leave_alliance.mjs "$part" || true
-                  node scripts/core/join_alliance.mjs "$part" || true
-                  node scripts/core/vip_send.mjs "$part" || true
-                  node work/leave_alliance.mjs "$part" || true
-                  node scripts/core/join_alliance.mjs "$part" --leader="${APPROVER:-Empire064d8775}" || true
+                for id in $(node -e "import('./scripts/core/_readme.mjs').then(({readAccounts})=>{console.log([...new Set((readAccounts()[process.argv[1]]||[]).map((a)=>a.home).filter(Boolean))].sort().join(' '))})" "$STATE"); do
+                  unlocked=$(node -e "import('./scripts/core/_readme.mjs').then(({readAccounts})=>{console.log((readAccounts()[process.argv[1]]||[]).filter((a)=>a.home===process.argv[2]&&(a.note||'').includes('VIP')&&a.vipStore===1).map((a)=>a.name).join(','))})" "$STATE" "$id")
+                  approver=$(node -e "import('node:fs').then(({readFileSync})=>{const d=JSON.parse(readFileSync('savedata/alliances.json','utf8'));console.log(((d[process.argv[1]]||[]).find((a)=>a.id===process.argv[2])||{}).approver||'')})" "$STATE" "$id")
+                  echo "$id の解禁済みの VIP を 775_001 へ入れて贈る（承認役 $approver）"
+                  for part in "$(echo "$unlocked" | cut -d, -f1-56)" "$(echo "$unlocked" | cut -d, -f57- -s)"; do
+                    if [ -z "$part" ] || [ -z "$approver" ]; then continue; fi
+                    node work/leave_alliance.mjs "$part" || true
+                    node scripts/core/join_alliance.mjs "$part" || true
+                    node scripts/core/vip_send.mjs "$part" || true
+                    node work/leave_alliance.mjs "$part" || true
+                    node scripts/core/join_alliance.mjs "$part" --leader="$approver" || true
+                  done
+                  node scripts/core/tms_rank.mjs --state="$STATE" --alliance="$id" || true
                 done
-                node scripts/core/tms_rank.mjs --state="$STATE" ${APPROVER:+"--approver=$APPROVER"} || true
               fi
               restart=1
             else
@@ -135,6 +140,11 @@ jobs:
             if [ -n "$restart" ]; then
               echo "tms.yml を起動する"
               gh workflow run tms.yml -R "$GITHUB_REPOSITORY" "${roles[@]}" || true
+              if [ "$STATE" = 775 ]; then
+                for id in $(node -e "import('./scripts/core/_readme.mjs').then(({readAccounts})=>{console.log([...new Set((readAccounts()[process.argv[1]]||[]).map((a)=>a.home).filter(Boolean))].sort().slice(1).join(' '))})" "$STATE"); do
+                  gh workflow run tms.yml -R "$GITHUB_REPOSITORY" -f alliance="$id" || true
+                done
+              fi
             fi
           ) > "$log" 2>&1 &
           pid=$!
