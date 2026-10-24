@@ -98,7 +98,6 @@ jobs:
             /api/
             /scripts/core/
             /savedata/
-            /CI_SKIP
             /device/files/ja/ja_ilocalize_base.json
             /device/files/WarZDoc/config/database.system.xml
 
