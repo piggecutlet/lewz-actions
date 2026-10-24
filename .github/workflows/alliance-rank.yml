@@ -40,7 +40,7 @@ jobs:
             /api/
             /scripts/core/
             /savedata/
-            /work/alliance_rank_save.mjs
+            /scripts/ci/alliance_rank_save.mjs
 
       - uses: actions/setup-node@v7
         with:
@@ -70,7 +70,7 @@ jobs:
             git config user.name "piggecutlet"
             git config user.email "234113501+piggecutlet@users.noreply.github.com"
             code=0
-            node work/alliance_rank_save.mjs "$name" ${OWN:+"--own=$OWN"} ${MINE:+"--mine=$MINE"} || code=1
+            node scripts/ci/alliance_rank_save.mjs "$name" ${OWN:+"--own=$OWN"} ${MINE:+"--mine=$MINE"} || code=1
             git add savedata/alliances.json
             if ! git diff --cached --quiet; then
               git commit -m "chore: CI で同盟の順位（alliances.json）を更新する"

@@ -32,7 +32,7 @@ jobs:
             /api/
             /scripts/core/
             /savedata/
-            /work/antimissile_build.mjs
+            /scripts/ci/antimissile_build.mjs
 
       - uses: actions/setup-node@v7
         with:
@@ -49,7 +49,7 @@ jobs:
           log="logs/$(TZ=Asia/Tokyo date +%Y/%m/%d/%H%M%S)_antimissile-build_${GITHUB_RUN_ID}.log"
           mkdir -p "$(dirname "$log")"
           set +e
-          (cd src && node work/antimissile_build.mjs "$names") > "$log" 2>&1 &
+          (cd src && node scripts/ci/antimissile_build.mjs "$names") > "$log" 2>&1 &
           pid=$!
           n=0
           while kill -0 "$pid" 2>/dev/null; do

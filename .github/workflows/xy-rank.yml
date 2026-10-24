@@ -38,7 +38,7 @@ jobs:
             /api/
             /scripts/core/
             /savedata/
-            /work/xy_from_rank775.mjs
+            /scripts/ci/xy_from_rank775.mjs
 
       - uses: actions/setup-node@v7
         with:
@@ -65,11 +65,11 @@ jobs:
             git config user.name "piggecutlet"
             git config user.email "234113501+piggecutlet@users.noreply.github.com"
             if [ "$write" = "true" ]; then
-              node work/xy_from_rank775.mjs "$login" "$names" --write
+              node scripts/ci/xy_from_rank775.mjs "$login" "$names" --write
               code=$?
               node -e "import('./scripts/core/_ci.mjs').then(({pushAccounts})=>pushAccounts('chore: CI で同盟の座標とランクを accounts.json に書く'))"
             else
-              node work/xy_from_rank775.mjs "$login" "$names"
+              node scripts/ci/xy_from_rank775.mjs "$login" "$names"
               code=$?
             fi
             exit $code

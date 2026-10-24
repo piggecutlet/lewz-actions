@@ -64,9 +64,9 @@ jobs:
             /api/
             /scripts/core/
             /savedata/
-            /work/skill_box_train_verify775.mjs
-            /work/scout775.mjs
-            /work/df_finish775.mjs
+            /scripts/ci/skill_box_train_verify775.mjs
+            /scripts/ci/scout775.mjs
+            /scripts/ci/df_finish775.mjs
             /decompile/obb/assets/WorldMap.tmx
             /decompile/device/files/ja/ja_ilocalize_base.json
             /decompile/device/files/WarZDoc/config/database.activity.xml
@@ -119,7 +119,7 @@ jobs:
             cd src
             git config user.name "piggecutlet"
             git config user.email "234113501+piggecutlet@users.noreply.github.com"
-            node work/skill_box_train_verify775.mjs "$names" $flag --leave --parallel=60 ${rose:+"--rose=$rose"} $DELETE_ACCOUNT $DOUBLE_ADVANCED --state="$STATE"
+            node scripts/ci/skill_box_train_verify775.mjs "$names" $flag --leave --parallel=60 ${rose:+"--rose=$rose"} $DELETE_ACCOUNT $DOUBLE_ADVANCED --state="$STATE"
             code=$?
             node -e "import('./scripts/core/_ci.mjs').then(({pushAccounts})=>pushAccounts('chore: CI の grow-army で accounts.json を更新する'))"
             exit $code

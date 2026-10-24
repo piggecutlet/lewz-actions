@@ -40,7 +40,7 @@ jobs:
             /api/
             /scripts/core/
             /savedata/
-            /work/setrank775.mjs
+            /scripts/ci/setrank775.mjs
 
       - uses: actions/setup-node@v7
         with:
@@ -72,7 +72,7 @@ jobs:
           set +e
           (
             cd src
-            node work/setrank775.mjs "$names" "$rank" ${leader:+"--leader=$leader"} --state="$STATE"
+            node scripts/ci/setrank775.mjs "$names" "$rank" ${leader:+"--leader=$leader"} --state="$STATE"
           ) > "$log" 2>&1 &
           pid=$!
           n=0

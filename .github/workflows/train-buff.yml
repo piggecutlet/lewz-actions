@@ -33,8 +33,8 @@ jobs:
             /api/
             /scripts/core/
             /savedata/
-            /work/army_time_probe775.mjs
-            /work/science/state775.mjs
+            /scripts/ci/army_time_probe775.mjs
+            /scripts/ci/state775.mjs
             /decompile/device/files/ja/ja_ilocalize_base.json
             /decompile/device/files/WarZDoc/config/database.local.xml
 
@@ -55,8 +55,8 @@ jobs:
           set +e
           (
             cd src
-            node work/army_time_probe775.mjs "$NAME"
-            node work/science/state775.mjs "$NAME" 259000,259100
+            node scripts/ci/army_time_probe775.mjs "$NAME"
+            node scripts/ci/state775.mjs "$NAME" 259000,259100
           ) > "$log" 2>&1 &
           pid=$!
           n=0

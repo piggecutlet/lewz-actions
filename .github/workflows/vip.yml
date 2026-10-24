@@ -54,7 +54,7 @@ jobs:
             /savedata/
             /decompile/device/files/ja/ja_ilocalize_base.json
             /decompile/device/files/WarZDoc/config/database.activity.xml
-            /work/gold_shield775.mjs
+            /scripts/ci/gold_shield775.mjs
 
       - uses: actions/setup-node@v7
         with:
@@ -114,7 +114,7 @@ jobs:
             fi
             git config user.name "piggecutlet"
             git config user.email "234113501+piggecutlet@users.noreply.github.com"
-            node work/gold_shield775.mjs "$names" --state="$STATE" || true
+            node scripts/ci/gold_shield775.mjs "$names" --state="$STATE" || true
             node -e "import('./scripts/core/_ci.mjs').then(({pushAccounts})=>pushAccounts('chore: CI の vip でダイヤを読み、accounts.json を更新する'))"
           ) > "$log" 2>&1 &
           pid=$!

@@ -35,7 +35,7 @@ jobs:
             /api/
             /scripts/core/
             /savedata/
-            /work/scout775.mjs
+            /scripts/ci/scout775.mjs
 
       - uses: actions/setup-node@v7
         with:
@@ -54,7 +54,7 @@ jobs:
           log="logs/$(TZ=Asia/Tokyo date +%Y/%m/%d/%H%M%S)_scout_${GITHUB_RUN_ID}.log"
           mkdir -p "$(dirname "$log")"
           set +e
-          (cd src && node work/scout775.mjs "$name" "$target") > "$log" 2>&1 &
+          (cd src && node scripts/ci/scout775.mjs "$name" "$target") > "$log" 2>&1 &
           pid=$!
           n=0
           while kill -0 "$pid" 2>/dev/null; do

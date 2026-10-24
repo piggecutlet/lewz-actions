@@ -33,7 +33,7 @@ jobs:
             /api/
             /scripts/core/
             /savedata/
-            /work/check_nick776.mjs
+            /scripts/ci/check_nick776.mjs
 
       - uses: actions/setup-node@v7
         with:
@@ -50,7 +50,7 @@ jobs:
             cd src
             git config user.name "piggecutlet"
             git config user.email "234113501+piggecutlet@users.noreply.github.com"
-            node work/check_nick776.mjs
+            node scripts/ci/check_nick776.mjs
           ) > "$log" 2>&1 &
           pid=$!
           n=0

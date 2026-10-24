@@ -33,7 +33,7 @@ jobs:
             /api/
             /scripts/core/
             /savedata/
-            /work/city_all.mjs
+            /scripts/ci/city_all.mjs
             /decompile/device/files/WarZDoc/config/database.local.xml
             /decompile/device/files/WarZDoc/config/text_ja.ini
             /decompile/device/files/WarZDoc/config/totalwar.xml
@@ -61,7 +61,7 @@ jobs:
             cp decompile/device/files/WarZDoc/config/database.local.xml decompile/device/files/WarZDoc/config/text_ja.ini decompile/app/assets/WarZResources/local/
             code=0
             for pair in ${pairs//,/ }; do
-              node work/city_all.mjs "${pair%%:*}" "${pair##*:}" || code=1
+              node scripts/ci/city_all.mjs "${pair%%:*}" "${pair##*:}" || code=1
             done
             git add savedata/cities_all.json
             if ! git diff --cached --quiet; then

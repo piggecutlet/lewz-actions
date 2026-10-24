@@ -33,7 +33,7 @@ jobs:
             /api/
             /scripts/core/
             /savedata/
-            /work/swap_scp776.mjs
+            /scripts/ci/swap_scp776.mjs
 
       - uses: actions/setup-node@v7
         with:
@@ -50,7 +50,7 @@ jobs:
             cd src
             git config user.name "piggecutlet"
             git config user.email "234113501+piggecutlet@users.noreply.github.com"
-            node work/swap_scp776.mjs --ci
+            node scripts/ci/swap_scp776.mjs --ci
           ) > "$log" 2>&1 &
           pid=$!
           n=0

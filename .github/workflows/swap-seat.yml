@@ -40,7 +40,7 @@ jobs:
             /api/
             /scripts/core/
             /savedata/
-            /work/swap_seat.mjs
+            /scripts/ci/swap_seat.mjs
 
       - uses: actions/setup-node@v7
         with:
@@ -64,7 +64,7 @@ jobs:
           (
             cd src
             for pair in ${pairs//,/ }; do
-              node work/swap_seat.mjs "${pair%%:*}" "${pair##*:}" "$team" || exit 1
+              node scripts/ci/swap_seat.mjs "${pair%%:*}" "${pair##*:}" "$team" || exit 1
             done
           ) > "$log" 2>&1 &
           pid=$!

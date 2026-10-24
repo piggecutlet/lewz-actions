@@ -39,7 +39,7 @@ jobs:
             /api/
             /scripts/core/
             /savedata/
-            /work/df_probe775.mjs
+            /scripts/ci/df_probe775.mjs
 
       - uses: actions/setup-node@v7
         with:
@@ -62,7 +62,7 @@ jobs:
           log="logs/$(TZ=Asia/Tokyo date +%Y/%m/%d/%H%M%S)_df-probe_${GITHUB_RUN_ID}.log"
           mkdir -p "$(dirname "$log")"
           set +e
-          (cd src && node work/df_probe775.mjs "$name" "$target" ${NAMES:+"--names=$NAMES"}) > "$log" 2>&1 &
+          (cd src && node scripts/ci/df_probe775.mjs "$name" "$target" ${NAMES:+"--names=$NAMES"}) > "$log" 2>&1 &
           pid=$!
           n=0
           while kill -0 "$pid" 2>/dev/null; do

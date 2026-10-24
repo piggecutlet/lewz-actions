@@ -43,8 +43,8 @@ jobs:
             /api/
             /scripts/core/
             /savedata/
-            /work/leave_random_move775.mjs
-            /work/retreat_city775.mjs
+            /scripts/ci/leave_random_move775.mjs
+            /scripts/ci/retreat_city775.mjs
 
       - uses: actions/setup-node@v7
         with:
@@ -73,11 +73,11 @@ jobs:
             git config user.name "piggecutlet"
             git config user.email "234113501+piggecutlet@users.noreply.github.com"
             if [ -n "$target" ]; then
-              node work/retreat_city775.mjs "$names" "$target"
+              node scripts/ci/retreat_city775.mjs "$names" "$target"
             fi
             rest="$names"
             for i in 1 2 3 4 5 6 7 8 9 10; do
-              out=$(node work/leave_random_move775.mjs "$rest" --state="$STATE")
+              out=$(node scripts/ci/leave_random_move775.mjs "$rest" --state="$STATE")
               code=$?
               echo "$out"
               rest=$(echo "$out" | grep -E "行軍中|E000000" | cut -d" " -f1 | sort -u | paste -sd,)

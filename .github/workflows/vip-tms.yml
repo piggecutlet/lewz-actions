@@ -56,8 +56,8 @@ jobs:
             /savedata/
             /decompile/device/files/ja/ja_ilocalize_base.json
             /decompile/device/files/WarZDoc/config/database.activity.xml
-            /work/gold_shield775.mjs
-            /work/leave_alliance.mjs
+            /scripts/ci/gold_shield775.mjs
+            /scripts/ci/leave_alliance.mjs
             /.SKIP_DONATION_TMS
 
       - uses: actions/setup-node@v7
@@ -120,10 +120,10 @@ jobs:
                   echo "$id の解禁済みの VIP を 775_001 へ入れて贈る（承認役 $approver）"
                   for part in "$(echo "$unlocked" | cut -d, -f1-56)" "$(echo "$unlocked" | cut -d, -f57- -s)"; do
                     if [ -z "$part" ] || [ -z "$approver" ]; then continue; fi
-                    node work/leave_alliance.mjs "$part" || true
+                    node scripts/ci/leave_alliance.mjs "$part" || true
                     node scripts/core/join_alliance.mjs "$part" || true
                     node scripts/core/vip_send.mjs "$part" || true
-                    node work/leave_alliance.mjs "$part" || true
+                    node scripts/ci/leave_alliance.mjs "$part" || true
                     node scripts/core/join_alliance.mjs "$part" --leader="$approver" || true
                   done
                   node scripts/core/tms_rank.mjs --state="$STATE" --alliance="$id" || true
@@ -135,7 +135,7 @@ jobs:
             fi
             git config user.name "piggecutlet"
             git config user.email "234113501+piggecutlet@users.noreply.github.com"
-            node work/gold_shield775.mjs "$names" --state="$STATE" || true
+            node scripts/ci/gold_shield775.mjs "$names" --state="$STATE" || true
             node -e "import('./scripts/core/_ci.mjs').then(({pushAccounts})=>pushAccounts('chore: CI の vip-tms でダイヤを読み、accounts.json を更新する'))"
             if [ -n "$restart" ]; then
               echo "tms.yml を起動する"
