@@ -40,9 +40,9 @@ jobs:
             set -e
             gh workflow run vip.yml -R "$GITHUB_REPOSITORY" -f state="$STATE" || true
             gh workflow run vip-tms.yml -R "$GITHUB_REPOSITORY" -f state="$STATE" || true
-            gh workflow run cmp.yml -R "$GITHUB_REPOSITORY" -f state="$STATE"
+            gh workflow run schedule-cmp.yml -R "$GITHUB_REPOSITORY" -f state="$STATE"
             if [ "$(TZ=Asia/Tokyo date +%H)" = 09 ]; then
-              gh workflow run zombie.yml -R "$GITHUB_REPOSITORY" -f state="$STATE"
+              gh workflow run team-zombie.yml -R "$GITHUB_REPOSITORY" -f state="$STATE"
             fi
           ) > "$log" 2>&1 &
           pid=$!

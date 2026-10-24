@@ -13,11 +13,11 @@ on:
         required: false
         default: ""
       captain:
-        description: tms.yml へ渡す小隊長（空なら 775 の Empire064d9775。ほかの州は必須）
+        description: vip-tms-new.yml へ渡す小隊長（空なら 775 の Empire064d9775。ほかの州は必須）
         required: false
         default: ""
       alliance:
-        description: tms.yml へ渡す自分の同盟の ID（空なら 775 の 775_002。ほかの州は必須）
+        description: vip-tms-new.yml へ渡す自分の同盟の ID（空なら 775 の 775_002。ほかの州は必須）
         required: false
         default: ""
 
@@ -96,9 +96,9 @@ jobs:
             cd src
             restart=""
             for i in $(seq 1 240); do
-              busy=$(gh run list -R "$GITHUB_REPOSITORY" -w tms.yml -L 5 --json status -q '[.[] | select(.status != "completed")] | length')
+              busy=$(gh run list -R "$GITHUB_REPOSITORY" -w vip-tms-new.yml -L 5 --json status -q '[.[] | select(.status != "completed")] | length')
               if [ "$busy" = "0" ]; then break; fi
-              if [ "$i" = 1 ]; then echo "tms.yml の周が終わるまで待つ"; fi
+              if [ "$i" = 1 ]; then echo "vip-tms-new.yml の周が終わるまで待つ"; fi
               restart=1
               sleep 10
             done
@@ -138,11 +138,11 @@ jobs:
             node scripts/ci/gold_shield775.mjs "$names" --state="$STATE" || true
             node -e "import('./scripts/core/_ci.mjs').then(({pushAccounts})=>pushAccounts('chore: CI の vip-tms でダイヤを読み、accounts.json を更新する'))"
             if [ -n "$restart" ]; then
-              echo "tms.yml を起動する"
-              gh workflow run tms.yml -R "$GITHUB_REPOSITORY" "${roles[@]}" || true
+              echo "vip-tms-new.yml を起動する"
+              gh workflow run vip-tms-new.yml -R "$GITHUB_REPOSITORY" "${roles[@]}" || true
               if [ "$STATE" = 775 ]; then
                 for id in $(node -e "import('./scripts/core/_readme.mjs').then(({readAccounts})=>{console.log([...new Set((readAccounts()[process.argv[1]]||[]).map((a)=>a.home).filter(Boolean))].sort().slice(1).join(' '))})" "$STATE"); do
-                  gh workflow run tms.yml -R "$GITHUB_REPOSITORY" -f alliance="$id" || true
+                  gh workflow run vip-tms-new.yml -R "$GITHUB_REPOSITORY" -f alliance="$id" || true
                 done
               fi
             fi

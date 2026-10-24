@@ -120,6 +120,6 @@ jobs:
         run: |
           n=$(gh api "repos/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID/jobs" --jq '[.jobs[].steps[] | select(.name == "時間切れ" and .conclusion == "success")] | length')
           if [ "$n" -gt 0 ]; then
-            gh workflow run rename-join.yml -R "$GITHUB_REPOSITORY" -f uid="$(jq -r .inputs.uid "$GITHUB_EVENT_PATH")" -f alliance="$(jq -r .inputs.alliance "$GITHUB_EVENT_PATH")" -f nicks="$(jq -r .inputs.nicks "$GITHUB_EVENT_PATH")"
+            gh workflow run account-rename-join.yml -R "$GITHUB_REPOSITORY" -f uid="$(jq -r .inputs.uid "$GITHUB_EVENT_PATH")" -f alliance="$(jq -r .inputs.alliance "$GITHUB_EVENT_PATH")" -f nicks="$(jq -r .inputs.nicks "$GITHUB_EVENT_PATH")"
             echo "続きを起動した"
           fi

@@ -38,7 +38,7 @@ jobs:
           set +e
           (
             set -e
-            gh workflow run 775.yml -R "$GITHUB_REPOSITORY" -f state="$STATE"
+            gh workflow run schedule-775.yml -R "$GITHUB_REPOSITORY" -f state="$STATE"
           ) > "$log" 2>&1 &
           pid=$!
           n=0
