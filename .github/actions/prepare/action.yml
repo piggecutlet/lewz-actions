@@ -2,14 +2,20 @@ inputs:
   ssh-private-key:
     required: true
   source-repo:
-    required: true
+    required: false
+    default: ""
   source-token:
-    required: true
+    required: false
+    default: ""
   sparse-checkout:
-    required: true
+    required: false
+    default: ""
   sparse-checkout-cone-mode:
     required: false
     default: "true"
+  fetch-depth:
+    required: false
+    default: "1"
 
 runs:
   using: composite
@@ -26,14 +32,17 @@ runs:
         git config --global user.name "piggecutlet"
         git config --global user.email "234113501+piggecutlet@users.noreply.github.com"
 
-    - uses: actions/checkout@v7
+    - if: inputs.sparse-checkout != ''
+      uses: actions/checkout@v7
       with:
         repository: ${{ inputs.source-repo }}
         token: ${{ inputs.source-token }}
         path: src
+        fetch-depth: ${{ inputs.fetch-depth }}
         sparse-checkout-cone-mode: ${{ inputs.sparse-checkout-cone-mode }}
         sparse-checkout: ${{ inputs.sparse-checkout }}
 
-    - uses: actions/setup-node@v7
+    - if: inputs.sparse-checkout != ''
+      uses: actions/setup-node@v7
       with:
         node-version: "24"
