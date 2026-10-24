@@ -1,0 +1,39 @@
+inputs:
+  ssh-private-key:
+    required: true
+  source-repo:
+    required: true
+  source-token:
+    required: true
+  sparse-checkout:
+    required: true
+  sparse-checkout-cone-mode:
+    required: false
+    default: "true"
+
+runs:
+  using: composite
+  steps:
+    - shell: bash
+      env:
+        SSH_PRIVATE_KEY: ${{ inputs.ssh-private-key }}
+      run: |
+        echo "$SSH_PRIVATE_KEY" > "$HOME/sign_key"
+        chmod 600 "$HOME/sign_key"
+        git config --global gpg.format ssh
+        git config --global user.signingkey "$HOME/sign_key"
+        if ssh-keygen -y -P "" -f "$HOME/sign_key" > /dev/null; then git config --global commit.gpgsign true; fi
+        git config --global user.name "piggecutlet"
+        git config --global user.email "234113501+piggecutlet@users.noreply.github.com"
+
+    - uses: actions/checkout@v7
+      with:
+        repository: ${{ inputs.source-repo }}
+        token: ${{ inputs.source-token }}
+        path: src
+        sparse-checkout-cone-mode: ${{ inputs.sparse-checkout-cone-mode }}
+        sparse-checkout: ${{ inputs.sparse-checkout }}
+
+    - uses: actions/setup-node@v7
+      with:
+        node-version: "24"
