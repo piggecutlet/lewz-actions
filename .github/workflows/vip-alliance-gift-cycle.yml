@@ -94,7 +94,7 @@ jobs:
             node -e "import('./scripts/core/_ci.mjs').then(({pushAccounts})=>pushAccounts('chore: CI の vip-alliance-gift-cycle で accounts.json を更新する'))"
           ) >> "$LOG" 2>&1
           if [ "$JOB_STATUS" = cancelled ]; then
-            if gh workflow run account-setup-cancel.yml -R "$GITHUB_REPOSITORY" -f started="$(gh run view "$GITHUB_RUN_ID" -R "$GITHUB_REPOSITORY" --json startedAt -q .startedAt)" -f state="$STATE" -f alliance="$ALLIANCE" >> "$LOG" 2>&1; then
+            if gh workflow run account-setup-cancel.yml -R "$GITHUB_REPOSITORY" -f started="$(gh run view "$GITHUB_RUN_ID" -R "$GITHUB_REPOSITORY" --json startedAt -q .startedAt)" -f state="$STATE" -f run_id="$GITHUB_RUN_ID" -f alliance="$ALLIANCE" >> "$LOG" 2>&1; then
               echo "account-setup-cancel.yml を起動した" >> "$LOG"
             else
               echo "account-setup-cancel.yml を起動できなかった。この run で作った件が同盟に残っていないか確かめる" >> "$LOG"

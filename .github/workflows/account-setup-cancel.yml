@@ -10,6 +10,10 @@ on:
         description: 同盟の ID（vip-alliance-gift-cycle の後片付け。空なら account-setup の後片付け）
         required: false
         default: ""
+      run_id:
+        description: 止めた run の番号（その run が作った行だけを片付ける。空なら started と同盟で選ぶ）
+        required: false
+        default: ""
 
 permissions:
   contents: write
@@ -39,6 +43,7 @@ jobs:
           VERCEL_DEPLOY_HOOK: ${{ secrets.VERCEL_DEPLOY_HOOK }}
           STATE: ${{ inputs.state || '775' }}
           ALLIANCE: ${{ inputs.alliance }}
+          RUN_ID: ${{ inputs.run_id }}
         run: |
           case "$STATE" in
             *[!0-9]*) exit 1 ;;
@@ -46,10 +51,13 @@ jobs:
           case "$ALLIANCE" in
             *[!0-9_]*) exit 1 ;;
           esac
+          case "$RUN_ID" in
+            *[!0-9]*) exit 1 ;;
+          esac
           main() {
             cd src
             base=$(git rev-list -1 --before="$STARTED" HEAD)
-            node scripts/core/setup_cancel.mjs "$base" --state="$STATE" ${ALLIANCE:+"--alliance=$ALLIANCE"}
+            node scripts/core/setup_cancel.mjs "$base" --state="$STATE" ${ALLIANCE:+"--alliance=$ALLIANCE"} ${RUN_ID:+"--run=$RUN_ID"}
             code=$?
             if [ -n "$VERCEL_DEPLOY_HOOK" ]; then
               curl -fsS -X POST "$VERCEL_DEPLOY_HOOK"
