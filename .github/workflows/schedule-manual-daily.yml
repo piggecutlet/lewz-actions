@@ -49,7 +49,6 @@ jobs:
               node scripts/core/use_skill.mjs "$names"
               node scripts/core/use_skill.mjs "$names" 240046 690013
             fi
-            node scripts/core/science.mjs "$names" || true
             node scripts/core/upgrade_tent.mjs "$names" --shelter
             node scripts/core/city_def.mjs "$names"
             node scripts/core/mail_reward.mjs "$names" || true
