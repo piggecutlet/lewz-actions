@@ -105,6 +105,9 @@ jobs:
                     zombie_opt="--only-send-lv10-zombie"
                     unlocked=$(node -e "Promise.all([import('./scripts/core/_readme.mjs'),import('./scripts/core/_state.mjs')]).then(([{readAccounts},{stateOf}])=>{const [state,names]=process.argv.slice(1);const rows=readAccounts()[state]||[];const m=rows.find((a)=>a.name===stateOf(state).manual[0]);const list=names.split(',').filter(Boolean);const far=list.filter((n)=>{const a=rows.find((r)=>r.name===n)||{};return !(Math.hypot(a.x-m.x,a.y-m.y)<100);});if(far.length>0){console.error(m.name+' から 100 マス以上なので贈らない '+far.join(','));}console.log(list.filter((n)=>!far.includes(n)).join(','))})" "$STATE" "$unlocked")
                   fi
+                  if [ -n "$unlocked" ]; then
+                    unlocked=$(node scripts/core/vip_send.mjs "$unlocked" $zombie_opt --check | tee /dev/stderr | sed -n 's/^送れる //p')
+                  fi
                   echo "$id の解禁済みの VIP を 775_001 へ入れて贈る（承認役 $approver）"
                   for part in "$(echo "$unlocked" | cut -d, -f1-56)" "$(echo "$unlocked" | cut -d, -f57- -s)"; do
                     if [ -z "$part" ] || [ -z "$approver" ]; then continue; fi
