@@ -79,8 +79,8 @@ jobs:
               names=$(node -e "Promise.all([import('./scripts/core/_readme.mjs'),import('./scripts/core/_kinds.mjs')]).then(([{readAccounts},{KIND}])=>{console.log((readAccounts()[process.argv[1]]||[]).filter((a)=>a.kind===KIND.AUTO&&a.note==='VIP').map((a)=>a.name).join(','))})" "$STATE")
             fi
             node scripts/core/shield.mjs "$names" || true
+            node scripts/core/vip_unlock.mjs "$names" || true
             if [ "$morning" = "true" ] || [ "$(TZ=JST-9 date +%H)" -lt 12 ]; then
-              node scripts/core/vip_unlock.mjs "$names" || true
               node scripts/core/vip_store.mjs "$names" || true
               if [ -n "$store" ]; then
                 node scripts/core/vip_store.mjs "$store" || true
