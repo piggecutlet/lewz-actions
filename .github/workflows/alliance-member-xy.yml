@@ -40,9 +40,6 @@ jobs:
           case "$login" in
             "" | *[!A-Za-z0-9]*) exit 1 ;;
           esac
-          case "$names" in
-            *[!A-Za-z0-9,]*) exit 1 ;;
-          esac
           main() {
             cd src
             if [ "$write" = "true" ]; then
