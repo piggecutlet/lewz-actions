@@ -3,7 +3,7 @@ on:
     inputs:
       name:
         description: 表示名
-        default: Empire04c3b775
+        default: Empire0fc1d775
 
 permissions:
   contents: write
@@ -31,7 +31,7 @@ jobs:
 
       - env:
           LOG_KEY: ${{ secrets.LOG_KEY }}
-          NAME: ${{ inputs.name || 'Empire04c3b775' }}
+          NAME: ${{ inputs.name || 'Empire0fc1d775' }}
         run: |
           case "$NAME" in
             *[!A-Za-z0-9]*) exit 1 ;;
