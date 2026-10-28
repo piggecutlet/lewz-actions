@@ -105,7 +105,7 @@ jobs:
                     zombie_opt="--only-send-lv10-zombie"
                   fi
                   if [ -n "$unlocked" ]; then
-                    unlocked=$(node scripts/core/vip_send.mjs "$unlocked" $zombie_opt --check | tee /dev/stderr | sed -n 's/^送れる //p')
+                    unlocked=$(node scripts/core/vip_send.mjs "$unlocked" $zombie_opt --check | tee -a /dev/stderr | sed -n 's/^送れる //p')
                   fi
                   echo "$id の解禁済みの VIP を 775_001 へ入れて贈る（承認役 $approver）"
                   for part in "$(echo "$unlocked" | cut -d, -f1-56)" "$(echo "$unlocked" | cut -d, -f57- -s)"; do
