@@ -52,6 +52,7 @@ jobs:
             node scripts/core/city_def.mjs "$names"
             node scripts/core/mail_reward.mjs "$names" || true
             if [ "$slot" = 09 ]; then node scripts/core/strategy_free.mjs "$names" || true; fi
+            node scripts/core/resource_collect.mjs "$names" || true
             if [ "$slot" = 21 ]; then node scripts/core/start_setup.mjs --state="$STATE" || true; fi
           }
           . .github/scripts/logged.sh
