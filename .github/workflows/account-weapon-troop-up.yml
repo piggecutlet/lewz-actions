@@ -19,6 +19,9 @@ on:
       buy:
         description: 最初に item.buy で買うもの（<itemId>:<数>,...。空なら買わない）
         default: ""
+      hot_buy:
+        description: hot.item.buy で買うもの（<itemId>:<数>:<1 個の値段>,...。空なら買わない）
+        default: ""
       items:
         description: 持っているアイテムを全部出す
         type: boolean
@@ -61,6 +64,11 @@ jobs:
           [[ "$buy" =~ ^[0-9:,]*$ ]] || exit 1
           if [ -n "$buy" ]; then
             opt="$opt --buy=$buy"
+          fi
+          hot=$(jq -r '.inputs.hot_buy // ""' "$GITHUB_EVENT_PATH")
+          [[ "$hot" =~ ^[0-9:,]*$ ]] || exit 1
+          if [ -n "$hot" ]; then
+            opt="$opt --hot-buy=$hot"
           fi
           if [ "$(jq -r '.inputs.items // "false"' "$GITHUB_EVENT_PATH")" = "true" ]; then
             opt="$opt --items"
