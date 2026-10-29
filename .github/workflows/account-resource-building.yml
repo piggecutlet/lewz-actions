@@ -8,6 +8,10 @@ on:
         description: 農地・油田・製鋼所・合金鉱山を 1 つずつ即時完成で建てる
         type: boolean
         default: false
+      collect:
+        description: 資源施設を 1 棟ずつ回収する
+        type: boolean
+        default: false
 
 permissions:
   contents: write
@@ -32,12 +36,16 @@ jobs:
       - env:
           LOG_KEY: ${{ secrets.LOG_KEY }}
           BUILD: ${{ inputs.build }}
+          COLLECT: ${{ inputs.collect }}
         run: |
           target=$(jq -r .inputs.name "$GITHUB_EVENT_PATH")
           [[ "$target" =~ ^[A-Za-z0-9]+$ ]] || exit 1
           opt=""
           if [ "$BUILD" = "true" ]; then
             opt="--build"
+          fi
+          if [ "$COLLECT" = "true" ]; then
+            opt="$opt --collect"
           fi
           main() {
             cd src && node scripts/core/resource_building.mjs "$target" $opt
