@@ -39,7 +39,9 @@ jobs:
           main() {
             cd src
             node scripts/ci/train_time_read.mjs "$NAME"
-            node scripts/ci/science_state.mjs "$NAME" 259000,259100
+            code=$?
+            node scripts/ci/science_state.mjs "$NAME" 259000,259100 || code=1
+            exit $code
           }
           . .github/scripts/logged.sh
           run_logged main

@@ -78,6 +78,7 @@ jobs:
             if [ "$DRY_RUN" = "true" ]; then
               exit 0
             fi
+            code=1
             while [ $SECONDS -lt $end ]; do
               timeout $((end - SECONDS)) node scripts/core/attack.mjs "$names" --target="$target" --go
               code=$?
