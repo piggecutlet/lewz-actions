@@ -157,7 +157,7 @@ jobs:
             fi
           ) >> "$LOG" 2>&1
           if [ "$JOB_STATUS" = cancelled ]; then
-            if gh workflow run account-setup-cancel.yml -R "$GITHUB_REPOSITORY" -f started="$(gh run view "$GITHUB_RUN_ID" -R "$GITHUB_REPOSITORY" --json startedAt -q .startedAt)" -f state="$STATE" >> "$LOG" 2>&1; then
+            if gh workflow run account-setup-cancel.yml -R "$GITHUB_REPOSITORY" -f started="$(gh run view "$GITHUB_RUN_ID" -R "$GITHUB_REPOSITORY" --json startedAt -q .startedAt)" -f state="$STATE" -f run="$GITHUB_RUN_ID" >> "$LOG" 2>&1; then
               echo "account-setup-cancel.yml を起動した" >> "$LOG"
             else
               echo "account-setup-cancel.yml を起動できなかった。この run で作った件が同盟に残っていないか確かめる" >> "$LOG"

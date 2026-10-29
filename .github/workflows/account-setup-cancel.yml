@@ -10,6 +10,10 @@ on:
         description: 同盟の ID（vip-alliance-gift-cycle の後片付け。空なら account-setup の後片付け）
         required: false
         default: ""
+      run:
+        description: 止めた account-setup.yml の run の番号（ログから accounts.json に無いアカウントを足す）
+        required: false
+        default: ""
 
 permissions:
   contents: write
@@ -39,6 +43,7 @@ jobs:
           VERCEL_DEPLOY_HOOK: ${{ secrets.VERCEL_DEPLOY_HOOK }}
           STATE: ${{ inputs.state || '775' }}
           ALLIANCE: ${{ inputs.alliance }}
+          RUN: ${{ inputs.run }}
         run: |
           case "$STATE" in
             *[!0-9]*) exit 1 ;;
@@ -46,10 +51,26 @@ jobs:
           case "$ALLIANCE" in
             *[!0-9_]*) exit 1 ;;
           esac
+          case "$RUN" in
+            *[!0-9]*) exit 1 ;;
+          esac
           main() {
+            setup_log=""
+            if [ -n "$RUN" ]; then
+              for i in $(seq 1 60); do
+                git pull -q --rebase
+                f=$(find logs -type f -name "*_account-setup_$RUN" | head -1)
+                if [ -n "$f" ]; then
+                  openssl enc -d -aes-256-cbc -pbkdf2 -pass env:LOG_KEY -in "$f" -out /tmp/setup.log && setup_log="--log=/tmp/setup.log"
+                  break
+                fi
+                sleep 10
+              done
+              if [ -z "$setup_log" ]; then echo "account-setup.yml の run $RUN のログが読めないので、accounts.json にある行だけを片付ける"; fi
+            fi
             cd src
             base=$(git rev-list -1 --before="$STARTED" HEAD)
-            node scripts/core/setup_cancel.mjs "$base" --state="$STATE" ${ALLIANCE:+"--alliance=$ALLIANCE"}
+            node scripts/core/setup_cancel.mjs "$base" --state="$STATE" ${ALLIANCE:+"--alliance=$ALLIANCE"} $setup_log
             code=$?
             if [ -n "$VERCEL_DEPLOY_HOOK" ]; then
               curl -fsS -X POST "$VERCEL_DEPLOY_HOOK"
