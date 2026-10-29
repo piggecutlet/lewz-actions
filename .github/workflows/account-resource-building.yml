@@ -8,6 +8,10 @@ on:
         description: 農地・油田・製鋼所・合金鉱山を 1 つずつ即時完成で建てる
         type: boolean
         default: false
+      build_chip:
+        description: 第一区にチップ工場を 1 つ即時完成で建てる
+        type: boolean
+        default: false
       collect:
         description: 資源施設を 1 棟ずつ回収する
         type: boolean
@@ -43,6 +47,7 @@ jobs:
       - env:
           LOG_KEY: ${{ secrets.LOG_KEY }}
           BUILD: ${{ inputs.build }}
+          BUILD_CHIP: ${{ inputs.build_chip }}
           COLLECT: ${{ inputs.collect }}
           COLLECT_ALL: ${{ inputs.collect_all }}
         run: |
@@ -51,6 +56,9 @@ jobs:
           opt=""
           if [ "$BUILD" = "true" ]; then
             opt="--build"
+          fi
+          if [ "$BUILD_CHIP" = "true" ]; then
+            opt="$opt --build-chip"
           fi
           if [ "$COLLECT" = "true" ]; then
             opt="$opt --collect"
