@@ -12,6 +12,10 @@ on:
         description: 資源施設を 1 棟ずつ回収する
         type: boolean
         default: false
+      collect_all:
+        description: build.collect.all で全部まとめて回収する
+        type: boolean
+        default: false
       collect_first:
         description: 種類ごとに最初の 1 棟だけ回収する（build.collect の type。空なら送らない）
         default: ""
@@ -40,6 +44,7 @@ jobs:
           LOG_KEY: ${{ secrets.LOG_KEY }}
           BUILD: ${{ inputs.build }}
           COLLECT: ${{ inputs.collect }}
+          COLLECT_ALL: ${{ inputs.collect_all }}
         run: |
           target=$(jq -r .inputs.name "$GITHUB_EVENT_PATH")
           [[ "$target" =~ ^[A-Za-z0-9]+$ ]] || exit 1
@@ -49,6 +54,9 @@ jobs:
           fi
           if [ "$COLLECT" = "true" ]; then
             opt="$opt --collect"
+          fi
+          if [ "$COLLECT_ALL" = "true" ]; then
+            opt="$opt --collect-all"
           fi
           first=$(jq -r '.inputs.collect_first // ""' "$GITHUB_EVENT_PATH")
           [[ "$first" =~ ^[0-9]*$ ]] || exit 1
