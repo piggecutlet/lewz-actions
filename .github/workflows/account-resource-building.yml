@@ -12,6 +12,9 @@ on:
         description: 資源施設を 1 棟ずつ回収する
         type: boolean
         default: false
+      collect_first:
+        description: 種類ごとに最初の 1 棟だけ回収する（build.collect の type。空なら送らない）
+        default: ""
 
 permissions:
   contents: write
@@ -46,6 +49,11 @@ jobs:
           fi
           if [ "$COLLECT" = "true" ]; then
             opt="$opt --collect"
+          fi
+          first=$(jq -r '.inputs.collect_first // ""' "$GITHUB_EVENT_PATH")
+          [[ "$first" =~ ^[0-9]*$ ]] || exit 1
+          if [ -n "$first" ]; then
+            opt="$opt --collect-first=$first"
           fi
           main() {
             cd src && node scripts/core/resource_building.mjs "$target" $opt
