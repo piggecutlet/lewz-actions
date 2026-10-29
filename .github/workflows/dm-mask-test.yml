@@ -1,0 +1,44 @@
+on:
+  workflow_dispatch:
+    inputs:
+      a:
+        required: true
+      b:
+        required: true
+
+permissions:
+  contents: write
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: ./.github/actions/prepare
+        with:
+          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
+          source-repo: ${{ secrets.SOURCE_REPO }}
+          source-token: ${{ secrets.SOURCE_TOKEN }}
+          sparse-checkout: |
+            api
+            scripts/core
+            scripts/ci
+            savedata
+
+      - env:
+          LOG_KEY: ${{ secrets.LOG_KEY }}
+        run: |
+          a=$(jq -r .inputs.a "$GITHUB_EVENT_PATH")
+          b=$(jq -r .inputs.b "$GITHUB_EVENT_PATH")
+          for n in "$a" "$b"; do
+            case "$n" in
+              "" | *[!A-Za-z0-9]*) exit 1 ;;
+            esac
+          done
+          main() {
+            cd src
+            node scripts/ci/dm_mask_test.mjs "$a" "$b"
+          }
+          . .github/scripts/logged.sh
+          run_logged main
