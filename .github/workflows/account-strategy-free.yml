@@ -33,14 +33,14 @@ jobs:
           LOG_KEY: ${{ secrets.LOG_KEY }}
           PROBE: ${{ inputs.probe }}
         run: |
-          name=$(jq -r .inputs.name "$GITHUB_EVENT_PATH")
-          [[ "$name" =~ ^[A-Za-z0-9]+$ ]] || exit 1
+          target=$(jq -r .inputs.name "$GITHUB_EVENT_PATH")
+          [[ "$target" =~ ^[A-Za-z0-9]+$ ]] || exit 1
           opt=""
           if [ "$PROBE" = "true" ]; then
             opt="--probe"
           fi
           main() {
-            cd src && node scripts/core/strategy_free.mjs "$name" $opt
+            cd src && node scripts/core/strategy_free.mjs "$target" $opt
           }
           . .github/scripts/logged.sh
           run_logged main
