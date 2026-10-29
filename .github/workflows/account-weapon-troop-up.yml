@@ -16,6 +16,9 @@ on:
       times:
         description: 強化と改造の回数
         default: "10"
+      buy:
+        description: 最初に item.buy で買うもの（<itemId>:<数>,...。空なら買わない）
+        default: ""
 
 permissions:
   contents: write
@@ -50,6 +53,11 @@ jobs:
               opt="$opt --$key=$value"
             fi
           done
+          buy=$(jq -r '.inputs.buy // ""' "$GITHUB_EVENT_PATH")
+          [[ "$buy" =~ ^[0-9:,]*$ ]] || exit 1
+          if [ -n "$buy" ]; then
+            opt="$opt --buy=$buy"
+          fi
           main() {
             cd src && node scripts/core/weapon_troop_up.mjs "$target" $opt
           }
