@@ -1,0 +1,57 @@
+on:
+  workflow_dispatch:
+    inputs:
+      name:
+        description: 表示名
+        required: true
+      make:
+        description: 作る巨大武器の armId（空なら作らない。130202 は夜明けの方舟）
+        default: ""
+      weapon:
+        description: 強化する巨大武器の armId（空なら強化しない）
+        default: ""
+      troop:
+        description: 兵種改造の type（空なら改造しない。4 はゾンビ）
+        default: ""
+      times:
+        description: 強化と改造の回数
+        default: "10"
+
+permissions:
+  contents: write
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: ./.github/actions/prepare
+        with:
+          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
+          source-repo: ${{ secrets.SOURCE_REPO }}
+          source-token: ${{ secrets.SOURCE_TOKEN }}
+          sparse-checkout-cone-mode: false
+          sparse-checkout: |
+            /api/
+            /scripts/core/
+            /savedata/
+
+      - env:
+          LOG_KEY: ${{ secrets.LOG_KEY }}
+        run: |
+          target=$(jq -r .inputs.name "$GITHUB_EVENT_PATH")
+          [[ "$target" =~ ^[A-Za-z0-9]+$ ]] || exit 1
+          opt=""
+          for key in make weapon troop times; do
+            value=$(jq -r ".inputs.$key // \"\"" "$GITHUB_EVENT_PATH")
+            [[ "$value" =~ ^[0-9]*$ ]] || exit 1
+            if [ -n "$value" ]; then
+              opt="$opt --$key=$value"
+            fi
+          done
+          main() {
+            cd src && node scripts/core/weapon_troop_up.mjs "$target" $opt
+          }
+          . .github/scripts/logged.sh
+          run_logged main
