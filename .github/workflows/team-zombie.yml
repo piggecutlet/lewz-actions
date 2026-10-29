@@ -66,6 +66,8 @@ jobs:
             fi
             node scripts/core/zombie_hunt.mjs "$team" --diamond
             c=$?
+            manual=$(node -e "import('./scripts/core/_state.mjs').then(({stateOf})=>{console.log(stateOf(process.argv[1]).manual.join(','))})" "$STATE")
+            node scripts/core/team_receive.mjs "$manual" || true
             node scripts/core/start_setup.mjs --state="$STATE"
             exit $c
           }
