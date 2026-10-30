@@ -7,6 +7,10 @@ on:
       state:
         description: 州（表示名を省いたときの州）
         default: "775"
+      only_send_lv10_zombie:
+        description: Lv.10 ゾンビ ネメシスだけを 1 万体まで作って贈る
+        type: boolean
+        default: false
 
 permissions:
   contents: write
@@ -51,8 +55,14 @@ jobs:
             if [ -z "$names" ]; then
               names=$(node -e "Promise.all([import('./scripts/core/_readme.mjs'),import('./scripts/core/_kinds.mjs')]).then(([{readAccounts},{KIND}])=>{console.log((readAccounts()[process.argv[1]]||[]).filter((a)=>a.kind===KIND.AUTO&&a.note==='VIP').map((a)=>a.name).join(','))})" "$STATE")
             fi
-            node scripts/core/vip_boost.mjs "$names" || true
-            node scripts/core/vip_send.mjs "$names"
+            boost_opt=""
+            send_opt=""
+            if [ "$(jq -r '.inputs.only_send_lv10_zombie // "false"' "$GITHUB_EVENT_PATH")" = "true" ]; then
+              boost_opt="--zombie-only"
+              send_opt="--only-send-lv10-zombie"
+            fi
+            node scripts/core/vip_boost.mjs "$names" $boost_opt || true
+            node scripts/core/vip_send.mjs "$names" $send_opt
             code=$?
             node -e "import('./scripts/core/_ci.mjs').then(({pushAccounts})=>pushAccounts('chore: CI の vip-send で accounts.json を更新する'))"
             exit $code
