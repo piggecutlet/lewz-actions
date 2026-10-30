@@ -51,7 +51,7 @@ jobs:
             /scripts/ci/leave_alliance.mjs
             /.SKIP_DONATION_VIP_ALLIANCE
 
-      - timeout-minutes: 150
+      - timeout-minutes: 300
         env:
           GH_TOKEN: ${{ github.token }}
           LOG_KEY: ${{ secrets.LOG_KEY }}
