@@ -96,19 +96,15 @@ jobs:
                 for id in $(node -e "import('./scripts/core/_readme.mjs').then(({readAccounts})=>{console.log([...new Set((readAccounts()[process.argv[1]]||[]).map((a)=>a.home).filter(Boolean))].sort().join(' '))})" "$STATE"); do
                   unlocked=$(node -e "import('./scripts/core/_readme.mjs').then(({readAccounts})=>{console.log((readAccounts()[process.argv[1]]||[]).filter((a)=>a.home===process.argv[2]&&(a.note||'').includes('VIP')&&a.vipStore===1).map((a)=>a.name).join(','))})" "$STATE" "$id")
                   approver=$(node -e "import('node:fs').then(({readFileSync})=>{const d=JSON.parse(readFileSync('savedata/alliances.json','utf8'));console.log(((d[process.argv[1]]||[]).find((a)=>a.id===process.argv[2])||{}).approver||'')})" "$STATE" "$id")
-                  zombie_opt=""
-                  if [ "$(node -e "import('node:fs').then(({readFileSync})=>{const d=JSON.parse(readFileSync('savedata/alliances.json','utf8'));console.log(((d[process.argv[1]]||[]).find((a)=>a.id===process.argv[2])||{}).nearManual===true)})" "$STATE" "$id")" = true ]; then
-                    zombie_opt="--only-send-lv10-zombie"
-                  fi
                   if [ -n "$unlocked" ]; then
-                    unlocked=$(node scripts/core/vip_send.mjs "$unlocked" $zombie_opt --check | tee -a /dev/stderr | sed -n 's/^送れる //p')
+                    unlocked=$(node scripts/core/vip_send.mjs "$unlocked" --check | tee -a /dev/stderr | sed -n 's/^送れる //p')
                   fi
                   echo "$id の解禁済みの VIP を 775_001 へ入れて贈る（承認役 $approver）"
                   for part in "$(echo "$unlocked" | cut -d, -f1-56)" "$(echo "$unlocked" | cut -d, -f57- -s)"; do
                     if [ -z "$part" ] || [ -z "$approver" ]; then continue; fi
                     node scripts/ci/leave_alliance.mjs "$part" || true
                     node scripts/core/join_alliance.mjs "$part" || true
-                    node scripts/core/vip_send.mjs "$part" $zombie_opt || true
+                    node scripts/core/vip_send.mjs "$part" || true
                     node scripts/ci/leave_alliance.mjs "$part" || true
                     node scripts/core/join_alliance.mjs "$part" --leader="$approver" || true
                   done
