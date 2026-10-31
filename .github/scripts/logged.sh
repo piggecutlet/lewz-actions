@@ -8,7 +8,7 @@ start_logged() {
   mkdir -p "$(dirname "$LOG")"
   echo "LOG=$LOG" >> "$GITHUB_ENV"
   set +e
-  ( "$fn" ) > "$LOG" 2>&1 &
+  ( "$fn" ) >> "$LOG" 2>&1 &
   local pid=$!
   local n=0
   while kill -0 "$pid" 2>/dev/null; do
