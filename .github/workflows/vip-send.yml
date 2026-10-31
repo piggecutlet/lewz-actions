@@ -34,6 +34,7 @@ jobs:
           sparse-checkout: |
             /api/
             /scripts/core/
+            /scripts/skip/
             /savedata/
             /decompile/device/files/ja/ja_ilocalize_base.json
             /decompile/device/files/WarZDoc/config/database.activity.xml
