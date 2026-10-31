@@ -86,14 +86,14 @@ jobs:
                 node scripts/core/vip_store.mjs "$store" || true
               fi
               node scripts/core/use_skill.mjs "$names" || true
-              node scripts/core/train_army.mjs "$names" || true
-              node scripts/core/vip_boost.mjs "$names" || true
-              node scripts/core/train_army.mjs "$names" || true
+              node scripts/core/train_army.mjs "$names" --zombie-only || true
+              node scripts/core/vip_boost.mjs "$names" --train-zombie || true
+              node scripts/core/train_army.mjs "$names" --zombie-only || true
               if [ "$(TZ=JST-9 date +%F)" != "2026-10-18" ]; then
                 node scripts/core/vip_send.mjs "$names" $send_opt || true
               fi
             else
-              node scripts/core/train_army.mjs "$names" || true
+              node scripts/core/train_army.mjs "$names" --zombie-only || true
             fi
             node scripts/ci/diamond_shield_read.mjs "$names" --state="$STATE" || true
             node -e "import('./scripts/core/_ci.mjs').then(({pushAccounts})=>pushAccounts('chore: CI の vip でダイヤを読み、accounts.json を更新する'))"
