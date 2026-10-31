@@ -49,7 +49,6 @@ jobs:
             /decompile/device/files/WarZDoc/config/database.activity.xml
             /scripts/ci/diamond_shield_read.mjs
             /scripts/ci/leave_alliance.mjs
-            /.SKIP_DONATION_VIP_ALLIANCE
 
       - timeout-minutes: 300
         env:
@@ -94,9 +93,6 @@ jobs:
               node scripts/core/train_army.mjs "$names" --zombie-only || true
               node scripts/core/vip_boost.mjs "$names" --train-zombie || true
               node scripts/core/train_army.mjs "$names" --zombie-only || true
-              if [ "$(tr -d '\r\n ' < .SKIP_DONATION_VIP_ALLIANCE 2>/dev/null)" = "1" ]; then
-                echo ".SKIP_DONATION_VIP_ALLIANCE が 1 なので 775_001 へ入って贈るのを飛ばす"
-              else
                 for id in $(node -e "import('./scripts/core/_readme.mjs').then(({readAccounts})=>{console.log([...new Set((readAccounts()[process.argv[1]]||[]).map((a)=>a.home).filter(Boolean))].sort().join(' '))})" "$STATE"); do
                   unlocked=$(node -e "import('./scripts/core/_readme.mjs').then(({readAccounts})=>{console.log((readAccounts()[process.argv[1]]||[]).filter((a)=>a.home===process.argv[2]&&(a.note||'').includes('VIP')&&a.vipStore===1).map((a)=>a.name).join(','))})" "$STATE" "$id")
                   approver=$(node -e "import('node:fs').then(({readFileSync})=>{const d=JSON.parse(readFileSync('savedata/alliances.json','utf8'));console.log(((d[process.argv[1]]||[]).find((a)=>a.id===process.argv[2])||{}).approver||'')})" "$STATE" "$id")
@@ -118,7 +114,6 @@ jobs:
                   done
                   node scripts/core/vip_alliance_rank.mjs --state="$STATE" --alliance="$id" || true
                 done
-              fi
               restart=1
             else
               node scripts/core/train_army.mjs "$names" --zombie-only || true
