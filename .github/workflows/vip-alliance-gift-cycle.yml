@@ -7,9 +7,6 @@ on:
       dry_run:
         type: boolean
         default: false
-      chained:
-        type: boolean
-        default: false
       state:
         description: 州
         default: "775"
@@ -56,7 +53,6 @@ jobs:
       - env:
           COUNT: ${{ inputs.count }}
           DRY_RUN: ${{ inputs.dry_run && '--dry-run' || '' }}
-          CHAINED: ${{ inputs.chained && '--chained' || '' }}
           GH_TOKEN: ${{ secrets.DISPATCH_TOKEN }}
           LOG_KEY: ${{ secrets.LOG_KEY }}
           STATE: ${{ inputs.state || '775' }}
@@ -75,7 +71,7 @@ jobs:
           esac
           main() {
             cd src
-            node scripts/core/vip_alliance_gift.mjs $COUNT $DRY_RUN $CHAINED --ci --state="$STATE" ${APPROVER:+"--approver=$APPROVER"} ${CAPTAIN:+"--captain=$CAPTAIN"} ${ALLIANCE:+"--alliance=$ALLIANCE"}
+            node scripts/core/vip_alliance_gift.mjs $COUNT $DRY_RUN --ci --state="$STATE" ${APPROVER:+"--approver=$APPROVER"} ${CAPTAIN:+"--captain=$CAPTAIN"} ${ALLIANCE:+"--alliance=$ALLIANCE"}
           }
           . .github/scripts/logged.sh
           start_logged main
