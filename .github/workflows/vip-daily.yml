@@ -86,6 +86,9 @@ jobs:
               if [ -n "$store" ]; then
                 node scripts/core/vip_store.mjs "$store" || true
               fi
+              if [ "$STATE" = 775 ]; then
+                node scripts/core/vip_store.mjs Empire061775 --officer-exp || true
+              fi
               node scripts/core/use_skill.mjs "$names" || true
               node scripts/core/train_army.mjs "$names" --zombie-only || true
               node scripts/core/vip_boost.mjs "$names" --train-zombie || true
