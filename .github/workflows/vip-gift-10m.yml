@@ -1,0 +1,82 @@
+on:
+  workflow_dispatch:
+    inputs:
+      name:
+        description: 相手の表示名
+        required: true
+      only_send_lv10_zombie:
+        description: Lv.10 ゾンビ ネメシスを贈る
+        type: boolean
+        default: false
+      only_send_lv10_archer:
+        description: Lv.10 射手 シャドウアサシンを贈る
+        type: boolean
+        default: false
+      only_send_lv10_vehicle:
+        description: Lv.10 車両 ピースメーカーを贈る
+        type: boolean
+        default: false
+      only_send_lv10_warrior:
+        description: Lv.10 戦士 Zヒーローを贈る
+        type: boolean
+        default: false
+
+permissions:
+  contents: write
+  actions: read
+
+concurrency:
+  group: vip
+  cancel-in-progress: false
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: ./.github/actions/prepare
+        with:
+          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
+          source-repo: ${{ secrets.SOURCE_REPO }}
+          source-token: ${{ secrets.SOURCE_TOKEN }}
+          sparse-checkout-cone-mode: false
+          sparse-checkout: |
+            /api/
+            /scripts/core/
+            /savedata/
+            /decompile/device/files/ja/ja_ilocalize_base.json
+            /decompile/device/files/WarZDoc/config/database.activity.xml
+            /scripts/ci/leave_alliance.mjs
+
+      - timeout-minutes: 300
+        env:
+          GH_TOKEN: ${{ github.token }}
+          LOG_KEY: ${{ secrets.LOG_KEY }}
+        run: |
+          name=$(jq -r '.inputs.name // ""' "$GITHUB_EVENT_PATH")
+          if [ -z "$name" ]; then
+            exit 1
+          fi
+          opts=""
+          for arm in zombie archer vehicle warrior; do
+            if [ "$(jq -r ".inputs.only_send_lv10_$arm // \"false\"" "$GITHUB_EVENT_PATH")" = "true" ]; then
+              opts="$opts --only-send-lv10-$arm"
+            fi
+          done
+          main() {
+            for w in vip-alliance-daily.yml vip-alliance-gift-cycle.yml account-setup.yml; do
+              busy=$(gh run list -R "$GITHUB_REPOSITORY" -w "$w" -L 5 --json status -q '[.[] | select(.status != "completed")] | length')
+              if [ "$busy" != "0" ]; then
+                echo "$w が動いているので送らない。終わってから実行してください"
+                exit 1
+              fi
+            done
+            cd src
+            node scripts/core/vip_gift_10m.mjs "$name" $opts
+            code=$?
+            node -e "import('./scripts/core/_ci.mjs').then(({pushAccounts})=>pushAccounts('chore: CI の vip-gift-10m で accounts.json を更新する'))"
+            exit $code
+          }
+          . .github/scripts/logged.sh
+          run_logged main
