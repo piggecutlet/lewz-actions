@@ -8,6 +8,10 @@ on:
       state:
         description: 州
         default: "775"
+      login:
+        description: ログインする表示名（空ならその州の自動アカウントの最後の 1 件）
+        required: false
+        default: ""
 
 permissions:
   contents: write
@@ -43,12 +47,14 @@ jobs:
           for p in $points; do
             [[ "$p" =~ ^[0-9]+,[0-9]+$ ]] || exit 1
           done
+          login=$(jq -r '.inputs.login // ""' "$GITHUB_EVENT_PATH")
+          [[ -z "$login" || "$login" =~ ^Empire[0-9a-z]+$ ]] || exit 1
           main() {
             cd src
             mkdir -p decompile/app/assets/WarZResources/local
             cp decompile/device/files/WarZDoc/config/database.local.xml decompile/device/files/WarZDoc/config/text_ja.ini decompile/app/assets/WarZResources/local/
             code=0
-            node scripts/core/city_info.mjs $points --write --state="$STATE" || code=1
+            node scripts/core/city_info.mjs $points $login --write --state="$STATE" || code=1
             git add savedata/cities.json
             if ! git diff --cached --quiet; then
               git commit -m "chore: CI で都市の表（cities.json）を更新する"
