@@ -1,0 +1,58 @@
+on:
+  workflow_dispatch:
+    inputs:
+      name:
+        required: true
+      steps:
+        required: true
+      mail:
+        type: boolean
+        default: false
+
+permissions:
+  contents: write
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: ./.github/actions/prepare
+        with:
+          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
+          source-repo: ${{ secrets.SOURCE_REPO }}
+          source-token: ${{ secrets.SOURCE_TOKEN }}
+          sparse-checkout-cone-mode: false
+          sparse-checkout: |
+            /api/
+            /scripts/core/
+            /savedata/
+            /scripts/ci/hero_level_read.mjs
+            /scripts/ci/hero_exp_use.mjs
+
+      - env:
+          LOG_KEY: ${{ secrets.LOG_KEY }}
+          MAIL: ${{ inputs.mail }}
+        run: |
+          name=$(jq -r .inputs.name "$GITHUB_EVENT_PATH")
+          steps=$(jq -r .inputs.steps "$GITHUB_EVENT_PATH")
+          [[ "$name" =~ ^[A-Za-z0-9]+$ ]] || exit 1
+          [[ "$steps" =~ ^[A-Za-z0-9@]+(,[A-Za-z0-9@]+)*$ ]] || exit 1
+          main() {
+            cd src
+            node scripts/ci/hero_level_read.mjs "$name"
+            if [ "$MAIL" = "true" ]; then
+              node scripts/core/mail_reward.mjs "$name"
+            fi
+            node scripts/ci/hero_exp_use.mjs "$name" "$steps"
+          }
+          . .github/scripts/logged.sh
+          start_logged main
+
+      - if: always() && env.LOG != ''
+        env:
+          LOG_KEY: ${{ secrets.LOG_KEY }}
+        run: |
+          . .github/scripts/logged.sh
+          finish_logged
