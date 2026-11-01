@@ -1,0 +1,67 @@
+on:
+  workflow_dispatch:
+    inputs:
+      value:
+        description: scripts/ci/ci_defaults.mjs の GROW_ARMY に書く値
+        type: choice
+        default: なし
+        options:
+          - なし
+          - 4種
+          - Lv.1
+          - ゾンビのみ
+          - Lv.9 車両
+          - Lv.10 車両
+          - Lv.10 射手
+          - Lv.9 射手
+          - DF
+          - core
+          - VIP
+          - VIP_NEW_ALLIANCE
+      delay_minutes:
+        description: 書き換えるまで待つ分（0 ならすぐ。最大 330）
+        required: false
+        default: "0"
+
+permissions:
+  contents: write
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: ./.github/actions/prepare
+        with:
+          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
+          source-repo: ${{ secrets.SOURCE_REPO }}
+          source-token: ${{ secrets.SOURCE_TOKEN }}
+          sparse-checkout-cone-mode: false
+          sparse-checkout: |
+            /scripts/ci/ci_defaults.mjs
+
+      - env:
+          LOG_KEY: ${{ secrets.LOG_KEY }}
+        run: |
+          value=$(jq -r '.inputs.value // "なし"' "$GITHUB_EVENT_PATH")
+          delay=$(jq -r '.inputs.delay_minutes // "0"' "$GITHUB_EVENT_PATH")
+          [[ "$delay" =~ ^[0-9]+$ ]] && [ "$delay" -le 330 ] || exit 1
+          main() {
+            echo "$delay 分待ってから GROW_ARMY を $value にする"
+            sleep $((delay * 60))
+            cd src
+            git pull --rebase
+            sed -i "s/^export const GROW_ARMY = .*/export const GROW_ARMY = \"$value\";/" scripts/ci/ci_defaults.mjs
+            grep -n '^export const GROW_ARMY' scripts/ci/ci_defaults.mjs
+            git add --sparse scripts/ci/ci_defaults.mjs
+            if ! git diff --cached --quiet; then
+              git commit -m "chore: CI で grow-army の既定を $value にする"
+              for i in 1 2 3 4 5; do
+                git pull --rebase && git push && break
+                sleep $((RANDOM % 20 + 5))
+              done
+            fi
+          }
+          . .github/scripts/logged.sh
+          run_logged main
