@@ -1,0 +1,60 @@
+on:
+  workflow_dispatch:
+    inputs:
+      name:
+        required: true
+      count:
+        required: false
+        default: "10"
+
+permissions:
+  contents: write
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: ./.github/actions/prepare
+        with:
+          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
+          source-repo: ${{ secrets.SOURCE_REPO }}
+          source-token: ${{ secrets.SOURCE_TOKEN }}
+          sparse-checkout-cone-mode: false
+          sparse-checkout: |
+            /api/
+            /scripts/core/
+            /savedata/
+            /scripts/ci/leave_alliance.mjs
+
+      - env:
+          LOG_KEY: ${{ secrets.LOG_KEY }}
+        run: |
+          name=$(jq -r .inputs.name "$GITHUB_EVENT_PATH")
+          count=$(jq -r '.inputs.count // "10"' "$GITHUB_EVENT_PATH")
+          case "$name" in
+            "" | *[!A-Za-z0-9]*) exit 1 ;;
+          esac
+          [[ "$count" =~ ^[0-9]+$ ]] || exit 1
+          main() {
+            cd src
+            alliance() { node -e "import('./scripts/core/_readme.mjs').then(({readAccounts})=>console.log((Object.values(readAccounts()).flat().find((a)=>a.name==='$name')||{}).alliance||''))"; }
+            leave() {
+              for i in 1 2 3 4 5 6 7 8 9 10; do
+                node scripts/ci/leave_alliance.mjs "$name"
+                [ "$(alliance)" = 未加入 ] && return 0
+                sleep 60
+              done
+              return 1
+            }
+            leave || { echo "抜けられない"; exit 1; }
+            node scripts/core/join_alliance.mjs "$name" || exit 1
+            node scripts/core/gift_presents.mjs "$name" "$count"
+            code=$?
+            leave || code=1
+            node -e "import('./scripts/core/_ci.mjs').then(({pushAccounts})=>pushAccounts('chore: CI の gift-presents で accounts.json を更新する'))"
+            exit $code
+          }
+          . .github/scripts/logged.sh
+          run_logged main
