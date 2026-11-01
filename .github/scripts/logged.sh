@@ -1,10 +1,10 @@
 start_logged() {
   local fn=$1
   local suffix=${2:+_$2}
-  local name
-  name=$(basename "${GITHUB_WORKFLOW_REF%%@*}" .yml)
+  local wf
+  wf=$(basename "${GITHUB_WORKFLOW_REF%%@*}" .yml)
   mkdir -p logs
-  LOG="logs/$(TZ=Asia/Tokyo date +%Y/%m/%d/%H%M%S)_${name}${suffix}_${GITHUB_RUN_ID}.log"
+  LOG="logs/$(TZ=Asia/Tokyo date +%Y/%m/%d/%H%M%S)_${wf}${suffix}_${GITHUB_RUN_ID}.log"
   mkdir -p "$(dirname "$LOG")"
   echo "LOG=$LOG" >> "$GITHUB_ENV"
   set +e
