@@ -16,7 +16,7 @@ on:
         description: 州
         default: "775"
       store:
-        description: VIP 商店も回す表示名（空なら 775 は Empire062775、ほかの州は回さない）
+        description: VIP 商店も回す表示名か deviceId（空なら 775 は ArcticFox、ほかの州は回さない）
         required: false
         default: ""
 
@@ -62,7 +62,7 @@ jobs:
           esac
           store="$STORE"
           if [ -z "$store" ] && [ "$STATE" = 775 ]; then
-            store=Empire062775
+            store=988923000775
           fi
           names=$(jq -r '.inputs.names // ""' "$GITHUB_EVENT_PATH")
           morning=$(jq -r '.inputs.morning // "false"' "$GITHUB_EVENT_PATH")
