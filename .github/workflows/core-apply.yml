@@ -9,6 +9,7 @@ on:
           - cancel
         default: watch
       name:
+        description: cancel で取り消す gameUid
         type: string
         default: ""
       dry_run:

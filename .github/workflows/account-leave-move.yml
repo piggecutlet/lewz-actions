@@ -2,6 +2,7 @@ on:
   workflow_dispatch:
     inputs:
       names:
+        description: gameUid（カンマ区切り）
         required: true
       target:
         description: 撤退させる都市の座標（x,y）
@@ -61,9 +62,7 @@ jobs:
               out=$(node scripts/ci/leave_random_move.mjs "$rest" --state="$STATE")
               code=$?
               echo "$out"
-              rest=$(echo "$out" | grep -E "行軍中|E000000" | cut -d" " -f1 | sort -u | paste -sd,)
-              [ -z "$rest" ] && break
-              rest=$(node scripts/core/game_uids.mjs "$rest")
+              rest=$(echo "$out" | sed -n 's/^流し直す //p')
               [ -z "$rest" ] && break
               sleep 60
             done

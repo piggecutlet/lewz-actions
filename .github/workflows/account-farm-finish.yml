@@ -2,6 +2,7 @@ on:
   workflow_dispatch:
     inputs:
       names:
+        description: gameUid（カンマ区切り）
         required: true
       target:
         description: DF の移転先と偵察先 x,y（空なら scripts/ci/ci_defaults.mjs の DF_TARGET）

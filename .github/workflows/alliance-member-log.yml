@@ -2,6 +2,7 @@ on:
   workflow_dispatch:
     inputs:
       name:
+        description: ログインする gameUid
         required: true
 
 permissions:

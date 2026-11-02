@@ -2,6 +2,7 @@ on:
   workflow_dispatch:
     inputs:
       uid:
+        description: gameUid
         required: true
       alliance:
         required: true

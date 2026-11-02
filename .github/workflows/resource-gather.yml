@@ -2,6 +2,7 @@ on:
   workflow_dispatch:
     inputs:
       account:
+        description: gameUid
         required: true
 
 permissions:

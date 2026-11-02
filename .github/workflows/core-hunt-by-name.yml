@@ -2,6 +2,7 @@ on:
   workflow_dispatch:
     inputs:
       name:
+        description: gameUid
         required: true
       size:
         description: 1 部隊の体数の上限（--size。空なら待機兵を均等に割る）

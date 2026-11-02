@@ -2,6 +2,7 @@ on:
   workflow_dispatch:
     inputs:
       name:
+        description: 送り手の gameUid
         required: true
       count:
         required: false

@@ -2,8 +2,10 @@ on:
   workflow_dispatch:
     inputs:
       names:
+        description: gameUid（カンマ区切り）
         required: true
       leader:
+        description: 盟主の gameUid（空なら州の自分の同盟）
         required: false
 
 permissions:

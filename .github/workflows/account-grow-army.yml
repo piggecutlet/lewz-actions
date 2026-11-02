@@ -2,6 +2,7 @@ on:
   workflow_dispatch:
     inputs:
       names:
+        description: gameUid（カンマ区切り）
         required: true
       mode:
         type: choice

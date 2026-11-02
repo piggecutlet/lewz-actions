@@ -4,6 +4,7 @@ on:
       state:
         required: false
       approver:
+        description: 加入の承認役の gameUid
         required: false
 
 permissions:

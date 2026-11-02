@@ -2,8 +2,10 @@ on:
   workflow_dispatch:
     inputs:
       a:
+        description: A の gameUid
         required: true
       b:
+        description: B の gameUid
         required: true
 
 permissions:

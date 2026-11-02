@@ -2,6 +2,7 @@ on:
   workflow_dispatch:
     inputs:
       name:
+        description: 盟主の gameUid
         required: true
 
 permissions:

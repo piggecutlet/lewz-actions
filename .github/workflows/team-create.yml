@@ -2,8 +2,10 @@ on:
   workflow_dispatch:
     inputs:
       leader:
+        description: 隊長の gameUid
         required: true
       names:
+        description: 入れる gameUid（カンマ区切り）
         required: true
 
 permissions:

@@ -2,6 +2,7 @@ on:
   workflow_dispatch:
     inputs:
       name:
+        description: ログインする gameUid
         required: true
       own:
         description: 自分の同盟の略称（alliances.json に id のある行が無い州だけ必須。775 は空でよい）

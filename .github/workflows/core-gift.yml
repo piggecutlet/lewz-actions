@@ -33,11 +33,11 @@ jobs:
         run: |
           names=$(jq -r .inputs.names "$GITHUB_EVENT_PATH")
           case "$names" in
-            "" | *[[:space:]]* | *\"* | *\'* | *\`* | *\$* | *'\'*) exit 1 ;;
+            "" | *[!0-9,]*) exit 1 ;;
           esac
           to=$(jq -r '.inputs.to // ""' "$GITHUB_EVENT_PATH")
           case "$to" in
-            *[!A-Za-z0-9:]*) exit 1 ;;
+            *[!0-9]*) exit 1 ;;
           esac
           main() {
             cd src

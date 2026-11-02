@@ -2,6 +2,7 @@ on:
   workflow_dispatch:
     inputs:
       names:
+        description: gameUid（カンマ区切り）
         required: true
       kinds:
         description: 食料 / 燃料 / 鉄鋼 / 合金 をカンマ区切り（空なら 4 種）。「食料:100000」で届けたい量（税 10% を上乗せして送る）

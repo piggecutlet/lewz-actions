@@ -5,6 +5,7 @@ on:
         description: 移転先の座標（x,y）
         required: true
       names:
+        description: gameUid（カンマ区切り）
         required: true
       diamond:
         description: 高級移転が無ければダイヤ
