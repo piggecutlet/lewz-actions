@@ -2,8 +2,8 @@ on:
   workflow_dispatch:
     inputs:
       login:
+        description: ログインする deviceId（kind deleted の行）
         required: true
-        default: Empire056e4775
       target:
         required: true
 
