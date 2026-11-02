@@ -2,7 +2,7 @@ on:
   workflow_dispatch:
     inputs:
       name:
-        description: deviceId
+        description: gameUid
         required: true
       probe:
         description: 無料を使い切ったあとに useFree 1 でもう 1 回ずつ送る（調べるとき用）

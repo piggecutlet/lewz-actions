@@ -2,7 +2,7 @@ on:
   workflow_dispatch:
     inputs:
       names:
-        description: deviceId,deviceId,...
+        description: gameUid,gameUid,...
         required: true
       dry_run:
         description: 送る予定のものを出すだけ（書き込みなし）

@@ -5,7 +5,7 @@ on:
         required: false
         default: "259000"
       leader:
-        description: 研究を始める deviceId（その人の同盟で始める。既定は Empire04c3a775）
+        description: 研究を始める gameUid（その人の同盟で始める。既定は Empire04c3a775）
         default: 195149172000775
 
 permissions:

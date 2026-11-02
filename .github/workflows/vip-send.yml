@@ -2,10 +2,10 @@ on:
   workflow_dispatch:
     inputs:
       names:
-        description: deviceId（カンマ区切り。省くと備考が VIP の自動アカウントの全件）
+        description: gameUid（カンマ区切り。省くと備考が VIP の自動アカウントの全件）
         required: false
       state:
-        description: 州（deviceId を省いたときの州）
+        description: 州（gameUid を省いたときの州）
         default: "775"
       only_send_lv10_zombie:
         description: Lv.10 ゾンビ ネメシスだけを 1 万体まで作って贈る
@@ -54,7 +54,7 @@ jobs:
           main() {
             cd src
             if [ -z "$names" ]; then
-              names=$(node -e "Promise.all([import('./scripts/core/_readme.mjs'),import('./scripts/core/_kinds.mjs')]).then(([{readAccounts},{KIND}])=>{console.log((readAccounts()[process.argv[1]]||[]).filter((a)=>a.kind===KIND.AUTO&&a.note==='VIP').map((a)=>a.deviceId).join(','))})" "$STATE")
+              names=$(node -e "Promise.all([import('./scripts/core/_readme.mjs'),import('./scripts/core/_kinds.mjs')]).then(([{readAccounts},{KIND}])=>{console.log((readAccounts()[process.argv[1]]||[]).filter((a)=>a.kind===KIND.AUTO&&a.note==='VIP').map((a)=>a.gameUid).join(','))})" "$STATE")
             fi
             boost_opt=""
             send_opt=""

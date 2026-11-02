@@ -2,7 +2,7 @@ on:
   workflow_dispatch:
     inputs:
       name:
-        description: 使う自動アカウントの deviceId
+        description: 使う自動アカウントの gameUid
         required: true
       list:
         description: 入らずに空きのある小隊の一覧だけ出す

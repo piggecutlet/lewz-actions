@@ -8,7 +8,7 @@ on:
         description: 同盟の名前（英数字と空白で 3〜20 文字）。略称は先頭 3 文字
         required: true
       creator:
-        description: 作るときの deviceId（同盟に入っていないもの）。名前を変えるときは空
+        description: 作るときの gameUid（同盟に入っていないもの）。名前を変えるときは空
         required: false
 
 permissions:

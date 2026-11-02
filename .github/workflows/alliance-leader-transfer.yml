@@ -2,10 +2,10 @@ on:
   workflow_dispatch:
     inputs:
       from:
-        description: 今の盟主の deviceId
+        description: 今の盟主の gameUid
         required: true
       to:
-        description: 新しい盟主の deviceId
+        description: 新しい盟主の gameUid
         required: true
 
 permissions:

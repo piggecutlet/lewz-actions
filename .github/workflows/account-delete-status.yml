@@ -2,7 +2,7 @@ on:
   workflow_dispatch:
     inputs:
       names:
-        description: deviceId（カンマ区切り）
+        description: gameUid（カンマ区切り）
         required: true
 
 permissions:

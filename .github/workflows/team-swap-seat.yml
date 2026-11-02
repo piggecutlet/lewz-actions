@@ -2,7 +2,7 @@ on:
   workflow_dispatch:
     inputs:
       pairs:
-        description: 押さえている側の deviceId:新しい側の deviceId をカンマ区切り
+        description: 押さえている側の gameUid:新しい側の gameUid をカンマ区切り
         required: true
       team:
         description: 小隊の teamId

@@ -9,7 +9,7 @@ on:
         description: 州
         default: "775"
       login:
-        description: ログインする deviceId（空ならその州の自動アカウントの最後の 1 件）
+        description: ログインする gameUid（空ならその州の自動アカウントの最後の 1 件）
         required: false
         default: ""
 

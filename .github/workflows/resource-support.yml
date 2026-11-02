@@ -8,11 +8,11 @@ on:
         required: false
         default: ""
       to:
-        description: 送り先の deviceId（空なら 775 は Empire061775、ほかの州は必須。Empire061775 以外なら同盟 775_001 への加入をしない）
+        description: 送り先の gameUid（空なら 775 は Empire061775、ほかの州は必須。Empire061775 以外なら同盟 775_001 への加入をしない）
         required: false
         default: ""
       teleport:
-        description: 送り先の付近へ移転する deviceId をカンマ区切り（空なら移転しない）
+        description: 送り先の付近へ移転する gameUid をカンマ区切り（空なら移転しない）
         required: false
         default: ""
       dry_run:

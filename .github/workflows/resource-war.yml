@@ -4,7 +4,7 @@ on:
       defender:
         required: true
       attackers:
-        description: deviceId,deviceId,...
+        description: gameUid,gameUid,...
         required: true
       target:
         description: x,y

@@ -2,7 +2,7 @@ on:
   workflow_dispatch:
     inputs:
       name:
-        description: deviceId（既定は Empire0fc1d775）
+        description: gameUid（既定は Empire0fc1d775）
         default: 645412375000775
 
 permissions:

@@ -39,7 +39,7 @@ jobs:
           [[ "$count" =~ ^[0-9]+$ ]] || exit 1
           main() {
             cd src
-            alliance() { node -e "import('./scripts/core/_readme.mjs').then(({readAccounts})=>console.log((Object.values(readAccounts()).flat().find((a)=>a.deviceId==='$who')||{}).alliance||''))"; }
+            alliance() { node -e "import('./scripts/core/_readme.mjs').then(({readAccounts})=>console.log((Object.values(readAccounts()).flat().find((a)=>a.gameUid==='$who')||{}).alliance||''))"; }
             leave() {
               for i in 1 2 3 4 5 6 7 8 9 10; do
                 node scripts/ci/leave_alliance.mjs "$who"

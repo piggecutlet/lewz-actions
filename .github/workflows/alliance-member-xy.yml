@@ -2,7 +2,7 @@ on:
   workflow_dispatch:
     inputs:
       login:
-        description: ログインする deviceId（この人の同盟のメンバーを読む）
+        description: ログインする gameUid（この人の同盟のメンバーを読む）
         required: true
       names:
         required: false

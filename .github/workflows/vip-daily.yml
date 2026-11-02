@@ -2,7 +2,7 @@ on:
   workflow_dispatch:
     inputs:
       names:
-        description: deviceId（省くと備考が VIP の自動アカウントの全件）
+        description: gameUid（省くと備考が VIP の自動アカウントの全件）
         required: false
       morning:
         description: 時刻に関係なく 9 時の回（解禁・商店・加速・派遣）を流す
@@ -16,7 +16,7 @@ on:
         description: 州
         default: "775"
       store:
-        description: VIP 商店も回す deviceId（空なら 775 は ArcticFox、ほかの州は回さない）
+        description: VIP 商店も回す gameUid（空なら 775 は ArcticFox、ほかの州は回さない）
         required: false
         default: ""
 
@@ -77,7 +77,7 @@ jobs:
           main() {
             cd src
             if [ -z "$names" ]; then
-              names=$(node -e "Promise.all([import('./scripts/core/_readme.mjs'),import('./scripts/core/_kinds.mjs')]).then(([{readAccounts},{KIND}])=>{console.log((readAccounts()[process.argv[1]]||[]).filter((a)=>a.kind===KIND.AUTO&&a.note==='VIP').map((a)=>a.deviceId).join(','))})" "$STATE")
+              names=$(node -e "Promise.all([import('./scripts/core/_readme.mjs'),import('./scripts/core/_kinds.mjs')]).then(([{readAccounts},{KIND}])=>{console.log((readAccounts()[process.argv[1]]||[]).filter((a)=>a.kind===KIND.AUTO&&a.note==='VIP').map((a)=>a.gameUid).join(','))})" "$STATE")
             fi
             node scripts/core/shield.mjs "$names" || true
             node scripts/core/vip_unlock.mjs "$names" || true

@@ -2,7 +2,7 @@ on:
   workflow_dispatch:
     inputs:
       login:
-        description: ログインする deviceId（kind deleted の行）
+        description: ログインする gameUid（kind deleted の行）
         required: true
       target:
         required: true

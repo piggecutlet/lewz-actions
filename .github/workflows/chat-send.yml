@@ -2,7 +2,7 @@ on:
   workflow_dispatch:
     inputs:
       name:
-        description: 送る側の deviceId
+        description: 送る側の gameUid
         required: true
       to:
         description: 送信先（国際 か 同盟の略称）
