@@ -52,7 +52,7 @@ jobs:
           COLLECT_ALL: ${{ inputs.collect_all }}
         run: |
           target=$(jq -r .inputs.name "$GITHUB_EVENT_PATH")
-          [[ "$target" =~ ^[A-Za-z0-9]+$ ]] || exit 1
+          [[ "$target" =~ ^[0-9]+$ ]] || exit 1
           opt=""
           if [ "$BUILD" = "true" ]; then
             opt="--build"

@@ -31,7 +31,7 @@ jobs:
         run: |
           names=$(jq -r .inputs.names "$GITHUB_EVENT_PATH")
           case "$names" in
-            "" | *[!A-Za-z0-9,]*) exit 1 ;;
+            "" | *[!0-9,]*) exit 1 ;;
           esac
           main() {
             cd src && node scripts/ci/move_ready.mjs "$names"

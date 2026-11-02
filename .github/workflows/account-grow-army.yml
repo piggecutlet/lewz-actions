@@ -75,7 +75,7 @@ jobs:
           esac
           names=$(jq -r .inputs.names "$GITHUB_EVENT_PATH")
           case "$names" in
-            "" | *[!A-Za-z0-9,]*) exit 1 ;;
+            "" | *[!0-9,]*) exit 1 ;;
           esac
           mode=$(jq -r .inputs.mode "$GITHUB_EVENT_PATH")
           [ "$mode" = 既定 ] && mode=$(cd src && node --input-type=module -e 'import { GROW_ARMY } from "./scripts/ci/ci_defaults.mjs"; console.log(GROW_ARMY);')

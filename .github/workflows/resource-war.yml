@@ -40,7 +40,7 @@ jobs:
           case "$defender" in
             "" | *[!A-Za-z0-9]*) exit 1 ;;
           esac
-          [[ "$attackers" =~ ^[A-Za-z0-9]+(,[A-Za-z0-9]+)*$ ]] || exit 1
+          [[ "$attackers" =~ ^[0-9]+(,[0-9]+)*$ ]] || exit 1
           [[ "$target" =~ ^[0-9]+,[0-9]+$ ]] || exit 1
           main() {
             cd src && node scripts/ci/resource_war.mjs "$defender" "$attackers" "$target"

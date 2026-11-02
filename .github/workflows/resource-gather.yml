@@ -31,7 +31,7 @@ jobs:
         run: |
           account=$(jq -r .inputs.account "$GITHUB_EVENT_PATH")
           case "$account" in
-            "" | *[!A-Za-z0-9]*) exit 1 ;;
+            "" | *[!0-9]*) exit 1 ;;
           esac
           main() {
             cd src && node scripts/ci/gather.mjs "$account"

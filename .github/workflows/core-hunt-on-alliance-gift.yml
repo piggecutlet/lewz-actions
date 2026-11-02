@@ -35,7 +35,7 @@ jobs:
           GIFT_ONLY: ${{ inputs.gift_only }}
         run: |
           case "$GIFT_ONLY" in
-            *[!A-Za-z0-9,]*) exit 1 ;;
+            *[!0-9,]*) exit 1 ;;
           esac
           main() {
             cd src

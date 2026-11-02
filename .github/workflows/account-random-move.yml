@@ -42,7 +42,7 @@ jobs:
           esac
           names=$(jq -r .inputs.names "$GITHUB_EVENT_PATH")
           case "$names" in
-            "" | *[!A-Za-z0-9,]*) exit 1 ;;
+            "" | *[!0-9,]*) exit 1 ;;
           esac
           main() {
             cd src && git config user.name "piggecutlet" && git config user.email "234113501+piggecutlet@users.noreply.github.com" && node scripts/ci/random_move_stay.mjs "$names" --state="$STATE" --ci $BUY_ONLY

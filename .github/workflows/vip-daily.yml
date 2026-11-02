@@ -58,7 +58,7 @@ jobs:
             *[!0-9]*) exit 1 ;;
           esac
           case "$STORE" in
-            *[!A-Za-z0-9]*) exit 1 ;;
+            *[!0-9]*) exit 1 ;;
           esac
           store="$STORE"
           if [ -z "$store" ] && [ "$STATE" = 775 ]; then
@@ -72,7 +72,7 @@ jobs:
             send_opt="--only-send-lv10-zombie"
           fi
           case "$names" in
-            *[!A-Za-z0-9,]*) exit 1 ;;
+            *[!0-9,]*) exit 1 ;;
           esac
           main() {
             cd src

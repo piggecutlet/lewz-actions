@@ -34,7 +34,7 @@ jobs:
           LOG_KEY: ${{ secrets.LOG_KEY }}
         run: |
           names=$(jq -r .inputs.names "$GITHUB_EVENT_PATH")
-          [[ "$names" =~ ^[A-Za-z0-9]+(,[A-Za-z0-9]+)*$ ]] || exit 1
+          [[ "$names" =~ ^[0-9]+(,[0-9]+)*$ ]] || exit 1
           main() {
             cd src
             node scripts/ci/item_buy_all.mjs "$names"

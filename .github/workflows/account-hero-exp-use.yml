@@ -38,7 +38,7 @@ jobs:
         run: |
           name=$(jq -r .inputs.name "$GITHUB_EVENT_PATH")
           steps=$(jq -r .inputs.steps "$GITHUB_EVENT_PATH")
-          [[ "$name" =~ ^[A-Za-z0-9]+$ ]] || exit 1
+          [[ "$name" =~ ^[0-9]+$ ]] || exit 1
           [[ "$steps" =~ ^[A-Za-z0-9@]+(,[A-Za-z0-9@]+)*$ ]] || exit 1
           main() {
             cd src

@@ -58,21 +58,21 @@ jobs:
           esac
           names=$(jq -r .inputs.names "$GITHUB_EVENT_PATH")
           case "$names" in
-            "" | *[!A-Za-z0-9,]*) exit 1 ;;
+            "" | *[!0-9,]*) exit 1 ;;
           esac
           kinds=$(jq -r '.inputs.kinds // ""' "$GITHUB_EVENT_PATH")
           kind="(食料|燃料|石油|鉄鋼|合金)(:[0-9]+)?"
           [[ -z "$kinds" || "$kinds" =~ ^$kind(,$kind)*$ ]] || exit 1
           teleport=$(jq -r '.inputs.teleport // ""' "$GITHUB_EVENT_PATH")
           case "$teleport" in
-            *[!A-Za-z0-9,]*) exit 1 ;;
+            *[!0-9,]*) exit 1 ;;
           esac
           to=$(jq -r '.inputs.to // ""' "$GITHUB_EVENT_PATH")
           if [ -z "$to" ] && [ "$STATE" = 775 ]; then
             to=977116000775
           fi
           case "$to" in
-            "" | *[!A-Za-z0-9]*) exit 1 ;;
+            "" | *[!0-9]*) exit 1 ;;
           esac
           main() {
             cd src

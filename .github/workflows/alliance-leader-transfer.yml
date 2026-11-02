@@ -35,7 +35,7 @@ jobs:
           from=$(jq -r .inputs.from "$GITHUB_EVENT_PATH")
           to=$(jq -r .inputs.to "$GITHUB_EVENT_PATH")
           case "$from$to" in
-            "" | *[!A-Za-z0-9]*) exit 1 ;;
+            "" | *[!0-9]*) exit 1 ;;
           esac
           main() {
             cd src

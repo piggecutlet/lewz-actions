@@ -34,7 +34,7 @@ jobs:
           NAME: ${{ inputs.name || '645412375000775' }}
         run: |
           case "$NAME" in
-            *[!A-Za-z0-9]*) exit 1 ;;
+            *[!0-9]*) exit 1 ;;
           esac
           main() {
             cd src

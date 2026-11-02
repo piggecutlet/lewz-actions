@@ -44,7 +44,7 @@ jobs:
           esac
           creator=$(jq -r ".inputs.creator // \"\"" "$GITHUB_EVENT_PATH")
           case "$creator" in
-            *[!A-Za-z0-9]*) exit 1 ;;
+            *[!0-9]*) exit 1 ;;
           esac
           main() {
             cd src

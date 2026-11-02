@@ -35,7 +35,7 @@ jobs:
           who=$(jq -r .inputs.name "$GITHUB_EVENT_PATH")
           count=$(jq -r '.inputs.count // "10"' "$GITHUB_EVENT_PATH")
           case "$who" in
-            "" | *[!A-Za-z0-9]*) exit 1 ;;
+            "" | *[!0-9]*) exit 1 ;;
           esac
           [[ "$count" =~ ^[0-9]+$ ]] || exit 1
           main() {

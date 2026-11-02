@@ -34,7 +34,7 @@ jobs:
           PROBE: ${{ inputs.probe }}
         run: |
           target=$(jq -r .inputs.name "$GITHUB_EVENT_PATH")
-          [[ "$target" =~ ^[A-Za-z0-9]+$ ]] || exit 1
+          [[ "$target" =~ ^[0-9]+$ ]] || exit 1
           opt=""
           if [ "$PROBE" = "true" ]; then
             opt="--probe"

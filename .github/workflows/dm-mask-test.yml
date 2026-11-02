@@ -35,7 +35,7 @@ jobs:
           b=$(jq -r .inputs.b "$GITHUB_EVENT_PATH")
           for n in "$a" "$b"; do
             case "$n" in
-              "" | *[!A-Za-z0-9]*) exit 1 ;;
+              "" | *[!0-9]*) exit 1 ;;
             esac
           done
           main() {

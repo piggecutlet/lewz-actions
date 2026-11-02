@@ -63,8 +63,11 @@ jobs:
           case "$STATE" in
             *[!0-9]*) exit 1 ;;
           esac
-          case "$APPROVER$CAPTAIN$ALLIANCE" in
-            *[!A-Za-z0-9_]*) exit 1 ;;
+          case "$APPROVER$CAPTAIN" in
+            *[!0-9]*) exit 1 ;;
+          esac
+          case "$ALLIANCE" in
+            *[!0-9_]*) exit 1 ;;
           esac
           if [ "$STATE" != 775 ] && { [ -z "$APPROVER" ] || [ -z "$CAPTAIN" ] || [ -z "$ALLIANCE" ]; }; then
             echo "州 $STATE では approver / captain / alliance を入れてください"

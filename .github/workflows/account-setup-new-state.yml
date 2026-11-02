@@ -38,9 +38,25 @@ jobs:
           main() {
             cd src
             node scripts/core/setup_new_state.mjs --state="$STATE"
-            code=$?
-            node -e "import('./scripts/core/_ci.mjs').then(({pushAccounts})=>pushAccounts('chore: CI の /account:setup-new-state で accounts.json を更新する'))"
-            exit $code
           }
           . .github/scripts/logged.sh
-          run_logged main
+          start_logged main
+
+      - if: always() && env.LOG != ''
+        env:
+          LOG_KEY: ${{ secrets.LOG_KEY }}
+        run: |
+          set +e
+          (
+            pkill -TERM -f 'scripts/(core|ci)/' && echo "まだ動いていた node を止めた"
+            for i in $(seq 1 30); do
+              pgrep -f 'scripts/(core|ci)/' > /dev/null || break
+              sleep 1
+            done
+            pkill -KILL -f 'scripts/(core|ci)/'
+            cd src
+            node -e "import('./scripts/core/_ci.mjs').then(({pushAccounts})=>pushAccounts('chore: CI の /account:setup-new-state で accounts.json を更新する'))"
+          ) >> "$LOG" 2>&1
+          set -e
+          . .github/scripts/logged.sh
+          finish_logged

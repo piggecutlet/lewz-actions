@@ -41,7 +41,7 @@ jobs:
         run: |
           name=$(jq -r .inputs.name "$GITHUB_EVENT_PATH")
           case "$name" in
-            "" | *[!A-Za-z0-9]*) exit 1 ;;
+            "" | *[!0-9]*) exit 1 ;;
           esac
           case "$OWN" in
             *[!A-Za-z0-9]*) exit 1 ;;

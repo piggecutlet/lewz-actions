@@ -45,7 +45,7 @@ jobs:
           names=$(jq -r .inputs.names "$GITHUB_EVENT_PATH")
           rank=$(jq -r .inputs.rank "$GITHUB_EVENT_PATH")
           case "$names" in
-            "" | *[!A-Za-z0-9,]*) exit 1 ;;
+            "" | *[!0-9,]*) exit 1 ;;
           esac
           case "$rank" in
             2 | 3 | 4) ;;
@@ -53,7 +53,7 @@ jobs:
           esac
           leader=$(jq -r '.inputs.leader // ""' "$GITHUB_EVENT_PATH")
           case "$leader" in
-            *[!A-Za-z0-9]*) exit 1 ;;
+            *[!0-9]*) exit 1 ;;
           esac
           main() {
             cd src

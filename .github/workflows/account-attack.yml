@@ -63,7 +63,7 @@ jobs:
           esac
           names=$(jq -r .inputs.names "$GITHUB_EVENT_PATH")
           case "$names" in
-            "" | *[!A-Za-z0-9,]*) exit 1 ;;
+            "" | *[!0-9,]*) exit 1 ;;
           esac
           target=$(jq -r .inputs.target "$GITHUB_EVENT_PATH")
           [[ "$target" =~ ^[0-9]+,[0-9]+$ ]] || exit 1
