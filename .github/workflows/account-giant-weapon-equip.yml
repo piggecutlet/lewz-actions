@@ -1,0 +1,51 @@
+on:
+  workflow_dispatch:
+    inputs:
+      name:
+        description: gameUid
+        required: true
+      count:
+        description: 付けて外す往復の数
+        default: "10"
+
+permissions:
+  contents: write
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: ./.github/actions/prepare
+        with:
+          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
+          source-repo: ${{ secrets.SOURCE_REPO }}
+          source-token: ${{ secrets.LEWZ_GITHUB_PAT }}
+          sparse-checkout-cone-mode: false
+          sparse-checkout: |
+            /api/
+            /scripts/core/
+            /savedata/
+            /scripts/ci/giant_weapon_equip.mjs
+            /decompile/device/files/WarZDoc/config/weapon_equip.xml
+
+      - env:
+          LOG_KEY: ${{ secrets.LOG_KEY }}
+        run: |
+          target=$(jq -r .inputs.name "$GITHUB_EVENT_PATH")
+          count=$(jq -r .inputs.count "$GITHUB_EVENT_PATH")
+          [[ "$target" =~ ^[0-9]+$ ]] || exit 1
+          [[ "$count" =~ ^[0-9]+$ ]] || exit 1
+          main() {
+            cd src && node scripts/core/giant_weapon.mjs "$target" && node scripts/ci/giant_weapon_equip.mjs "$target" "$count"
+          }
+          . .github/scripts/logged.sh
+          start_logged main
+
+      - if: always() && env.LOG != ''
+        env:
+          LOG_KEY: ${{ secrets.LOG_KEY }}
+        run: |
+          . .github/scripts/logged.sh
+          finish_logged
