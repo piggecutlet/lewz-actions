@@ -2,7 +2,7 @@ on:
   workflow_dispatch:
     inputs:
       gift_only:
-        description: 回す表示名をカンマ区切り（空なら Empire062775）
+        description: 回す表示名をカンマ区切り（空なら ArcticFox）
         required: false
         default: ""
 
