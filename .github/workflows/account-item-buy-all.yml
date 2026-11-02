@@ -1,0 +1,49 @@
+on:
+  workflow_dispatch:
+    inputs:
+      name:
+        required: true
+
+concurrency:
+  group: item-buy-all
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: ./.github/actions/prepare
+        with:
+          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
+          source-repo: ${{ secrets.SOURCE_REPO }}
+          source-token: ${{ secrets.SOURCE_TOKEN }}
+          sparse-checkout: |
+            api
+            scripts/core
+            scripts/ci
+            savedata
+            web/scripts
+
+      - env:
+          LOG_KEY: ${{ secrets.LOG_KEY }}
+        run: |
+          name=$(jq -r .inputs.name "$GITHUB_EVENT_PATH")
+          [[ "$name" =~ ^[A-Za-z0-9]+$ ]] || exit 1
+          main() {
+            cd src
+            node scripts/ci/item_buy_all.mjs "$name"
+          }
+          . .github/scripts/logged.sh
+          start_logged main
+
+      - if: always() && env.LOG != ''
+        env:
+          LOG_KEY: ${{ secrets.LOG_KEY }}
+        run: |
+          . .github/scripts/logged.sh
+          finish_logged
