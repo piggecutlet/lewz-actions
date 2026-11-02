@@ -2,7 +2,7 @@ on:
   workflow_dispatch:
     inputs:
       pairs:
-        description: 押さえている側:新しい側 をカンマ区切り（例 Empire04a775:Empire04c36775）
+        description: 押さえている側の deviceId:新しい側の deviceId をカンマ区切り
         required: true
       team:
         description: 小隊の teamId

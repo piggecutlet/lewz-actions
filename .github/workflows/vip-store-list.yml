@@ -2,7 +2,7 @@ on:
   workflow_dispatch:
     inputs:
       names:
-        description: 表示名（VIP 商店の一覧を読むだけ。買わない）
+        description: deviceId（VIP 商店の一覧を読むだけ。買わない）
         required: true
 
 permissions:

@@ -9,7 +9,7 @@ on:
         description: 州
         default: "775"
       login:
-        description: ログインする表示名（空ならその州の自動アカウントの最後の 1 件）
+        description: ログインする deviceId（空ならその州の自動アカウントの最後の 1 件）
         required: false
         default: ""
 
@@ -48,7 +48,7 @@ jobs:
             [[ "$p" =~ ^[0-9]+,[0-9]+$ ]] || exit 1
           done
           login=$(jq -r '.inputs.login // ""' "$GITHUB_EVENT_PATH")
-          [[ -z "$login" || "$login" =~ ^Empire[0-9a-z]+$ ]] || exit 1
+          [[ -z "$login" || "$login" =~ ^[0-9a-z]+$ ]] || exit 1
           main() {
             cd src
             mkdir -p decompile/app/assets/WarZResources/local

@@ -2,7 +2,7 @@ on:
   workflow_dispatch:
     inputs:
       names:
-        description: 表示名（カンマ区切り）
+        description: deviceId（カンマ区切り）
         required: true
 
 permissions:

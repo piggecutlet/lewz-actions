@@ -11,11 +11,11 @@ on:
         description: 州
         default: "775"
       approver:
-        description: 加入の承認役（空なら 775 の Empire064d8775。ほかの州は必須）
+        description: 加入の承認役の deviceId（空なら 775 の Empire064d8775。ほかの州は必須）
         required: false
         default: ""
       captain:
-        description: 小隊長（空なら 775 の Empire064d9775。ほかの州は必須）
+        description: 小隊長の deviceId（空なら 775 の Empire064d9775。ほかの州は必須）
         required: false
         default: ""
       alliance:

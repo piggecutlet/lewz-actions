@@ -2,7 +2,7 @@ on:
   workflow_dispatch:
     inputs:
       gift_only:
-        description: 回す表示名をカンマ区切り（空なら ArcticFox）
+        description: 回す deviceId をカンマ区切り（空なら ArcticFox）
         required: false
         default: ""
 

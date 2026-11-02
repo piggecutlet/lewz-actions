@@ -63,6 +63,8 @@ jobs:
               echo "$out"
               rest=$(echo "$out" | grep -E "行軍中|E000000" | cut -d" " -f1 | sort -u | paste -sd,)
               [ -z "$rest" ] && break
+              rest=$(node scripts/core/device_ids.mjs "$rest")
+              [ -z "$rest" ] && break
               sleep 60
             done
             if [ "$DELETE_ACCOUNT" = "true" ]; then

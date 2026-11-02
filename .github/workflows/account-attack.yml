@@ -92,16 +92,18 @@ jobs:
                 echo "$left"
                 rest=$(echo "$left" | awk '/行軍中/ { print $1 }' | paste -sd, -)
                 [ -n "$rest" ] || break
+                rest=$(node scripts/core/device_ids.mjs "$rest")
+                [ -n "$rest" ] || break
                 sleep 60
               done
             fi
             if grep -q "回目: 落ちた" "../$LOG"; then
               node -e '
                 import("./scripts/core/_readme.mjs").then(({ readAccounts, writeAccounts }) => {
-                  const names = process.argv[1].split(",");
+                  const ids = process.argv[1].split(",");
                   const data = readAccounts();
                   for (const a of Object.values(data).flat()) {
-                    if (!names.includes(a.name) || (a.note || "").includes("attack 済み")) continue;
+                    if (!ids.includes(a.deviceId) || (a.note || "").includes("attack 済み")) continue;
                     a.note = a.note ? a.note + " / attack 済み" : "attack 済み";
                   }
                   writeAccounts(data);

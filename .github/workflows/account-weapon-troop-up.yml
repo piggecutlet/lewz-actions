@@ -2,7 +2,7 @@ on:
   workflow_dispatch:
     inputs:
       name:
-        description: 表示名
+        description: deviceId
         required: true
       make:
         description: 作る巨大武器の armId（空なら作らない。130202 は夜明けの方舟）

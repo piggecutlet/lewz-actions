@@ -8,11 +8,11 @@ on:
         required: false
         default: ""
       to:
-        description: 送り先の表示名（空なら 775 は Empire061775、ほかの州は必須。Empire061775 以外なら同盟 775_001 への加入をしない）
+        description: 送り先の deviceId（空なら 775 は Empire061775、ほかの州は必須。Empire061775 以外なら同盟 775_001 への加入をしない）
         required: false
         default: ""
       teleport:
-        description: 送り先の付近へ移転する表示名をカンマ区切り（空なら移転しない）
+        description: 送り先の付近へ移転する deviceId をカンマ区切り（空なら移転しない）
         required: false
         default: ""
       dry_run:
@@ -68,7 +68,7 @@ jobs:
           esac
           to=$(jq -r '.inputs.to // ""' "$GITHUB_EVENT_PATH")
           if [ -z "$to" ] && [ "$STATE" = 775 ]; then
-            to=Empire061775
+            to=977116000775
           fi
           case "$to" in
             "" | *[!A-Za-z0-9]*) exit 1 ;;
@@ -84,7 +84,7 @@ jobs:
               node scripts/ci/resource_support.mjs "$names" --state="$STATE" $kinds --to="$to" --buy --dry
               exit $?
             fi
-            if [ "$STATE" = 775 ] && [ "$to" = "Empire061775" ]; then
+            if [ "$STATE" = 775 ] && [ "$to" = "977116000775" ]; then
               node scripts/core/join_alliance.mjs "$names"
             fi
             code=0

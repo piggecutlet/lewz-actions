@@ -38,7 +38,7 @@ on:
         required: false
         default: ""
       seats:
-        description: 使う枠の持ち主の表示名,...（空なら accounts.json の小隊用アカウント）
+        description: 使う枠の持ち主の deviceId,...（空なら accounts.json の小隊用アカウント）
         required: false
         default: ""
       skip_build_base:

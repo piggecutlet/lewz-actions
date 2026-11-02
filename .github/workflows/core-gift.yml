@@ -2,10 +2,10 @@ on:
   workflow_dispatch:
     inputs:
       names:
-        description: 送る側の表示名（カンマ区切り）
+        description: 送る側の deviceId（カンマ区切り）
         required: true
       to:
-        description: 受ける側の 表示名:gameUid（空なら 775 の Empire061775。ほかの州は必須）
+        description: 受ける側の deviceId:gameUid（空なら 775 の Empire061775。ほかの州は必須）
         required: false
         default: ""
 

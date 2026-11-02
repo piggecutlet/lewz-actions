@@ -2,7 +2,7 @@ on:
   workflow_dispatch:
     inputs:
       name:
-        description: 表示名
+        description: deviceId
         required: true
       build:
         description: 農地・油田・製鋼所・合金鉱山を 1 つずつ即時完成で建てる

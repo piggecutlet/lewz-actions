@@ -9,11 +9,11 @@ on:
         description: 州
         default: "775"
       approver:
-        description: 775_002 の加入の承認役（空なら 775 の Empire064d8775。ほかの州は必須）
+        description: 775_002 の加入の承認役の deviceId（空なら 775 の Empire064d8775。ほかの州は必須）
         required: false
         default: ""
       captain:
-        description: vip-alliance-gift-cycle.yml へ渡す小隊長（空なら 775 の Empire064d9775。ほかの州は必須）
+        description: vip-alliance-gift-cycle.yml へ渡す小隊長の deviceId（空なら 775 の Empire064d9775。ほかの州は必須）
         required: false
         default: ""
       alliance:
@@ -85,7 +85,7 @@ jobs:
               restart=1
               sleep 10
             done
-            names=$(node -e "Promise.all([import('./scripts/core/_readme.mjs'),import('./scripts/core/_kinds.mjs')]).then(([{readAccounts},{KIND}])=>{console.log((readAccounts()[process.argv[1]]||[]).filter((a)=>(a.home||a.kind===KIND.VMS)&&(a.note||'').includes('VIP')).map((a)=>a.name).join(','))})" "$STATE")
+            names=$(node -e "Promise.all([import('./scripts/core/_readme.mjs'),import('./scripts/core/_kinds.mjs')]).then(([{readAccounts},{KIND}])=>{console.log((readAccounts()[process.argv[1]]||[]).filter((a)=>(a.home||a.kind===KIND.VMS)&&(a.note||'').includes('VIP')).map((a)=>a.deviceId).join(','))})" "$STATE")
             node scripts/core/shield.mjs "$names" || true
             node scripts/core/vip_unlock.mjs "$names" || true
             if [ "$morning" = "true" ] || [ "$(TZ=JST-9 date +%H)" -lt 12 ]; then
@@ -95,12 +95,12 @@ jobs:
               node scripts/core/vip_boost.mjs "$names" --train-zombie || true
               node scripts/core/train_army.mjs "$names" --zombie-only || true
                 for id in $(node -e "import('./scripts/core/_readme.mjs').then(({readAccounts})=>{console.log([...new Set((readAccounts()[process.argv[1]]||[]).map((a)=>a.home).filter(Boolean))].sort().join(' '))})" "$STATE"); do
-                  unlocked=$(node -e "import('./scripts/core/_readme.mjs').then(({readAccounts})=>{console.log((readAccounts()[process.argv[1]]||[]).filter((a)=>a.home===process.argv[2]&&(a.note||'').includes('VIP')&&a.vipStore===1).map((a)=>a.name).join(','))})" "$STATE" "$id")
-                  approver=$(node -e "import('node:fs').then(({readFileSync})=>{const d=JSON.parse(readFileSync('savedata/alliances.json','utf8'));console.log(((d[process.argv[1]]||[]).find((a)=>a.id===process.argv[2])||{}).approver||'')})" "$STATE" "$id")
+                  unlocked=$(node -e "import('./scripts/core/_readme.mjs').then(({readAccounts})=>{console.log((readAccounts()[process.argv[1]]||[]).filter((a)=>a.home===process.argv[2]&&(a.note||'').includes('VIP')&&a.vipStore===1).map((a)=>a.deviceId).join(','))})" "$STATE" "$id")
+                  read -r approver approver_name < <(node -e "Promise.all([import('./scripts/core/_state.mjs'),import('./scripts/core/_readme.mjs')]).then(([{allianceById},{readAccounts}])=>{const id=allianceById(process.argv[1])['承認']||'';console.log(id,(Object.values(readAccounts()).flat().find((a)=>a.deviceId===id)||{}).name||'')})" "$id")
                   if [ -n "$unlocked" ]; then
                     unlocked=$(node scripts/core/vip_send.mjs "$unlocked" --check | tee -a /dev/stderr | sed -n 's/^送れる //p')
                   fi
-                  echo "$id の解禁済みの VIP を 775_001 へ入れて贈る（承認役 $approver）"
+                  echo "$id の解禁済みの VIP を 775_001 へ入れて贈る（承認役 $approver_name）"
                   for part in "$(echo "$unlocked" | cut -d, -f1-56)" "$(echo "$unlocked" | cut -d, -f57- -s)"; do
                     if [ -z "$part" ] || [ -z "$approver" ]; then continue; fi
                     node scripts/ci/leave_alliance.mjs "$part" || true
