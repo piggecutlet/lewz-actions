@@ -12,7 +12,7 @@ on:
         default: false
 
 concurrency:
-  group: core-hunt-one-${{ inputs.name }}
+  group: core-hunt-by-name-${{ inputs.name }}
   cancel-in-progress: false
 
 permissions:
@@ -99,7 +99,7 @@ jobs:
             size=$(jq -r '.inputs.size // ""' "$GITHUB_EVENT_PATH")
             high=$(jq -r '.inputs.high // false' "$GITHUB_EVENT_PATH")
             for i in 1 2 3 4 5; do
-              if gh workflow run core-hunt-one.yml -R "$GITHUB_REPOSITORY" -f name="$name" -f size="$size" -f high="$high"; then
+              if gh workflow run core-hunt-by-name.yml -R "$GITHUB_REPOSITORY" -f name="$name" -f size="$size" -f high="$high"; then
                 echo "続きを起動した"
                 exit 0
               fi

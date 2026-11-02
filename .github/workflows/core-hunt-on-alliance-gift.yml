@@ -7,7 +7,7 @@ on:
         default: ""
 
 concurrency:
-  group: core-hunt-gift
+  group: core-hunt-on-alliance-gift
   cancel-in-progress: false
 
 permissions:
@@ -93,7 +93,7 @@ jobs:
           fi
           if [ "$n" -gt 0 ]; then
             for i in 1 2 3 4 5; do
-              if gh workflow run core-hunt-gift.yml -R "$GITHUB_REPOSITORY" -f gift_only="$GIFT_ONLY"; then
+              if gh workflow run core-hunt-on-alliance-gift.yml -R "$GITHUB_REPOSITORY" -f gift_only="$GIFT_ONLY"; then
                 echo "続きを起動した"
                 exit 0
               fi
