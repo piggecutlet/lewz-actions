@@ -1,7 +1,7 @@
 on:
   workflow_dispatch:
     inputs:
-      name:
+      names:
         required: true
 
 concurrency:
@@ -32,11 +32,11 @@ jobs:
       - env:
           LOG_KEY: ${{ secrets.LOG_KEY }}
         run: |
-          name=$(jq -r .inputs.name "$GITHUB_EVENT_PATH")
-          [[ "$name" =~ ^[A-Za-z0-9]+$ ]] || exit 1
+          names=$(jq -r .inputs.names "$GITHUB_EVENT_PATH")
+          [[ "$names" =~ ^[A-Za-z0-9]+(,[A-Za-z0-9]+)*$ ]] || exit 1
           main() {
             cd src
-            node scripts/ci/item_buy_all.mjs "$name"
+            node scripts/ci/item_buy_all.mjs "$names"
           }
           . .github/scripts/logged.sh
           start_logged main
