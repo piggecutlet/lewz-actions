@@ -24,7 +24,7 @@ jobs:
         with:
           ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
           source-repo: ${{ secrets.SOURCE_REPO }}
-          source-token: ${{ secrets.SOURCE_TOKEN }}
+          source-token: ${{ secrets.LEWZ_GITHUB_PAT }}
           sparse-checkout: |
             api
             scripts/core
@@ -77,7 +77,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - env:
-          GH_TOKEN: ${{ secrets.DISPATCH_TOKEN || github.token }}
+          GH_TOKEN: ${{ secrets.LEWZ_GITHUB_PAT || github.token }}
           GIFT_ONLY: ${{ inputs.gift_only }}
         run: |
           n=""

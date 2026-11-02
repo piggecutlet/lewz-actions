@@ -50,7 +50,7 @@ jobs:
         with:
           ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
           source-repo: ${{ secrets.SOURCE_REPO }}
-          source-token: ${{ secrets.SOURCE_TOKEN }}
+          source-token: ${{ secrets.LEWZ_GITHUB_PAT }}
           sparse-checkout-cone-mode: false
           sparse-checkout: |
             /api/
