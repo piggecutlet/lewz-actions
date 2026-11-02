@@ -28,6 +28,7 @@ jobs:
             /scripts/core/
             /savedata/
             /scripts/ci/giant_weapon_equip.mjs
+            /scripts/ci/giant_weapon_equip_points.json
             /decompile/device/files/WarZDoc/config/weapon_equip.xml
 
       - env:
@@ -42,6 +43,14 @@ jobs:
           }
           . .github/scripts/logged.sh
           start_logged main
+
+      - if: always()
+        run: |
+          [ -n "$LOG" ] && [ -f "$LOG" ] && [ -d src ] || exit 0
+          (
+            cd src
+            node scripts/ci/giant_weapon_equip.mjs --push
+          ) >> "$LOG" 2>&1 || true
 
       - if: always() && env.LOG != ''
         env:
