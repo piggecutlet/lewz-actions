@@ -7,6 +7,9 @@ on:
       count:
         description: 付けて外す往復の数
         default: "10"
+      goal:
+        description: 最強要塞のポイントがこれを超えるまで回す（空なら count の回数だけ）
+        default: ""
 
 permissions:
   contents: write
@@ -38,8 +41,14 @@ jobs:
           count=$(jq -r .inputs.count "$GITHUB_EVENT_PATH")
           [[ "$target" =~ ^[0-9]+$ ]] || exit 1
           [[ "$count" =~ ^[0-9]+$ ]] || exit 1
+          goal=$(jq -r '.inputs.goal // ""' "$GITHUB_EVENT_PATH")
+          opt=""
+          if [ -n "$goal" ]; then
+            [[ "$goal" =~ ^[0-9]+$ ]] || exit 1
+            opt="--target=$goal"
+          fi
           main() {
-            cd src && node scripts/core/giant_weapon.mjs "$target" && node scripts/ci/giant_weapon_equip.mjs "$target" "$count"
+            cd src && node scripts/core/giant_weapon.mjs "$target" && node scripts/ci/giant_weapon_equip.mjs "$target" "$count" $opt
           }
           . .github/scripts/logged.sh
           start_logged main
