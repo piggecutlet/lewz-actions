@@ -25,6 +25,12 @@ on:
       open_each:
         description: 自選箱を中身の候補ごとに 1 個ずつ開ける（<箱の itemId>,...。空なら開けない）
         default: ""
+      use_items:
+        description: 持っている分を 1 個ずつ使うアイテム（<itemId>,...。空なら使わない）
+        default: ""
+      skin_act:
+        description: スキンリストで有効にする状態 ID を有効にしたい順に（<状態 ID>,...。空なら有効にしない）
+        default: ""
       items:
         description: 持っているアイテムを全部出す
         type: boolean
@@ -78,6 +84,13 @@ jobs:
           if [ -n "$open" ]; then
             opt="$opt --open-each=$open"
           fi
+          for key in use_items skin_act; do
+            value=$(jq -r ".inputs.$key // \"\"" "$GITHUB_EVENT_PATH")
+            [[ "$value" =~ ^[0-9,]*$ ]] || exit 1
+            if [ -n "$value" ]; then
+              opt="$opt --${key//_/-}=$value"
+            fi
+          done
           if [ "$(jq -r '.inputs.items // "false"' "$GITHUB_EVENT_PATH")" = "true" ]; then
             opt="$opt --items"
           fi
