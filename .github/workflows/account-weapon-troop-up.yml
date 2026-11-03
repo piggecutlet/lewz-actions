@@ -28,6 +28,9 @@ on:
       open:
         description: 自選箱から選んだ中身をその数だけ受け取る（<箱の itemId>:<中身の itemId>:<数>,...。空なら開けない）
         default: ""
+      gift:
+        description: 持ち物のスキンを 1 個プレゼントする（<itemId>:<受け手の gameUid>。空なら贈らない）
+        default: ""
       use_items:
         description: 持っている分を 1 個ずつ使うアイテム（<itemId>,...。空なら使わない）
         default: ""
@@ -103,6 +106,11 @@ jobs:
           [[ "$open" =~ ^[0-9,]*$ ]] || exit 1
           if [ -n "$open" ]; then
             opt="$opt --open-each=$open"
+          fi
+          gift=$(jq -r '.inputs.gift // ""' "$GITHUB_EVENT_PATH")
+          [[ "$gift" =~ ^([0-9]+:[0-9]+)?$ ]] || exit 1
+          if [ -n "$gift" ]; then
+            opt="$opt --gift=$gift"
           fi
           for key in use_items skin_act skin_deact castle_troop castle_num; do
             value=$(jq -r ".inputs.$key // \"\"" "$GITHUB_EVENT_PATH")
