@@ -2,7 +2,7 @@ on:
   workflow_dispatch:
     inputs:
       alliance:
-        description: 同盟の ID をカンマ区切り（空なら 775_002 → 775_003 → 775_004 → 775_005）
+        description: 同盟の ID をカンマ区切り（空なら 775_001 → 775_002 → 775_003 → 775_004 → 775_005）
         required: false
         default: ""
       count:
