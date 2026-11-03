@@ -85,10 +85,6 @@ jobs:
               git commit -m "chore: CI の vip-gift-10m で同盟の startAfter を 4 時間後にする" -- savedata/alliances.json
             fi
             node -e "import('./scripts/core/_ci.mjs').then(({pushAccounts})=>pushAccounts('chore: CI の vip-gift-10m で accounts.json を更新する'))"
-            for id in $(node -e "import('./scripts/core/_readme.mjs').then(({readAccounts,DEFAULT_STATE})=>{console.log([...new Set((readAccounts()[DEFAULT_STATE]||[]).map((a)=>a.home).filter(Boolean))].sort().join(' '))})"); do
-              echo "$id の vip-alliance-gift-cycle.yml を起動する"
-              gh workflow run vip-alliance-gift-cycle.yml -R "$GITHUB_REPOSITORY" -f alliance="$id" || true
-            done
             exit $code
           }
           . .github/scripts/logged.sh

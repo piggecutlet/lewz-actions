@@ -120,15 +120,6 @@ jobs:
             fi
             node scripts/ci/diamond_shield_read.mjs "$names" --state="$STATE" || true
             node -e "import('./scripts/core/_ci.mjs').then(({pushAccounts})=>pushAccounts('chore: CI の vip-tms でダイヤを読み、accounts.json を更新する'))"
-            if [ -n "$restart" ]; then
-              echo "vip-alliance-gift-cycle.yml を起動する"
-              gh workflow run vip-alliance-gift-cycle.yml -R "$GITHUB_REPOSITORY" "${roles[@]}" || true
-              if [ "$STATE" = 775 ]; then
-                for id in $(node -e "import('./scripts/core/_readme.mjs').then(({readAccounts})=>{console.log([...new Set((readAccounts()[process.argv[1]]||[]).map((a)=>a.home).filter(Boolean))].sort().slice(1).join(' '))})" "$STATE"); do
-                  gh workflow run vip-alliance-gift-cycle.yml -R "$GITHUB_REPOSITORY" -f alliance="$id" || true
-                done
-              fi
-            fi
           }
           . .github/scripts/logged.sh
           run_logged main
