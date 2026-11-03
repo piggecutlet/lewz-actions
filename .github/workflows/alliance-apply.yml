@@ -7,6 +7,10 @@ on:
       alliance:
         description: 申請先の同盟 ID（空なら 775 の SNG）
         required: false
+      cancel:
+        description: 申請を取り下げる
+        type: boolean
+        default: false
 
 permissions:
   contents: write
@@ -36,9 +40,11 @@ jobs:
           esac
           alliance=$(jq -r '.inputs.alliance // ""' "$GITHUB_EVENT_PATH")
           [[ -z "$alliance" || "$alliance" =~ ^[0-9a-f]{32}$ ]] || exit 1
+          cancel=
+          [ "${{ inputs.cancel }}" = true ] && cancel=--cancel
           main() {
             cd src
-            node scripts/core/apply_alliance.mjs "$names" ${alliance:+"--alliance=$alliance"}
+            node scripts/core/apply_alliance.mjs "$names" ${alliance:+"--alliance=$alliance"} $cancel
             code=$?
             node -e "import('./scripts/core/_ci.mjs').then(({pushAccounts})=>pushAccounts('chore: CI で同盟へ加入申請し、accounts.json を更新する'))"
             exit $code
