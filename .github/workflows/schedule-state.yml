@@ -29,7 +29,6 @@ jobs:
           esac
           main() {
             set -e
-            gh workflow run vip-daily.yml -R "$GITHUB_REPOSITORY" -f state="$STATE" || true
             gh workflow run schedule-manual-daily.yml -R "$GITHUB_REPOSITORY" -f state="$STATE"
             if [ "$(TZ=Asia/Tokyo date +%H)" = 09 ]; then
               gh workflow run team-zombie.yml -R "$GITHUB_REPOSITORY" -f state="$STATE"
