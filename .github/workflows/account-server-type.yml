@@ -1,0 +1,49 @@
+on:
+  workflow_dispatch:
+    inputs:
+      gameUid:
+        required: true
+      states:
+        required: true
+        default: "774,775"
+
+permissions:
+  contents: write
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: ./.github/actions/prepare
+        with:
+          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
+          source-repo: ${{ secrets.SOURCE_REPO }}
+          source-token: ${{ secrets.LEWZ_GITHUB_PAT }}
+          sparse-checkout-cone-mode: false
+          sparse-checkout: |
+            /api/
+            /scripts/core/
+            /savedata/
+            /scripts/ci/server_type.mjs
+
+      - env:
+          LOG_KEY: ${{ secrets.LOG_KEY }}
+        run: |
+          uid=$(jq -r .inputs.gameUid "$GITHUB_EVENT_PATH")
+          states=$(jq -r .inputs.states "$GITHUB_EVENT_PATH")
+          [[ "$uid" =~ ^[0-9]+$ ]] || exit 1
+          [[ "$states" =~ ^[0-9]+(,[0-9]+)*$ ]] || exit 1
+          main() {
+            cd src && node scripts/ci/server_type.mjs "$uid" "$states"
+          }
+          . .github/scripts/logged.sh
+          start_logged main
+
+      - if: always() && env.LOG != ''
+        env:
+          LOG_KEY: ${{ secrets.LOG_KEY }}
+        run: |
+          . .github/scripts/logged.sh
+          finish_logged
