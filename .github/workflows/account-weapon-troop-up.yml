@@ -37,6 +37,12 @@ on:
       attack_castle:
         description: スキンのあとにそのマスの城を 1 回攻撃して戦闘報告の効果の値を出す（x,y。空なら攻撃しない。自分の削除申請済みの城だけ）
         default: ""
+      castle_troop:
+        description: 城を攻撃する前に即時訓練で足す兵種の armId（空なら Lv.1 の戦士 107000）
+        default: ""
+      castle_num:
+        description: その兵種の待機兵をこの数まで足す（空なら 1 部隊の上限まで）
+        default: ""
       items:
         description: 持っているアイテムを全部出す
         type: boolean
@@ -90,7 +96,7 @@ jobs:
           if [ -n "$open" ]; then
             opt="$opt --open-each=$open"
           fi
-          for key in use_items skin_act skin_deact; do
+          for key in use_items skin_act skin_deact castle_troop castle_num; do
             value=$(jq -r ".inputs.$key // \"\"" "$GITHUB_EVENT_PATH")
             [[ "$value" =~ ^[0-9,]*$ ]] || exit 1
             if [ -n "$value" ]; then
