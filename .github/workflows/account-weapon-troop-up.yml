@@ -22,6 +22,9 @@ on:
       hot_buy:
         description: hot.item.buy で買うもの（<itemId>:<数>:<1 個の値段>,...。空なら買わない）
         default: ""
+      open_each:
+        description: 自選箱を中身の候補ごとに 1 個ずつ開ける（<箱の itemId>,...。空なら開けない）
+        default: ""
       items:
         description: 持っているアイテムを全部出す
         type: boolean
@@ -70,6 +73,11 @@ jobs:
           if [ -n "$hot" ]; then
             opt="$opt --hot-buy=$hot"
           fi
+          open=$(jq -r '.inputs.open_each // ""' "$GITHUB_EVENT_PATH")
+          [[ "$open" =~ ^[0-9,]*$ ]] || exit 1
+          if [ -n "$open" ]; then
+            opt="$opt --open-each=$open"
+          fi
           if [ "$(jq -r '.inputs.items // "false"' "$GITHUB_EVENT_PATH")" = "true" ]; then
             opt="$opt --items"
           fi
@@ -77,4 +85,11 @@ jobs:
             cd src && node scripts/core/weapon_troop_up.mjs "$target" $opt
           }
           . .github/scripts/logged.sh
-          run_logged main
+          start_logged main
+
+      - if: always() && env.LOG != ''
+        env:
+          LOG_KEY: ${{ secrets.LOG_KEY }}
+        run: |
+          . .github/scripts/logged.sh
+          finish_logged
