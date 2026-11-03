@@ -29,10 +29,10 @@ on:
         description: 持っている分を 1 個ずつ使うアイテム（<itemId>,...。空なら使わない）
         default: ""
       skin_act:
-        description: スキンリストで有効にする状態 ID を有効にしたい順に（<状態 ID>,...。空なら有効にしない）
+        description: 今は送らない（スキンリストの枠は効果に関係しないため。元はスキンリストで有効にする状態 ID）
         default: ""
       skin_deact:
-        description: スキンリストから外す状態 ID（<状態 ID>,...。skin_act より先に外す。空なら外さない）
+        description: 今は送らない（スキンリストの枠は効果に関係しないため。元はスキンリストから外す状態 ID）
         default: ""
       attack_castle:
         description: スキンのあとにそのマスの城を 1 回攻撃して戦闘報告の効果の値を出す（x,y。空なら攻撃しない。自分の削除申請済みの城だけ）
