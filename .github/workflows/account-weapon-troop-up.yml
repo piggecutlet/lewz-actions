@@ -31,6 +31,9 @@ on:
       skin_act:
         description: スキンリストで有効にする状態 ID を有効にしたい順に（<状態 ID>,...。空なら有効にしない）
         default: ""
+      skin_deact:
+        description: スキンリストから外す状態 ID（<状態 ID>,...。skin_act より先に外す。空なら外さない）
+        default: ""
       items:
         description: 持っているアイテムを全部出す
         type: boolean
@@ -84,7 +87,7 @@ jobs:
           if [ -n "$open" ]; then
             opt="$opt --open-each=$open"
           fi
-          for key in use_items skin_act; do
+          for key in use_items skin_act skin_deact; do
             value=$(jq -r ".inputs.$key // \"\"" "$GITHUB_EVENT_PATH")
             [[ "$value" =~ ^[0-9,]*$ ]] || exit 1
             if [ -n "$value" ]; then
