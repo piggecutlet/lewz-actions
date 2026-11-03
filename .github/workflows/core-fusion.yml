@@ -1,0 +1,80 @@
+on:
+  workflow_dispatch:
+    inputs:
+      name:
+        description: 対象の gameUid（kind manual だけ）
+        required: true
+      op:
+        description: 操作
+        required: true
+        type: choice
+        options:
+          - fuse
+          - decompose
+          - break
+          - rebuild
+      lv:
+        description: 入れるコアの Lv
+        required: true
+      count:
+        description: 回数
+        required: false
+        default: "1"
+      stop:
+        description: パワー突破で止める Lv
+        required: false
+        default: "9"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: core-fusion
+  cancel-in-progress: false
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: ./.github/actions/prepare
+        with:
+          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
+          source-repo: ${{ secrets.SOURCE_REPO }}
+          source-token: ${{ secrets.LEWZ_GITHUB_PAT }}
+          sparse-checkout: |
+            api
+            scripts/core
+            savedata
+
+      - env:
+          LOG_KEY: ${{ secrets.LOG_KEY }}
+        run: |
+          name=$(jq -r .inputs.name "$GITHUB_EVENT_PATH")
+          op=$(jq -r .inputs.op "$GITHUB_EVENT_PATH")
+          lv=$(jq -r .inputs.lv "$GITHUB_EVENT_PATH")
+          count=$(jq -r '.inputs.count // "1"' "$GITHUB_EVENT_PATH")
+          stop=$(jq -r '.inputs.stop // "9"' "$GITHUB_EVENT_PATH")
+          for v in "$name" "$lv" "$count" "$stop"; do
+            case "$v" in
+              "" | *[!0-9]*) exit 1 ;;
+            esac
+          done
+          case "$op" in
+            fuse | decompose | break | rebuild) ;;
+            *) exit 1 ;;
+          esac
+          main() {
+            cd src
+            node scripts/core/core_fusion.mjs "$name" "--op=$op" "--lv=$lv" "--count=$count" "--stop=$stop"
+          }
+          . .github/scripts/logged.sh
+          start_logged main
+
+      - if: always() && env.LOG != ''
+        env:
+          LOG_KEY: ${{ secrets.LOG_KEY }}
+        run: |
+          . .github/scripts/logged.sh
+          finish_logged
