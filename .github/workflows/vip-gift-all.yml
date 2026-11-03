@@ -9,6 +9,10 @@ on:
         description: 先頭からこの件数だけ（空なら全件）
         required: false
         default: ""
+      retry:
+        description: kind vip にした件でもダイヤが 5,000 以上残っていればもう一度回す
+        type: boolean
+        default: false
 
 permissions:
   contents: write
@@ -53,6 +57,7 @@ jobs:
           opts=()
           if [ -n "$alliance" ]; then opts+=("--alliance=$alliance"); fi
           if [ -n "$count" ]; then opts+=("--count=$count"); fi
+          if [ "$(jq -r '.inputs.retry // "false"' "$GITHUB_EVENT_PATH")" = "true" ]; then opts+=("--retry"); fi
           main() {
             busy=$(gh run list -R "$GITHUB_REPOSITORY" -w account-setup.yml -L 5 --json status -q '[.[] | select(.status != "completed")] | length')
             if [ "$busy" != "0" ]; then
