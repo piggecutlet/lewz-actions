@@ -1,0 +1,47 @@
+on:
+  workflow_dispatch:
+    inputs:
+      names:
+        description: gameUid（カンマ区切り）
+        required: true
+
+permissions:
+  contents: write
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: ./.github/actions/prepare
+        with:
+          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
+          source-repo: ${{ secrets.SOURCE_REPO }}
+          source-token: ${{ secrets.LEWZ_GITHUB_PAT }}
+          sparse-checkout-cone-mode: false
+          sparse-checkout: |
+            /api/
+            /scripts/core/
+            /savedata/
+            /scripts/ci/alliance_of.mjs
+
+      - env:
+          LOG_KEY: ${{ secrets.LOG_KEY }}
+        run: |
+          names=$(jq -r .inputs.names "$GITHUB_EVENT_PATH")
+          case "$names" in
+            "" | *[!0-9,]*) exit 1 ;;
+          esac
+          main() {
+            cd src && node scripts/ci/alliance_of.mjs "$names"
+          }
+          . .github/scripts/logged.sh
+          start_logged main
+
+      - if: always() && env.LOG != ''
+        env:
+          LOG_KEY: ${{ secrets.LOG_KEY }}
+        run: |
+          . .github/scripts/logged.sh
+          finish_logged
