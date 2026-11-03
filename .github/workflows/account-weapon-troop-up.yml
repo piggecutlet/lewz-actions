@@ -34,6 +34,9 @@ on:
       skin_deact:
         description: スキンリストから外す状態 ID（<状態 ID>,...。skin_act より先に外す。空なら外さない）
         default: ""
+      attack_castle:
+        description: スキンのあとにそのマスの城を 1 回攻撃して戦闘報告の効果の値を出す（x,y。空なら攻撃しない。自分の削除申請済みの城だけ）
+        default: ""
       items:
         description: 持っているアイテムを全部出す
         type: boolean
@@ -94,6 +97,11 @@ jobs:
               opt="$opt --${key//_/-}=$value"
             fi
           done
+          castle=$(jq -r '.inputs.attack_castle // ""' "$GITHUB_EVENT_PATH")
+          [[ "$castle" =~ ^([0-9]+,[0-9]+)?$ ]] || exit 1
+          if [ -n "$castle" ]; then
+            opt="$opt --attack-castle=$castle"
+          fi
           if [ "$(jq -r '.inputs.items // "false"' "$GITHUB_EVENT_PATH")" = "true" ]; then
             opt="$opt --items"
           fi
