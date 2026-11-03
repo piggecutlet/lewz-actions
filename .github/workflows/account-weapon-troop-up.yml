@@ -25,6 +25,9 @@ on:
       open_each:
         description: 自選箱を中身の候補ごとに 1 個ずつ開ける（<箱の itemId>,...。空なら開けない）
         default: ""
+      open:
+        description: 自選箱から選んだ中身をその数だけ受け取る（<箱の itemId>:<中身の itemId>:<数>,...。空なら開けない）
+        default: ""
       use_items:
         description: 持っている分を 1 個ずつ使うアイテム（<itemId>,...。空なら使わない）
         default: ""
@@ -90,6 +93,11 @@ jobs:
           [[ "$hot" =~ ^[0-9:,]*$ ]] || exit 1
           if [ -n "$hot" ]; then
             opt="$opt --hot-buy=$hot"
+          fi
+          pick=$(jq -r '.inputs.open // ""' "$GITHUB_EVENT_PATH")
+          [[ "$pick" =~ ^[0-9:,]*$ ]] || exit 1
+          if [ -n "$pick" ]; then
+            opt="$opt --open=$pick"
           fi
           open=$(jq -r '.inputs.open_each // ""' "$GITHUB_EVENT_PATH")
           [[ "$open" =~ ^[0-9,]*$ ]] || exit 1
