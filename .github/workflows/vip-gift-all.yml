@@ -13,6 +13,14 @@ on:
         description: kind vip にした件でもダイヤが 5,000 以上残っていればもう一度回す
         type: boolean
         default: false
+      leftover:
+        description: VIP ではなく、贈与前・兵のある削除申請済み・ダイヤ 28 万以上の削除申請済みを贈る（終わったら次を起動する）
+        type: boolean
+        default: false
+      parallel:
+        description: 同時に回す件数（空なら 30）
+        required: false
+        default: ""
 
 permissions:
   contents: write
@@ -48,26 +56,38 @@ jobs:
         run: |
           alliance=$(jq -r '.inputs.alliance // ""' "$GITHUB_EVENT_PATH")
           count=$(jq -r '.inputs.count // ""' "$GITHUB_EVENT_PATH")
+          parallel=$(jq -r '.inputs.parallel // ""' "$GITHUB_EVENT_PATH")
+          leftover=$(jq -r '.inputs.leftover // "false"' "$GITHUB_EVENT_PATH")
           case "$alliance" in
             *[!0-9_,]*) exit 1 ;;
           esac
-          case "$count" in
+          case "$count$parallel" in
             *[!0-9]*) exit 1 ;;
           esac
           opts=()
           if [ -n "$alliance" ]; then opts+=("--alliance=$alliance"); fi
           if [ -n "$count" ]; then opts+=("--count=$count"); fi
           if [ "$(jq -r '.inputs.retry // "false"' "$GITHUB_EVENT_PATH")" = "true" ]; then opts+=("--retry"); fi
+          if [ "$leftover" = "true" ]; then opts+=("--leftover"); fi
+          if [ -n "$parallel" ]; then opts+=("--parallel=$parallel"); fi
           main() {
             busy=$(gh run list -R "$GITHUB_REPOSITORY" -w account-setup.yml -L 5 --json status -q '[.[] | select(.status != "completed")] | length')
             if [ "$busy" != "0" ]; then
               echo "account-setup.yml が動いているので贈らない。止めてから実行してください"
               exit 1
             fi
+            busy=$(gh run list -R "$GITHUB_REPOSITORY" -w account-grow-gift-soldier.yml -L 5 --json status -q '[.[] | select(.status != "completed")] | length')
+            if [ "$busy" != "0" ]; then
+              echo "account-grow-gift-soldier.yml が動いているので贈らない。止めてから実行してください"
+              exit 1
+            fi
             cd src
             node scripts/core/vip_gift_all.mjs "${opts[@]}"
             code=$?
             node -e "import('./scripts/core/_ci.mjs').then(({pushAccounts})=>pushAccounts('chore: CI の vip-gift-all で accounts.json を更新する'))"
+            if [ "$code" = 0 ] && [ "$leftover" = "true" ]; then
+              gh workflow run vip-gift-all.yml -R "$GITHUB_REPOSITORY" -f leftover=true -f count="$count" -f parallel="$parallel" && echo "次の vip-gift-all.yml を起動した"
+            fi
             exit $code
           }
           . .github/scripts/logged.sh
