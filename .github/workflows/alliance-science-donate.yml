@@ -44,4 +44,11 @@ jobs:
             node scripts/core/science.mjs "$names" $args
           }
           . .github/scripts/logged.sh
-          run_logged main
+          start_logged main
+
+      - if: always() && env.LOG != ''
+        env:
+          LOG_KEY: ${{ secrets.LOG_KEY }}
+        run: |
+          . .github/scripts/logged.sh
+          finish_logged

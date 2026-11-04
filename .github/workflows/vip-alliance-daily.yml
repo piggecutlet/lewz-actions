@@ -122,4 +122,11 @@ jobs:
             node -e "import('./scripts/core/_ci.mjs').then(({pushAccounts})=>pushAccounts('chore: CI の vip-tms でダイヤを読み、accounts.json を更新する'))"
           }
           . .github/scripts/logged.sh
-          run_logged main
+          start_logged main
+
+      - if: always() && env.LOG != ''
+        env:
+          LOG_KEY: ${{ secrets.LOG_KEY }}
+        run: |
+          . .github/scripts/logged.sh
+          finish_logged

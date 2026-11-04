@@ -62,4 +62,11 @@ jobs:
             node scripts/core/vip_gift.mjs "$name" "$xy" "--arm=$arm" "--accounts=$accounts"
           }
           . .github/scripts/logged.sh
-          run_logged main
+          start_logged main
+
+      - if: always() && env.LOG != ''
+        env:
+          LOG_KEY: ${{ secrets.LOG_KEY }}
+        run: |
+          . .github/scripts/logged.sh
+          finish_logged

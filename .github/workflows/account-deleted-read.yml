@@ -40,4 +40,11 @@ jobs:
             node scripts/core/deleted_read.mjs --ci --state="$STATE"
           }
           . .github/scripts/logged.sh
-          run_logged main
+          start_logged main
+
+      - if: always() && env.LOG != ''
+        env:
+          LOG_KEY: ${{ secrets.LOG_KEY }}
+        run: |
+          . .github/scripts/logged.sh
+          finish_logged
