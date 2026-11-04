@@ -29,7 +29,7 @@ on:
         description: 自選箱から選んだ中身をその数だけ受け取る（<箱の itemId>:<中身の itemId>:<数>,...。空なら開けない）
         default: ""
       gift:
-        description: 持ち物のスキンを 1 個プレゼントする（<itemId>:<受け手の州>:<受け手の表示名>。空なら贈らない）
+        description: 持ち物のスキンをプレゼントする（<itemId>,...:<受け手の州>:<受け手の表示名>。空なら贈らない）
         default: ""
       use_items:
         description: 持っている分を 1 個ずつ使うアイテム（<itemId>,...。空なら使わない）
@@ -110,7 +110,7 @@ jobs:
             opt="$opt --open-each=$open"
           fi
           gift=$(jq -r '.inputs.gift // ""' "$GITHUB_EVENT_PATH")
-          [[ "$gift" =~ ^([0-9]+:[0-9]+:.+)?$ ]] || exit 1
+          [[ "$gift" =~ ^([0-9,]+:[0-9]+:.+)?$ ]] || exit 1
           gift_arg=""
           if [ -n "$gift" ]; then
             gift_arg="--gift=$gift"
