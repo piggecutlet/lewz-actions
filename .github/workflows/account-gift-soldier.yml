@@ -9,8 +9,9 @@ on:
           - Lv.10 車両
           - Lv.10 射手
       to:
-        description: 相手の名前（部隊プレゼントの同盟に入っていること）
-        required: true
+        description: 相手の名前（空なら部隊プレゼントの同盟の自分でない 1 人）
+        required: false
+        default: ""
       amount:
         description: 贈る体数の合計
         default: "10000000"
@@ -58,11 +59,10 @@ jobs:
           case "$AMOUNT$STATE" in
             *[!0-9]*) exit 1 ;;
           esac
-          to=$(jq -r .inputs.to "$GITHUB_EVENT_PATH")
-          [ -n "$to" ] || exit 1
+          to=$(jq -r ".inputs.to // \"\"" "$GITHUB_EVENT_PATH")
           main() {
             cd src
-            node --max-old-space-size=8192 scripts/ci/gift_soldier.mjs --arm="$ARM" --to="$to" ${AMOUNT:+"--amount=$AMOUNT"} --state="$STATE" $DRY_RUN
+            node --max-old-space-size=8192 scripts/ci/gift_soldier.mjs --arm="$ARM" ${to:+"--to=$to"} ${AMOUNT:+"--amount=$AMOUNT"} --state="$STATE" $DRY_RUN
             code=$?
             node -e "import('./scripts/core/_ci.mjs').then(({pushAccounts})=>pushAccounts('chore: CI の gift-soldier で accounts.json を更新する'))"
             exit $code
