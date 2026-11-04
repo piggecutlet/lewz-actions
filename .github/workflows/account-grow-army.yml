@@ -66,6 +66,7 @@ jobs:
 
       - env:
           LOG_KEY: ${{ secrets.LOG_KEY }}
+          GH_TOKEN: ${{ secrets.LEWZ_GITHUB_PAT }}
           DELETE_ACCOUNT: ${{ inputs.delete_account && '--delete-account' || '' }}
           DOUBLE_ADVANCED: ${{ inputs.double_advanced && '--double-advanced' || '' }}
           STATE: ${{ inputs.state || '775' }}
@@ -102,6 +103,11 @@ jobs:
           esac
           main() {
             cd src
+            me=$(gh run view "$GITHUB_RUN_ID" -R "$GITHUB_REPOSITORY" --json createdAt -q .createdAt)
+            while [ "$(gh run list -R "$GITHUB_REPOSITORY" -w account-grow-gift-soldier.yml -s in_progress --json createdAt -q "[.[] | select(.createdAt < \"$me\")] | length")" != 0 ]; do
+              echo "account-grow-gift-soldier.yml が終わるまで待つ"
+              sleep 60
+            done
             node scripts/ci/grow_army.mjs "$names" $flag --leave --parallel=60 ${rose:+"--rose=$rose"} $DELETE_ACCOUNT $DOUBLE_ADVANCED --state="$STATE"
             code=$?
             node -e "import('./scripts/core/_ci.mjs').then(({pushAccounts})=>pushAccounts('chore: CI の grow-army で accounts.json を更新する'))"

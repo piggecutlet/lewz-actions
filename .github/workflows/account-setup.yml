@@ -92,6 +92,7 @@ jobs:
             /scripts/ci/ci_defaults.mjs
             /decompile/device/files/ja/ja_ilocalize_base.json
             /decompile/device/files/WarZDoc/config/database.system.xml
+            /decompile/device/files/WarZDoc/config/database.local.xml
 
       - env:
           COUNT: ${{ inputs.count }}
@@ -135,7 +136,7 @@ jobs:
           esac
           main() {
             cd src
-            node scripts/core/new_dev.mjs $COUNT $DELETE_ACCOUNT $SECOND_DELETE ${grow_army:+"$grow_army"} $GROW_ARMY_DEFAULT ${TARGET:+"--target=$TARGET"} ${SEC:+"--sec=$SEC"} ${SEATS:+"--seats=$SEATS"} $SKIP_BUILD_BASE $OFFICER $FIRE $FORCE $DRY_RUN --ci --state="$STATE" ${VIP_CENTER:+"--vip-center=$VIP_CENTER"}
+            node scripts/core/new_dev.mjs $COUNT $DELETE_ACCOUNT $SECOND_DELETE ${grow_army:+"$grow_army"} $GROW_ARMY_DEFAULT ${TARGET:+"--target=$TARGET"} ${SEC:+"--sec=$SEC"} ${SEATS:+"--seats=$SEATS"} $SKIP_BUILD_BASE $OFFICER $FIRE $FORCE $DRY_RUN --ci --state="$STATE" --grow-army-option="${GROW_ARMY:-なし}" ${VIP_CENTER:+"--vip-center=$VIP_CENTER"}
           }
           . .github/scripts/logged.sh
           start_logged main

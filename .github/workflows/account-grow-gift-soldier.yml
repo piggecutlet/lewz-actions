@@ -1,0 +1,85 @@
+on:
+  workflow_dispatch:
+    inputs:
+      arm:
+        type: choice
+        options:
+          - Lv.10 ゾンビ
+          - Lv.10 戦士
+          - Lv.10 車両
+          - Lv.10 射手
+      count:
+        description: 使う件数（空なら amount から決める）
+        required: false
+        default: ""
+      amount:
+        description: 作る体数の目安
+        default: "10000000"
+      dry_run:
+        type: boolean
+        default: false
+      state:
+        description: 州
+        default: "775"
+
+concurrency:
+  group: grow-gift-soldier
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: ./.github/actions/prepare
+        with:
+          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
+          source-repo: ${{ secrets.SOURCE_REPO }}
+          source-token: ${{ secrets.LEWZ_GITHUB_PAT }}
+          sparse-checkout-cone-mode: false
+          sparse-checkout: |
+            /api/
+            /scripts/core/
+            /savedata/
+            /scripts/ci/grow_gift_soldier.mjs
+            /scripts/ci/leave_alliance.mjs
+            /decompile/device/files/ja/ja_ilocalize_base.json
+            /decompile/device/files/WarZDoc/config/database.activity.xml
+
+      - env:
+          LOG_KEY: ${{ secrets.LOG_KEY }}
+          GH_TOKEN: ${{ secrets.LEWZ_GITHUB_PAT }}
+          ARM: ${{ inputs.arm }}
+          AMOUNT: ${{ inputs.amount }}
+          COUNT: ${{ inputs.count }}
+          DRY_RUN: ${{ inputs.dry_run && '--dry-run' || '' }}
+          STATE: ${{ inputs.state || '775' }}
+        run: |
+          case "$AMOUNT$COUNT$STATE" in
+            *[!0-9]*) exit 1 ;;
+          esac
+          main() {
+            cd src
+            me=$(gh run view "$GITHUB_RUN_ID" -R "$GITHUB_REPOSITORY" --json createdAt -q .createdAt)
+            while [ "$(gh run list -R "$GITHUB_REPOSITORY" -w account-grow-army.yml -s in_progress --json createdAt -q "[.[] | select(.createdAt < \"$me\")] | length")" != 0 ]; do
+              echo "account-grow-army.yml が終わるまで待つ"
+              sleep 60
+            done
+            node --max-old-space-size=8192 scripts/ci/grow_gift_soldier.mjs --arm="$ARM" ${COUNT:+"--count=$COUNT"} ${AMOUNT:+"--amount=$AMOUNT"} --state="$STATE" $DRY_RUN
+            code=$?
+            node -e "import('./scripts/core/_ci.mjs').then(({pushAccounts})=>pushAccounts('chore: CI の grow-gift-soldier で accounts.json を更新する'))"
+            exit $code
+          }
+          . .github/scripts/logged.sh
+          start_logged main
+
+      - if: always() && env.LOG != ''
+        env:
+          LOG_KEY: ${{ secrets.LOG_KEY }}
+        run: |
+          . .github/scripts/logged.sh
+          finish_logged
