@@ -32,10 +32,13 @@ jobs:
           ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
           source-repo: ${{ secrets.SOURCE_REPO }}
           source-token: ${{ secrets.LEWZ_GITHUB_PAT }}
+          sparse-checkout-cone-mode: false
           sparse-checkout: |
-            api
-            scripts/core
-            savedata
+            /api/
+            /scripts/core/
+            /savedata/
+            /decompile/device/files/ja/ja_ilocalize_base.json
+            /decompile/device/files/WarZDoc/config/database.activity.xml
 
       - env:
           LOG_KEY: ${{ secrets.LOG_KEY }}
