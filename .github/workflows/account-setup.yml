@@ -61,7 +61,7 @@ on:
         description: 州
         default: "775"
       vip_center:
-        description: VIP を移す中心 x,y（空なら 775 の 1071,793。ほかの州の VIP は必須）
+        description: VIP を移す中心 x,y（空なら手動アカウントの今の位置を al.rank から読む）
         required: false
         default: ""
 
