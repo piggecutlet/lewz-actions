@@ -1,0 +1,66 @@
+on:
+  workflow_dispatch:
+    inputs:
+      receivers:
+        description: 受け手の gameUid（カンマ区切り）
+        required: true
+      deadline:
+        description: この時刻を過ぎたら新しい送り手を始めない（例 2026-11-05T09:00:00+09:00）
+        required: true
+      parallel:
+        description: 同時に回す件数
+        default: "100"
+
+concurrency:
+  group: rose-login
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: ./.github/actions/prepare
+        with:
+          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
+          source-repo: ${{ secrets.SOURCE_REPO }}
+          source-token: ${{ secrets.LEWZ_GITHUB_PAT }}
+          sparse-checkout-cone-mode: false
+          sparse-checkout: |
+            /api/
+            /scripts/core/
+            /savedata/
+
+      - env:
+          LOG_KEY: ${{ secrets.LOG_KEY }}
+          PARALLEL: ${{ inputs.parallel }}
+        run: |
+          receivers=$(jq -r .inputs.receivers "$GITHUB_EVENT_PATH")
+          deadline=$(jq -r .inputs.deadline "$GITHUB_EVENT_PATH")
+          case "$receivers" in
+            "" | *[!0-9,]*) exit 1 ;;
+          esac
+          case "$PARALLEL" in
+            "" | *[!0-9]*) exit 1 ;;
+          esac
+          [[ "$deadline" =~ ^[0-9T:+-]+$ ]] || exit 1
+          main() {
+            cd src
+            node --max-old-space-size=8192 scripts/core/purple_rose.mjs "$receivers" unsent --login-only --deadline="$deadline" --parallel="$PARALLEL"
+            code=$?
+            node -e "import('./scripts/core/_ci.mjs').then(({pushAccounts})=>pushAccounts('chore: CI の rose-login で accounts.json を更新する'))"
+            exit $code
+          }
+          . .github/scripts/logged.sh
+          start_logged main
+
+      - if: always() && env.LOG != ''
+        env:
+          LOG_KEY: ${{ secrets.LOG_KEY }}
+        run: |
+          . .github/scripts/logged.sh
+          finish_logged
