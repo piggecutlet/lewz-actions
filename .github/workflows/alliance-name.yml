@@ -10,6 +10,9 @@ on:
       creator:
         description: 作るときの gameUid（同盟に入っていないもの）。名前を変えるときは空
         required: false
+      abbr:
+        description: 略称（英数字 3 文字）。空なら名前の先頭 3 文字
+        required: false
 
 permissions:
   contents: write
@@ -46,9 +49,13 @@ jobs:
           case "$creator" in
             *[!0-9]*) exit 1 ;;
           esac
+          abbr=$(jq -r ".inputs.abbr // \"\"" "$GITHUB_EVENT_PATH")
+          case "$abbr" in
+            *[!A-Za-z0-9]*) exit 1 ;;
+          esac
           main() {
             cd src
-            node scripts/core/alliance_name.mjs "$id" "$name" ${creator:+"$creator"}
+            node scripts/core/alliance_name.mjs "$id" "$name" ${creator:+"$creator"} ${abbr:+"--abbr=$abbr"}
             code=$?
             git add savedata/alliances.json
             if ! git diff --cached --quiet -- savedata/alliances.json; then

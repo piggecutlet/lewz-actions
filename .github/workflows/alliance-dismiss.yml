@@ -4,6 +4,10 @@ on:
       name:
         description: 盟主の gameUid
         required: true
+      kick_all:
+        description: 解散の前にほかのメンバーを全員外す
+        type: boolean
+        default: false
 
 permissions:
   contents: write
@@ -28,6 +32,7 @@ jobs:
 
       - env:
           LOG_KEY: ${{ secrets.LOG_KEY }}
+          KICK_ALL: ${{ inputs.kick_all && '--kick-all' || '' }}
         run: |
           name=$(jq -r .inputs.name "$GITHUB_EVENT_PATH")
           case "$name" in
@@ -35,8 +40,12 @@ jobs:
           esac
           main() {
             cd src
-            node scripts/ci/al_dismiss.mjs "$name"
+            node scripts/ci/al_dismiss.mjs "$name" $KICK_ALL
             code=$?
+            git add savedata/alliances.json
+            if ! git diff --cached --quiet -- savedata/alliances.json; then
+              git commit -m "chore: CI で同盟を解散し、alliances.json から消す" -- savedata/alliances.json
+            fi
             node -e "import('./scripts/core/_ci.mjs').then(({pushAccounts})=>pushAccounts('chore: CI で同盟を解散し、accounts.json を更新する'))"
             exit $code
           }
