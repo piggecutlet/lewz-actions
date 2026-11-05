@@ -8,6 +8,15 @@ on:
           - Lv.10 戦士
           - Lv.10 車両
           - Lv.10 射手
+          - Lv.10 車両,Lv.10 射手,Lv.10 戦士
+      no_alliance:
+        description: 自分の同盟に入れずに訓練する
+        type: boolean
+        default: false
+      old:
+        description: grow-army の印が無い昔の setup の件を使う
+        type: boolean
+        default: false
       count:
         description: 使う件数（空なら amount から決める）
         required: false
@@ -23,7 +32,7 @@ on:
         default: "775"
 
 concurrency:
-  group: grow-gift-soldier
+  group: grow-gift-soldier-${{ inputs.no_alliance }}
   cancel-in-progress: false
 
 permissions:
@@ -57,6 +66,10 @@ jobs:
           AMOUNT: ${{ inputs.amount }}
           COUNT: ${{ inputs.count }}
           DRY_RUN: ${{ inputs.dry_run && '--dry-run' || '' }}
+          NO_ALLIANCE: ${{ inputs.no_alliance && '--no-alliance' || '' }}
+          OLD: ${{ inputs.old && '--old' || '' }}
+          NO_ALLIANCE_INPUT: ${{ inputs.no_alliance }}
+          OLD_INPUT: ${{ inputs.old }}
           STATE: ${{ inputs.state || '775' }}
         run: |
           case "$AMOUNT$COUNT$STATE" in
@@ -69,11 +82,11 @@ jobs:
               echo "account-grow-army.yml が終わるまで待つ"
               sleep 60
             done
-            node --max-old-space-size=8192 scripts/ci/grow_gift_soldier.mjs --arm="$ARM" ${COUNT:+"--count=$COUNT"} ${AMOUNT:+"--amount=$AMOUNT"} --state="$STATE" $DRY_RUN
+            node --max-old-space-size=8192 scripts/ci/grow_gift_soldier.mjs --arm="$ARM" ${COUNT:+"--count=$COUNT"} ${AMOUNT:+"--amount=$AMOUNT"} --state="$STATE" $NO_ALLIANCE $OLD $DRY_RUN
             code=$?
             node -e "import('./scripts/core/_ci.mjs').then(({pushAccounts})=>pushAccounts('chore: CI の grow-gift-soldier で accounts.json を更新する'))"
             if [ "$code" = 0 ] && [ -z "$DRY_RUN" ]; then
-              gh workflow run account-grow-gift-soldier.yml -R "$GITHUB_REPOSITORY" -f arm="$ARM" -f count="$COUNT" -f amount="$AMOUNT" -f state="$STATE" && echo "次の account-grow-gift-soldier.yml を起動した"
+              gh workflow run account-grow-gift-soldier.yml -R "$GITHUB_REPOSITORY" -f arm="$ARM" -f count="$COUNT" -f amount="$AMOUNT" -f state="$STATE" -f no_alliance="$NO_ALLIANCE_INPUT" -f old="$OLD_INPUT" && echo "次の account-grow-gift-soldier.yml を起動した"
             fi
             exit $code
           }
