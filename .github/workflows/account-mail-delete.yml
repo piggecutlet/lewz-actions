@@ -1,0 +1,58 @@
+on:
+  workflow_dispatch:
+    inputs:
+      name:
+        description: gameUid
+        required: true
+      types:
+        description: 消すメールの type（カンマ区切り。例 41,4）
+        required: true
+      limit:
+        description: 古い順に消す通数（空なら全部）
+        default: ""
+
+permissions:
+  contents: write
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: ./.github/actions/prepare
+        with:
+          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
+          source-repo: ${{ secrets.SOURCE_REPO }}
+          source-token: ${{ secrets.LEWZ_GITHUB_PAT }}
+          sparse-checkout: |
+            api
+            scripts/core
+            savedata
+
+      - env:
+          LOG_KEY: ${{ secrets.LOG_KEY }}
+        run: |
+          name=$(jq -r .inputs.name "$GITHUB_EVENT_PATH")
+          types=$(jq -r .inputs.types "$GITHUB_EVENT_PATH")
+          limit=$(jq -r '.inputs.limit // ""' "$GITHUB_EVENT_PATH")
+          [[ "$name" =~ ^[0-9]+$ ]] || exit 1
+          [[ "$types" =~ ^[0-9]+(,[0-9]+)*$ ]] || exit 1
+          [[ "$limit" =~ ^[0-9]*$ ]] || exit 1
+          main() {
+            cd src
+            node scripts/core/mail_reward.mjs "$name"
+            node scripts/core/mail_delete.mjs "$name" --types="$types" ${limit:+--limit="$limit"}
+          }
+          . .github/scripts/logged.sh
+          start_logged main
+          exit $CODE
+
+      - if: always()
+        env:
+          LOG_KEY: ${{ secrets.LOG_KEY }}
+        run: |
+          [ -n "$LOG" ] && [ -f "$LOG" ] || exit 0
+          . .github/scripts/logged.sh
+          CODE=0
+          finish_logged
