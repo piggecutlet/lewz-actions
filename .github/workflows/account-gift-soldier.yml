@@ -16,6 +16,14 @@ on:
         description: 相手の名前（空なら贈る同盟の自分でない 1 人）
         required: false
         default: ""
+      accept:
+        description: 加入申請を承認して相手にする gameUid（to の代わり）
+        required: false
+        default: ""
+      refuse:
+        description: 加入申請を拒否する gameUid（カンマ区切り）
+        required: false
+        default: ""
       amount:
         description: 贈る体数の合計
         default: "10000000"
@@ -68,9 +76,17 @@ jobs:
           case "$alliance" in
             *[!0-9_]*) exit 1 ;;
           esac
+          accept=$(jq -r ".inputs.accept // \"\"" "$GITHUB_EVENT_PATH")
+          case "$accept" in
+            *[!0-9]*) exit 1 ;;
+          esac
+          refuse=$(jq -r ".inputs.refuse // \"\"" "$GITHUB_EVENT_PATH")
+          case "$refuse" in
+            *[!0-9,]*) exit 1 ;;
+          esac
           main() {
             cd src
-            node --max-old-space-size=8192 scripts/ci/gift_soldier.mjs --arm="$ARM" ${alliance:+"--alliance=$alliance"} ${to:+"--to=$to"} ${AMOUNT:+"--amount=$AMOUNT"} --state="$STATE" $DRY_RUN
+            node --max-old-space-size=8192 scripts/ci/gift_soldier.mjs --arm="$ARM" ${alliance:+"--alliance=$alliance"} ${to:+"--to=$to"} ${accept:+"--accept=$accept"} ${refuse:+"--refuse=$refuse"} ${AMOUNT:+"--amount=$AMOUNT"} --state="$STATE" $DRY_RUN
             code=$?
             node -e "import('./scripts/core/_ci.mjs').then(({pushAccounts})=>pushAccounts('chore: CI の gift-soldier で accounts.json を更新する'))"
             exit $code
