@@ -35,7 +35,7 @@ on:
         default: "775"
 
 concurrency:
-  group: gift-soldier
+  group: ${{ inputs.dry_run && format('gift-soldier-dry-{0}', github.run_id) || 'gift-soldier' }}
   cancel-in-progress: false
 
 permissions:
