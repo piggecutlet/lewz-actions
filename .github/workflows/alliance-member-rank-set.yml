@@ -58,6 +58,9 @@ jobs:
           main() {
             cd src
             node scripts/ci/member_rank_set.mjs "$names" "$rank" ${leader:+"--leader=$leader"} --state="$STATE"
+            code=$?
+            node -e "import('./scripts/core/_ci.mjs').then(({pushAccounts})=>pushAccounts('chore: CI で同盟の階級を変え、accounts.json を更新する'))"
+            exit $code
           }
           . .github/scripts/logged.sh
           start_logged main
