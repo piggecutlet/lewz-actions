@@ -1,0 +1,62 @@
+on:
+  workflow_dispatch:
+    inputs:
+      id:
+        description: 自分の同盟の ID（775_002 など）
+        required: true
+      accept:
+        description: 承認する gameUid（カンマ区切り）。accept も refuse も空なら申請の一覧を出すだけ
+        required: false
+      refuse:
+        description: 拒否する gameUid（カンマ区切り）
+        required: false
+
+permissions:
+  contents: write
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: ./.github/actions/prepare
+        with:
+          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
+          source-repo: ${{ secrets.SOURCE_REPO }}
+          source-token: ${{ secrets.LEWZ_GITHUB_PAT }}
+          sparse-checkout-cone-mode: false
+          sparse-checkout: |
+            /api/
+            /scripts/core/
+            /savedata/
+            /scripts/ci/apply_review.mjs
+
+      - env:
+          LOG_KEY: ${{ secrets.LOG_KEY }}
+        run: |
+          id=$(jq -r .inputs.id "$GITHUB_EVENT_PATH")
+          case "$id" in
+            "" | *[!0-9_]*) exit 1 ;;
+          esac
+          accept=$(jq -r '.inputs.accept // ""' "$GITHUB_EVENT_PATH")
+          case "$accept" in
+            *[!0-9,]*) exit 1 ;;
+          esac
+          refuse=$(jq -r '.inputs.refuse // ""' "$GITHUB_EVENT_PATH")
+          case "$refuse" in
+            *[!0-9,]*) exit 1 ;;
+          esac
+          main() {
+            cd src
+            node scripts/ci/apply_review.mjs "$id" ${accept:+"--accept=$accept"} ${refuse:+"--refuse=$refuse"}
+          }
+          . .github/scripts/logged.sh
+          start_logged main
+
+      - if: always() && env.LOG != ''
+        env:
+          LOG_KEY: ${{ secrets.LOG_KEY }}
+        run: |
+          . .github/scripts/logged.sh
+          finish_logged
