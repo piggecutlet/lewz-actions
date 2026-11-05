@@ -3,6 +3,7 @@ on:
     inputs:
       arm:
         type: choice
+        default: Lv.10 ゾンビ
         options:
           - Lv.10 ゾンビ
           - Lv.10 戦士
