@@ -4,6 +4,10 @@ on:
       names:
         description: gameUid（カンマ区切り）
         required: true
+      chapter_only:
+        description: 章報酬だけ受け取る
+        type: boolean
+        default: false
 
 permissions:
   contents: write
@@ -26,6 +30,7 @@ jobs:
 
       - env:
           LOG_KEY: ${{ secrets.LOG_KEY }}
+          MODE: ${{ inputs.chapter_only && '--chapter-only' || '--officer' }}
         run: |
           names=$(jq -r .inputs.names "$GITHUB_EVENT_PATH")
           case "$names" in
@@ -33,7 +38,7 @@ jobs:
           esac
           main() {
             cd src
-            node scripts/core/setup_officer.mjs "$names" --officer
+            node scripts/core/setup_officer.mjs "$names" $MODE
             code=$?
             exit $code
           }
