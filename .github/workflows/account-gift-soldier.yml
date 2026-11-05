@@ -27,6 +27,10 @@ on:
       amount:
         description: 贈る体数の合計
         default: "10000000"
+      no_kick:
+        description: 贈ったあと相手を贈る同盟から外さない
+        type: boolean
+        default: false
       dry_run:
         type: boolean
         default: false
@@ -66,6 +70,7 @@ jobs:
           ARM: ${{ inputs.arm }}
           AMOUNT: ${{ inputs.amount }}
           DRY_RUN: ${{ inputs.dry_run && '--dry-run' || '' }}
+          NO_KICK: ${{ inputs.no_kick && '--no-kick' || '' }}
           STATE: ${{ inputs.state || '775' }}
         run: |
           case "$AMOUNT$STATE" in
@@ -86,7 +91,7 @@ jobs:
           esac
           main() {
             cd src
-            node --max-old-space-size=8192 scripts/ci/gift_soldier.mjs --arm="$ARM" ${alliance:+"--alliance=$alliance"} ${to:+"--to=$to"} ${accept:+"--accept=$accept"} ${refuse:+"--refuse=$refuse"} ${AMOUNT:+"--amount=$AMOUNT"} --state="$STATE" $DRY_RUN
+            node --max-old-space-size=8192 scripts/ci/gift_soldier.mjs --arm="$ARM" ${alliance:+"--alliance=$alliance"} ${to:+"--to=$to"} ${accept:+"--accept=$accept"} ${refuse:+"--refuse=$refuse"} ${AMOUNT:+"--amount=$AMOUNT"} --state="$STATE" $DRY_RUN $NO_KICK
             code=$?
             node -e "import('./scripts/core/_ci.mjs').then(({pushAccounts})=>pushAccounts('chore: CI の gift-soldier で accounts.json を更新する'))"
             exit $code
