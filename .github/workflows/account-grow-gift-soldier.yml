@@ -87,6 +87,10 @@ jobs:
             node --max-old-space-size=8192 scripts/ci/grow_gift_soldier.mjs --arm="$ARM" ${COUNT:+"--count=$COUNT"} ${AMOUNT:+"--amount=$AMOUNT"} --state="$STATE" $NO_ALLIANCE $OLD $DRY_RUN
             code=$?
             node -e "import('./scripts/core/_ci.mjs').then(({pushAccounts})=>pushAccounts('chore: CI の grow-gift-soldier で accounts.json を更新する'))"
+            if [ "$code" = 3 ]; then
+              echo "使える件が 0 件なので次の account-grow-gift-soldier.yml を起動しない"
+              exit 0
+            fi
             if [ "$code" = 0 ] && [ -z "$DRY_RUN" ]; then
               gh workflow run account-grow-gift-soldier.yml -R "$GITHUB_REPOSITORY" -f arm="$ARM" -f count="$COUNT" -f amount="$AMOUNT" -f state="$STATE" -f no_alliance="$NO_ALLIANCE_INPUT" -f old="$OLD_INPUT" && echo "次の account-grow-gift-soldier.yml を起動した"
             fi
