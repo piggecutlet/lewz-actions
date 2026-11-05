@@ -8,8 +8,12 @@ on:
           - Lv.10 戦士
           - Lv.10 車両
           - Lv.10 射手
+      alliance:
+        description: 贈る同盟の ID（775_002 / 775_003 / 775_004。空なら gift の同盟）
+        required: false
+        default: ""
       to:
-        description: 相手の名前（空なら部隊プレゼントの同盟の自分でない 1 人）
+        description: 相手の名前（空なら贈る同盟の自分でない 1 人）
         required: false
         default: ""
       amount:
@@ -60,9 +64,13 @@ jobs:
             *[!0-9]*) exit 1 ;;
           esac
           to=$(jq -r ".inputs.to // \"\"" "$GITHUB_EVENT_PATH")
+          alliance=$(jq -r ".inputs.alliance // \"\"" "$GITHUB_EVENT_PATH")
+          case "$alliance" in
+            *[!0-9_]*) exit 1 ;;
+          esac
           main() {
             cd src
-            node --max-old-space-size=8192 scripts/ci/gift_soldier.mjs --arm="$ARM" ${to:+"--to=$to"} ${AMOUNT:+"--amount=$AMOUNT"} --state="$STATE" $DRY_RUN
+            node --max-old-space-size=8192 scripts/ci/gift_soldier.mjs --arm="$ARM" ${alliance:+"--alliance=$alliance"} ${to:+"--to=$to"} ${AMOUNT:+"--amount=$AMOUNT"} --state="$STATE" $DRY_RUN
             code=$?
             node -e "import('./scripts/core/_ci.mjs').then(({pushAccounts})=>pushAccounts('chore: CI の gift-soldier で accounts.json を更新する'))"
             exit $code
