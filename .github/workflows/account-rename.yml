@@ -5,8 +5,12 @@ on:
         description: gameUid
         required: true
       name:
-        description: 新しい名前（英数字と空白）。random なら Tmp + 数字 5 桁
+        description: 新しい名前（英数字と空白）。random なら Tmp + 数字 5 桁。check_only ならカンマ区切りで複数
         required: true
+      check_only:
+        description: 改名せず、名前が使えるかだけ確かめる
+        type: boolean
+        default: false
 
 permissions:
   contents: write
@@ -29,6 +33,7 @@ jobs:
 
       - env:
           LOG_KEY: ${{ secrets.LOG_KEY }}
+          CHECK_ONLY: ${{ inputs.check_only && '--check-only' || '' }}
         run: |
           uid=$(jq -r .inputs.uid "$GITHUB_EVENT_PATH")
           case "$uid" in
@@ -36,11 +41,11 @@ jobs:
           esac
           name=$(jq -r .inputs.name "$GITHUB_EVENT_PATH")
           case "$name" in
-            "" | *[!A-Za-z0-9\ ]*) exit 1 ;;
+            "" | *[!A-Za-z0-9\ ,]*) exit 1 ;;
           esac
           main() {
             cd src
-            node scripts/core/rename.mjs "$uid" "$name"
+            node scripts/core/rename.mjs "$uid" "$name" $CHECK_ONLY
             code=$?
             node -e "import('./scripts/core/_ci.mjs').then(({pushAccounts})=>pushAccounts('chore: CI で改名し、accounts.json を更新する'))"
             exit $code
