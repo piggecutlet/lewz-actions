@@ -47,6 +47,10 @@ jobs:
             cd src
             node scripts/core/rename.mjs "$uid" "$name" $CHECK_ONLY
             code=$?
+            git add scripts/core/taken_names.json
+            if ! git diff --cached --quiet -- scripts/core/taken_names.json; then
+              git commit -m "chore: CI で使えなかった名前を taken_names.json に控える" -- scripts/core/taken_names.json
+            fi
             node -e "import('./scripts/core/_ci.mjs').then(({pushAccounts})=>pushAccounts('chore: CI で改名し、accounts.json を更新する'))"
             exit $code
           }

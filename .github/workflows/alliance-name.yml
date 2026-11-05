@@ -61,6 +61,10 @@ jobs:
             if ! git diff --cached --quiet -- savedata/alliances.json; then
               git commit -m "chore: CI で同盟 $id の名前を $name にする" -- savedata/alliances.json
             fi
+            git add scripts/core/taken_names.json
+            if ! git diff --cached --quiet -- scripts/core/taken_names.json; then
+              git commit -m "chore: CI で使えなかった同盟の名前と略称を taken_names.json に控える" -- scripts/core/taken_names.json
+            fi
             node -e "import('./scripts/core/_ci.mjs').then(({pushAccounts})=>pushAccounts('chore: CI で同盟の名前を変え、accounts.json を更新する'))"
             exit $code
           }
