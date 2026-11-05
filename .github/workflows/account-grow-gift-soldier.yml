@@ -3,8 +3,9 @@ on:
     inputs:
       arm:
         type: choice
-        default: Lv.10 ゾンビ
+        default: 既定
         options:
+          - 既定
           - Lv.10 ゾンビ
           - Lv.10 戦士
           - Lv.10 車両
