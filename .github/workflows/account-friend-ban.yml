@@ -11,6 +11,10 @@ on:
         required: true
       to:
         required: true
+      replace:
+        description: 名前が前半で始まらない相手のブロックを先に解除する
+        type: boolean
+        default: false
 
 concurrency:
   group: friend-ban
@@ -43,10 +47,11 @@ jobs:
           PREFIX: ${{ inputs.prefix }}
           FROM: ${{ inputs.from }}
           TO: ${{ inputs.to }}
+          REPLACE: ${{ inputs.replace && '--replace' || '' }}
         run: |
           main() {
             cd src
-            node scripts/ci/friend_ban.mjs "$LOGIN" "$PREFIX" "$FROM" "$TO"
+            node scripts/ci/friend_ban.mjs "$LOGIN" "$PREFIX" "$FROM" "$TO" $REPLACE
           }
           . .github/scripts/logged.sh
           start_logged main
