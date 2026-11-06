@@ -1,0 +1,54 @@
+on:
+  workflow_dispatch:
+    inputs:
+      login:
+        description: 受け取らせる gameUid
+        required: true
+      limit:
+        description: 試すギフトの件数
+        default: "3"
+
+permissions:
+  contents: write
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: ./.github/actions/prepare
+        with:
+          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
+          source-repo: ${{ secrets.SOURCE_REPO }}
+          source-token: ${{ secrets.LEWZ_GITHUB_PAT }}
+          sparse-checkout-cone-mode: false
+          sparse-checkout: |
+            /api/
+            /scripts/core/
+            /savedata/
+
+      - env:
+          LOG_KEY: ${{ secrets.LOG_KEY }}
+        run: |
+          login=$(jq -r .inputs.login "$GITHUB_EVENT_PATH")
+          limit=$(jq -r .inputs.limit "$GITHUB_EVENT_PATH")
+          case "$login" in
+            "" | *[!0-9]*) exit 1 ;;
+          esac
+          case "$limit" in
+            "" | *[!0-9]*) exit 1 ;;
+          esac
+          main() {
+            cd src
+            node scripts/core/redpack.mjs "$login" --collectors="$login" --limit="$limit"
+          }
+          . .github/scripts/logged.sh
+          start_logged main
+
+      - if: always() && env.LOG != ''
+        env:
+          LOG_KEY: ${{ secrets.LOG_KEY }}
+        run: |
+          . .github/scripts/logged.sh
+          finish_logged
