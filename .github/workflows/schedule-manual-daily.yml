@@ -56,6 +56,7 @@ jobs:
             node scripts/core/city_def.mjs "$names"
             node scripts/core/mail_reward.mjs "$names" || true
             if [ "$slot" = 09 ]; then node scripts/core/strategy_free.mjs "$names" || true; fi
+            if [ "$slot" = 09 ]; then node scripts/core/vip_store.mjs "$names" --officer-exp || true; fi
             if [ "$slot" = 09 ]; then
               for n in ${names//,/ }; do
                 node scripts/core/weapon_troop_up.mjs "$n" --weapon=130202 --troop=4 --times=30 --troop-times=50 || true
