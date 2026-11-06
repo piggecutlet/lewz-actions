@@ -10,6 +10,9 @@ on:
       parallel:
         description: 同時に回す件数
         default: "100"
+      senders:
+        description: 送り手の選び方（unsent は rose が無い行、deleted-today は削除申請済みで rose に今日の日付が無い行）
+        default: unsent
 
 concurrency:
   group: rose-login
@@ -38,6 +41,7 @@ jobs:
       - env:
           LOG_KEY: ${{ secrets.LOG_KEY }}
           PARALLEL: ${{ inputs.parallel }}
+          SENDERS: ${{ inputs.senders }}
         run: |
           receivers=$(jq -r .inputs.receivers "$GITHUB_EVENT_PATH")
           deadline=$(jq -r .inputs.deadline "$GITHUB_EVENT_PATH")
@@ -48,9 +52,13 @@ jobs:
             "" | *[!0-9]*) exit 1 ;;
           esac
           [[ "$deadline" =~ ^[0-9T:+-]+$ ]] || exit 1
+          case "$SENDERS" in
+            unsent | deleted-today) ;;
+            *) exit 1 ;;
+          esac
           main() {
             cd src
-            node --max-old-space-size=8192 scripts/core/purple_rose.mjs "$receivers" unsent --login-only --deadline="$deadline" --parallel="$PARALLEL"
+            node --max-old-space-size=8192 scripts/core/purple_rose.mjs "$receivers" "$SENDERS" --login-only --deadline="$deadline" --parallel="$PARALLEL"
             code=$?
             node -e "import('./scripts/core/_ci.mjs').then(({pushAccounts})=>pushAccounts('chore: CI の rose-login で accounts.json を更新する'))"
             exit $code
