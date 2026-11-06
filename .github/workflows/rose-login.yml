@@ -11,7 +11,7 @@ on:
         description: 同時に回す件数
         default: "100"
       senders:
-        description: 送り手の選び方（unsent は rose が無い行、deleted-today は削除申請済みと VIP で rose に今日の日付が無い行、vip-today は VIP で rose に今日の日付が無い行）
+        description: 送り手の選び方（unsent は rose が無い行、kind をカンマ区切りで並べると（例 deleted,temp,vip）その kind で今日 JST 9:00 から贈っていない行）
         default: unsent
 
 concurrency:
@@ -53,8 +53,7 @@ jobs:
           esac
           [[ "$deadline" =~ ^[0-9T:+-]+$ ]] || exit 1
           case "$SENDERS" in
-            unsent | deleted-today | vip-today) ;;
-            *) exit 1 ;;
+            "" | *[!a-z,]*) exit 1 ;;
           esac
           main() {
             cd src
