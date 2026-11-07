@@ -3,7 +3,7 @@ on:
     inputs:
       kind:
         description: 読む kind（カンマ区切り）
-        default: core,sng,core-hunt,cnl
+        default: sng,core-hunt,cnl
       state:
         description: 州
         default: "775"
@@ -34,7 +34,7 @@ jobs:
           case "$STATE" in
             *[!0-9]*) exit 1 ;;
           esac
-          kind=$(jq -r '.inputs.kind // "core,sng,core-hunt,cnl"' "$GITHUB_EVENT_PATH")
+          kind=$(jq -r '.inputs.kind // "sng,core-hunt,cnl"' "$GITHUB_EVENT_PATH")
           case "$kind" in
             "" | *[!a-z,-]*) exit 1 ;;
           esac
