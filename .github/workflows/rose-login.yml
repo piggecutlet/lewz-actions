@@ -18,6 +18,9 @@ on:
       senders:
         description: 送り手の選び方（unsent は rose が無い行、kind をカンマ区切りで並べると（例 deleted,temp,vip）その kind で今日 JST 9:00 から贈っていない行）
         default: unsent
+      sample:
+        description: 0 より大きいと、送り手をこの件数に絞って読むだけ（受け取りも贈りもしない）
+        default: "0"
 
 concurrency:
   group: rose-login
@@ -47,6 +50,7 @@ jobs:
           LOG_KEY: ${{ secrets.LOG_KEY }}
           PARALLEL: ${{ inputs.parallel }}
           SENDERS: ${{ inputs.senders }}
+          SAMPLE: ${{ inputs.sample }}
         run: |
           receivers=$(jq -r .inputs.receivers "$GITHUB_EVENT_PATH")
           deadline=$(jq -r .inputs.deadline "$GITHUB_EVENT_PATH")
@@ -61,9 +65,14 @@ jobs:
           case "$SENDERS" in
             "" | *[!a-z,]*) exit 1 ;;
           esac
+          case "$SAMPLE" in
+            "" | *[!0-9]*) exit 1 ;;
+          esac
+          mode=--claim-done
+          [ "$SAMPLE" -gt 0 ] && mode="--dry-run --sample=$SAMPLE"
           main() {
             cd src
-            node --max-old-space-size=8192 scripts/core/purple_rose.mjs "$receivers" "$SENDERS" --claim-done --deadline="$deadline" --parallel="$PARALLEL"
+            node --max-old-space-size=8192 scripts/core/purple_rose.mjs "$receivers" "$SENDERS" $mode --deadline="$deadline" --parallel="$PARALLEL"
             code=$?
             node -e "import('./scripts/core/_ci.mjs').then(({pushAccounts})=>pushAccounts('chore: CI の rose-login で accounts.json を更新する'))"
             exit $code
