@@ -16,7 +16,7 @@ on:
         description: 同時に回す件数
         default: "100"
       senders:
-        description: 送り手の選び方（unsent は rose が無い行、kind をカンマ区切りで並べると（例 deleted,temp,vip）その kind で今日 JST 9:00 から贈っていない行）
+        description: 送り手の選び方（unsent は rose が無い行、kind をカンマ区切りで並べると（例 deleted,temp,vip）その kind で今日 JST 9:00 から贈っていない行、gameUid をカンマ区切りで並べるとその行だけ）
         default: unsent
       sample:
         description: 0 より大きいと、送り手をこの件数に絞って読むだけ（受け取りも贈りもしない）
@@ -70,7 +70,7 @@ jobs:
           [[ "$deadline" =~ ^[0-9T:+-]+$ ]] || exit 1
           [[ "$start_at" =~ ^[0-9T:+-]*$ ]] || exit 1
           case "$SENDERS" in
-            "" | *[!a-z,]*) exit 1 ;;
+            "" | *[!a-z0-9,]*) exit 1 ;;
           esac
           case "$SAMPLE" in
             "" | *[!0-9]*) exit 1 ;;
