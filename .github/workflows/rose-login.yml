@@ -21,6 +21,9 @@ on:
       sample:
         description: 0 より大きいと、送り手をこの件数に絞って読むだけ（受け取りも贈りもしない）
         default: "0"
+      start_at:
+        description: 空でなければ、この時刻（例 2026-11-08T06:00:00+09:00）まで待ってから始める。5 時間ごとに次の run へ引き継ぐ
+        default: ""
 
 concurrency:
   group: rose-login
@@ -44,16 +47,19 @@ jobs:
           sparse-checkout: |
             /api/
             /scripts/core/
+            /scripts/ci/wait_until.mjs
             /savedata/
 
       - env:
           LOG_KEY: ${{ secrets.LOG_KEY }}
+          GH_TOKEN: ${{ secrets.LEWZ_GITHUB_PAT }}
           PARALLEL: ${{ inputs.parallel }}
           SENDERS: ${{ inputs.senders }}
           SAMPLE: ${{ inputs.sample }}
         run: |
           receivers=$(jq -r .inputs.receivers "$GITHUB_EVENT_PATH")
           deadline=$(jq -r .inputs.deadline "$GITHUB_EVENT_PATH")
+          start_at=$(jq -r '.inputs.start_at // ""' "$GITHUB_EVENT_PATH")
           case "$receivers" in
             manual,sng | manual | sng) ;;
             *) exit 1 ;;
@@ -62,6 +68,7 @@ jobs:
             "" | *[!0-9]*) exit 1 ;;
           esac
           [[ "$deadline" =~ ^[0-9T:+-]+$ ]] || exit 1
+          [[ "$start_at" =~ ^[0-9T:+-]*$ ]] || exit 1
           case "$SENDERS" in
             "" | *[!a-z,]*) exit 1 ;;
           esac
@@ -72,6 +79,16 @@ jobs:
           [ "$SAMPLE" -gt 0 ] && mode="--dry-run --sample=$SAMPLE"
           main() {
             cd src
+            if [ -n "$start_at" ]; then
+              node scripts/ci/wait_until.mjs "$start_at"
+              case $? in
+                0) next="" ;;
+                10) next="$start_at" ;;
+                *) exit 1 ;;
+              esac
+              gh workflow run rose-login.yml -R "$GITHUB_REPOSITORY" -f receivers="$receivers" -f deadline="$deadline" -f parallel="$PARALLEL" -f senders="$SENDERS" -f sample="$SAMPLE" -f start_at="$next" && echo "次の rose-login.yml を起動した（start_at ${next:-なし}）"
+              exit $?
+            fi
             node --max-old-space-size=8192 scripts/core/purple_rose.mjs "$receivers" "$SENDERS" $mode --deadline="$deadline" --parallel="$PARALLEL"
             code=$?
             node -e "import('./scripts/core/_ci.mjs').then(({pushAccounts})=>pushAccounts('chore: CI の rose-login で accounts.json を更新する'))"
