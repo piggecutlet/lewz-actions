@@ -11,6 +11,19 @@ on:
         description: 狙える一番高い Lv から倒す（--high）
         type: boolean
         default: false
+      lv:
+        description: 狙う Lv をこの順に（--lv。例 13,14。空なら Lv.1 から）
+        default: ""
+      army:
+        description: 出す兵種の armId（--army。例 107309。空なら 4 兵種）
+        default: ""
+      limit:
+        description: 出撃の回数の上限（--limit。空なら上限なし）
+        default: ""
+      no_shield:
+        description: ピースシールドを買わない（--no-shield）
+        type: boolean
+        default: false
 
 concurrency:
   group: core-hunt-by-name-${{ inputs.name }}
@@ -23,6 +36,8 @@ permissions:
 jobs:
   run:
     runs-on: ubuntu-latest
+    outputs:
+      left: ${{ steps.hunt.outputs.left }}
     steps:
       - uses: actions/checkout@v7
 
@@ -36,7 +51,8 @@ jobs:
             scripts/core
             savedata
 
-      - env:
+      - id: hunt
+        env:
           LOG_KEY: ${{ secrets.LOG_KEY }}
         run: |
           name=$(jq -r .inputs.name "$GITHUB_EVENT_PATH")
@@ -50,12 +66,23 @@ jobs:
           opts=""
           [ -n "$size" ] && opts="$opts --size=$size"
           [ "$(jq -r '.inputs.high // false' "$GITHUB_EVENT_PATH")" = "true" ] && opts="$opts --high"
+          for key in lv army limit; do
+            v=$(jq -r --arg k "$key" '.inputs[$k] // ""' "$GITHUB_EVENT_PATH")
+            case "$v" in
+              *[!0-9,]*) exit 1 ;;
+            esac
+            if [ -n "$v" ]; then
+              opts="$opts --$key=$v"
+            fi
+          done
+          [ "$(jq -r '.inputs.no_shield // false' "$GITHUB_EVENT_PATH")" = "true" ] && opts="$opts --no-shield"
           main() {
             cd src
             node scripts/core/core_hunt.mjs "$name" $opts
           }
           . .github/scripts/logged.sh
           start_logged main
+          [ -f src/left.txt ] && echo "left=$(cat src/left.txt)" >> "$GITHUB_OUTPUT"
           code=$CODE
           if [ $code -eq 3 ]; then
             echo "timeout=1" >> "$GITHUB_ENV"
@@ -83,6 +110,7 @@ jobs:
     steps:
       - env:
           GH_TOKEN: ${{ secrets.LEWZ_GITHUB_PAT || github.token }}
+          LEFT: ${{ needs.run.outputs.left }}
         run: |
           name=$(jq -r .inputs.name "$GITHUB_EVENT_PATH")
           n=""
@@ -99,8 +127,13 @@ jobs:
           if [ "$n" -gt 0 ]; then
             size=$(jq -r '.inputs.size // ""' "$GITHUB_EVENT_PATH")
             high=$(jq -r '.inputs.high // false' "$GITHUB_EVENT_PATH")
+            lv=$(jq -r '.inputs.lv // ""' "$GITHUB_EVENT_PATH")
+            army=$(jq -r '.inputs.army // ""' "$GITHUB_EVENT_PATH")
+            limit=$(jq -r '.inputs.limit // ""' "$GITHUB_EVENT_PATH")
+            [ -n "$limit" ] && limit="$LEFT"
+            no_shield=$(jq -r '.inputs.no_shield // false' "$GITHUB_EVENT_PATH")
             for i in 1 2 3 4 5; do
-              if gh workflow run core-hunt-by-name.yml -R "$GITHUB_REPOSITORY" -f name="$name" -f size="$size" -f high="$high"; then
+              if gh workflow run core-hunt-by-name.yml -R "$GITHUB_REPOSITORY" -f name="$name" -f size="$size" -f high="$high" -f lv="$lv" -f army="$army" -f limit="$limit" -f no_shield="$no_shield"; then
                 echo "続きを起動した"
                 exit 0
               fi
