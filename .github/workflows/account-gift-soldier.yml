@@ -67,6 +67,7 @@ jobs:
 
       - env:
           LOG_KEY: ${{ secrets.LOG_KEY }}
+          LOG_EVERY: 6
           ARM: ${{ inputs.arm }}
           AMOUNT: ${{ inputs.amount }}
           DRY_RUN: ${{ inputs.dry_run && '--dry-run' || '' }}

@@ -14,7 +14,7 @@ start_logged() {
   while kill -0 "$pid" 2>/dev/null; do
     sleep 10
     n=$((n + 1))
-    if [ $((n % 30)) -eq 0 ]; then
+    if [ $((n % ${LOG_EVERY:-30})) -eq 0 ]; then
       echo
       echo "----- $(TZ=Asia/Tokyo date +%H:%M:%S) -----"
       tail -n 30 "$LOG" | openssl enc -aes-256-cbc -pbkdf2 -salt -pass env:LOG_KEY | base64 -w 1000
