@@ -3,13 +3,13 @@ on:
     inputs:
       kinds:
         description: ジョブごとに回す kind（JSON の配列。要素はカンマ区切りの kind）
-        default: '["other"]'
+        default: '["core-hunt"]'
       state:
         description: 州
         default: "775"
 
 concurrency:
-  group: core-hunt-${{ inputs.kinds || '["other"]' }}
+  group: core-hunt-${{ inputs.kinds || '["core-hunt"]' }}
   cancel-in-progress: false
 
 permissions:
@@ -21,7 +21,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        kind: ${{ fromJSON(inputs.kinds || '["other"]') }}
+        kind: ${{ fromJSON(inputs.kinds || '["core-hunt"]') }}
     steps:
       - uses: actions/checkout@v7
 
@@ -42,7 +42,7 @@ jobs:
         run: |
           kind="$KIND"
           case "$kind" in
-            "" | *[!a-z,]*) exit 1 ;;
+            "" | *[!a-z,-]*) exit 1 ;;
           esac
           case "$STATE" in
             *[!0-9]*) exit 1 ;;
@@ -98,7 +98,7 @@ jobs:
           GH_TOKEN: ${{ secrets.LEWZ_GITHUB_PAT || github.token }}
           STATE: ${{ inputs.state || '775' }}
         run: |
-          kinds=$(jq -r '.inputs.kinds // "[\"other\"]"' "$GITHUB_EVENT_PATH")
+          kinds=$(jq -r '.inputs.kinds // "[\"core-hunt\"]"' "$GITHUB_EVENT_PATH")
           n=""
           for i in 1 2 3 4 5; do
             n=$(gh api "repos/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID/jobs" --jq '[.jobs[].steps[] | select((.name == "時間切れ" and .conclusion == "success") or (.name == "レスポンスコアが落ちた" and .conclusion == "failure"))] | length') && break
