@@ -2,8 +2,13 @@ on:
   workflow_dispatch:
     inputs:
       receivers:
-        description: 受け手の gameUid（カンマ区切り）
-        required: true
+        description: 受け手（manual は手動アカウント、sng は SNG の盟主）
+        type: choice
+        options:
+          - manual,sng
+          - manual
+          - sng
+        default: manual,sng
       deadline:
         description: この時刻を過ぎたら新しい送り手を始めない（例 2026-11-05T09:00:00+09:00）
         required: true
@@ -46,7 +51,8 @@ jobs:
           receivers=$(jq -r .inputs.receivers "$GITHUB_EVENT_PATH")
           deadline=$(jq -r .inputs.deadline "$GITHUB_EVENT_PATH")
           case "$receivers" in
-            "" | *[!0-9,]*) exit 1 ;;
+            manual,sng | manual | sng) ;;
+            *) exit 1 ;;
           esac
           case "$PARALLEL" in
             "" | *[!0-9]*) exit 1 ;;
@@ -57,7 +63,7 @@ jobs:
           esac
           main() {
             cd src
-            node --max-old-space-size=8192 scripts/core/purple_rose.mjs "$receivers" "$SENDERS" --login-only --deadline="$deadline" --parallel="$PARALLEL"
+            node --max-old-space-size=8192 scripts/core/purple_rose.mjs "$receivers" "$SENDERS" --claim-done --deadline="$deadline" --parallel="$PARALLEL"
             code=$?
             node -e "import('./scripts/core/_ci.mjs').then(({pushAccounts})=>pushAccounts('chore: CI の rose-login で accounts.json を更新する'))"
             exit $code
