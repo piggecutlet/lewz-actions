@@ -48,9 +48,6 @@ permissions:
 jobs:
   run:
     runs-on: ubuntu-latest
-    concurrency:
-      group: ${{ inputs.dry_run && format('gift-soldier-dry-job-{0}', github.run_id) || format('gift-soldier-arm-{0}-{1}', inputs.state, inputs.arm) }}
-      cancel-in-progress: false
     steps:
       - uses: actions/checkout@v7
 
