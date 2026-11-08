@@ -1,0 +1,112 @@
+on:
+  workflow_dispatch:
+    inputs:
+      wait:
+        description: 終わるのを待つ run の番号
+        required: true
+      stage:
+        type: choice
+        options:
+          - zombie
+          - vehicle
+        default: zombie
+      to:
+        description: 相手の gameUid
+        required: true
+      alliance:
+        description: 贈る同盟の ID
+        required: true
+      shield_before:
+        description: account-gift-soldier.yml の shield_before
+        default: ""
+
+permissions:
+  contents: write
+  actions: write
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: ./.github/actions/prepare
+        with:
+          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
+
+      - env:
+          GH_TOKEN: ${{ secrets.LEWZ_GITHUB_PAT }}
+          LOG_KEY: ${{ secrets.LOG_KEY }}
+          WAIT: ${{ inputs.wait }}
+          STAGE: ${{ inputs.stage }}
+          TO: ${{ inputs.to }}
+          ALLIANCE: ${{ inputs.alliance }}
+          SHIELD: ${{ inputs.shield_before }}
+        run: |
+          case "$WAIT$TO" in
+            *[!0-9]*) exit 1 ;;
+          esac
+          case "$ALLIANCE" in
+            *[!0-9_]*) exit 1 ;;
+          esac
+          case "$SHIELD" in
+            *[!0-9T:+-]*) exit 1 ;;
+          esac
+          R="$GITHUB_REPOSITORY"
+          START=$(date +%s)
+          dispatch() {
+            w=$1
+            shift
+            url=$(gh workflow run "$w" -R "$R" "$@" 2>&1 | tail -1)
+            id=${url##*/}
+            case "$id" in
+              ''|*[!0-9]*)
+                sleep 15
+                id=$(gh run list -R "$R" -w "$w" -L 1 --json databaseId -q '.[0].databaseId')
+                ;;
+            esac
+            echo "$w を起動した: $id" >&2
+            echo "$id"
+          }
+          wait_run() {
+            while [ "$(gh run view "$1" -R "$R" --json status -q .status)" != completed ]; do
+              if [ $(( $(date +%s) - START )) -gt 18000 ]; then
+                dispatch account-gift-soldier-chain.yml -f wait="$1" -f stage="$2" -f to="$TO" -f alliance="$ALLIANCE" -f shield_before="$SHIELD" >/dev/null
+                echo "5 時間たったので次の run に引き継いだ"
+                return 1
+              fi
+              sleep 60
+            done
+            CONC=$(gh run view "$1" -R "$R" --json conclusion -q .conclusion)
+            echo "run $1: $CONC"
+          }
+          gift() {
+            dispatch account-gift-soldier.yml -f arm="Lv.10 車両" -f alliance="$ALLIANCE" -f to="$TO" -f amount=999999999 -f shield_before="$SHIELD" -f no_kick=true -f dry_run="$1"
+          }
+          main() {
+            if [ "$STAGE" = zombie ]; then
+              wait_run "$WAIT" zombie || return 0
+              dry=$(gift true)
+              wait_run "$dry" zombie || return 0
+              if [ "$CONC" = success ]; then
+                WAIT=$(gift false)
+                STAGE=vehicle
+              else
+                echo "車両の確認用の run が $CONC なので、車両は贈らない"
+              fi
+            fi
+            if [ "$STAGE" = vehicle ]; then
+              wait_run "$WAIT" vehicle || return 0
+            fi
+            dispatch account-setup.yml >/dev/null
+            dispatch account-grow-gift-soldier.yml -f arm=既定 -f state=775 >/dev/null
+          }
+          . .github/scripts/logged.sh
+          start_logged main
+
+      - if: always() && env.LOG != ''
+        env:
+          LOG_KEY: ${{ secrets.LOG_KEY }}
+        run: |
+          . .github/scripts/logged.sh
+          finish_logged
