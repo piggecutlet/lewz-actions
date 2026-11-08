@@ -27,6 +27,10 @@ on:
       amount:
         description: 贈る体数の合計
         default: "10000000"
+      shield_before:
+        description: シールドがこの時刻より前に切れる件だけを早い順に使う（例 2026-11-10T00:00+09:00。空なら 1 回目の削除申請の古い順）
+        required: false
+        default: ""
       no_kick:
         description: 贈ったあと相手を贈る同盟から外さない
         type: boolean
@@ -90,9 +94,13 @@ jobs:
           case "$refuse" in
             *[!0-9,]*) exit 1 ;;
           esac
+          shield=$(jq -r ".inputs.shield_before // \"\"" "$GITHUB_EVENT_PATH")
+          case "$shield" in
+            *[!0-9T:+-]*) exit 1 ;;
+          esac
           main() {
             cd src
-            node --max-old-space-size=8192 scripts/ci/gift_soldier.mjs --arm="$ARM" ${alliance:+"--alliance=$alliance"} ${to:+"--to=$to"} ${accept:+"--accept=$accept"} ${refuse:+"--refuse=$refuse"} ${AMOUNT:+"--amount=$AMOUNT"} --state="$STATE" $DRY_RUN $NO_KICK
+            node --max-old-space-size=8192 scripts/ci/gift_soldier.mjs --arm="$ARM" ${alliance:+"--alliance=$alliance"} ${to:+"--to=$to"} ${accept:+"--accept=$accept"} ${refuse:+"--refuse=$refuse"} ${AMOUNT:+"--amount=$AMOUNT"} ${shield:+"--shield-before=$shield"} --state="$STATE" $DRY_RUN $NO_KICK
             code=$?
             node -e "import('./scripts/core/_ci.mjs').then(({pushAccounts})=>pushAccounts('chore: CI の gift-soldier で accounts.json を更新する'))"
             exit $code
