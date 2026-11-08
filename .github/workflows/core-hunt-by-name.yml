@@ -20,6 +20,9 @@ on:
       limit:
         description: 出撃の回数の上限（--limit。空なら上限なし）
         default: ""
+      earth:
+        description: 手持ちのアースコアがこの個数以上なら止める（--earth。空なら止めない）
+        default: ""
       no_shield:
         description: ピースシールドを買わない（--no-shield）
         type: boolean
@@ -66,7 +69,7 @@ jobs:
           opts=""
           [ -n "$size" ] && opts="$opts --size=$size"
           [ "$(jq -r '.inputs.high // false' "$GITHUB_EVENT_PATH")" = "true" ] && opts="$opts --high"
-          for key in lv army limit; do
+          for key in lv army limit earth; do
             v=$(jq -r --arg k "$key" '.inputs[$k] // ""' "$GITHUB_EVENT_PATH")
             case "$v" in
               *[!0-9,]*) exit 1 ;;
@@ -131,9 +134,10 @@ jobs:
             army=$(jq -r '.inputs.army // ""' "$GITHUB_EVENT_PATH")
             limit=$(jq -r '.inputs.limit // ""' "$GITHUB_EVENT_PATH")
             [ -n "$limit" ] && limit="$LEFT"
+            earth=$(jq -r '.inputs.earth // ""' "$GITHUB_EVENT_PATH")
             no_shield=$(jq -r '.inputs.no_shield // false' "$GITHUB_EVENT_PATH")
             for i in 1 2 3 4 5; do
-              if gh workflow run core-hunt-by-name.yml -R "$GITHUB_REPOSITORY" -f name="$name" -f size="$size" -f high="$high" -f lv="$lv" -f army="$army" -f limit="$limit" -f no_shield="$no_shield"; then
+              if gh workflow run core-hunt-by-name.yml -R "$GITHUB_REPOSITORY" -f name="$name" -f size="$size" -f high="$high" -f lv="$lv" -f army="$army" -f limit="$limit" -f earth="$earth" -f no_shield="$no_shield"; then
                 echo "続きを起動した"
                 exit 0
               fi
