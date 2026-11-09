@@ -1,0 +1,53 @@
+on:
+  workflow_dispatch:
+    inputs:
+      reader:
+        description: 受け手の gameUid
+        required: true
+      sender:
+        description: 送り手の gameUid
+        required: true
+
+permissions:
+  contents: write
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: ./.github/actions/prepare
+        with:
+          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
+          source-repo: ${{ secrets.SOURCE_REPO }}
+          source-token: ${{ secrets.LEWZ_GITHUB_PAT }}
+          sparse-checkout: |
+            api
+            scripts/core
+            scripts/ci
+            savedata
+
+      - env:
+          LOG_KEY: ${{ secrets.LOG_KEY }}
+        run: |
+          reader=$(jq -r .inputs.reader "$GITHUB_EVENT_PATH")
+          sender=$(jq -r .inputs.sender "$GITHUB_EVENT_PATH")
+          for n in "$reader" "$sender"; do
+            case "$n" in
+              "" | *[!0-9]*) exit 1 ;;
+            esac
+          done
+          main() {
+            cd src
+            node scripts/ci/dm_lang_read.mjs "$reader" "$sender"
+          }
+          . .github/scripts/logged.sh
+          start_logged main
+
+      - if: always() && env.LOG != ''
+        env:
+          LOG_KEY: ${{ secrets.LOG_KEY }}
+        run: |
+          . .github/scripts/logged.sh
+          finish_logged
