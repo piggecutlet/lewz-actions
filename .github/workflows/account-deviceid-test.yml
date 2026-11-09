@@ -1,0 +1,48 @@
+on:
+  workflow_dispatch:
+    inputs:
+      uid:
+        description: 試す gameUid（贈与済みの捨てる件）
+        required: true
+
+concurrency:
+  group: deviceid-test
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: ./.github/actions/prepare
+        with:
+          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
+          source-repo: ${{ secrets.SOURCE_REPO }}
+          source-token: ${{ secrets.LEWZ_GITHUB_PAT }}
+          sparse-checkout-cone-mode: false
+          sparse-checkout: |
+            /scripts/core/
+            /savedata/
+            /scripts/ci/deviceid_test.mjs
+
+      - env:
+          LOG_KEY: ${{ secrets.LOG_KEY }}
+          UID: ${{ inputs.uid }}
+        run: |
+          main() {
+            cd src
+            node scripts/ci/deviceid_test.mjs --uid="$UID"
+          }
+          . .github/scripts/logged.sh
+          start_logged main
+
+      - if: always() && env.LOG != ''
+        env:
+          LOG_KEY: ${{ secrets.LOG_KEY }}
+        run: |
+          . .github/scripts/logged.sh
+          finish_logged
