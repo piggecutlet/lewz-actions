@@ -1,0 +1,56 @@
+on:
+  workflow_dispatch:
+    inputs:
+      account:
+        description: gameUid
+        required: true
+      flag:
+        description: 国コード
+        required: true
+        default: US
+
+permissions:
+  contents: write
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: ./.github/actions/prepare
+        with:
+          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
+          source-repo: ${{ secrets.SOURCE_REPO }}
+          source-token: ${{ secrets.LEWZ_GITHUB_PAT }}
+          sparse-checkout: |
+            api
+            scripts/core
+            scripts/ci
+            savedata
+
+      - env:
+          LOG_KEY: ${{ secrets.LOG_KEY }}
+        run: |
+          account=$(jq -r .inputs.account "$GITHUB_EVENT_PATH")
+          flag=$(jq -r .inputs.flag "$GITHUB_EVENT_PATH")
+          case "$account" in
+            "" | *[!0-9]*) exit 1 ;;
+          esac
+          case "$flag" in
+            [A-Z][A-Z]) ;;
+            *) exit 1 ;;
+          esac
+          main() {
+            cd src
+            node scripts/ci/country_flag.mjs "$account" "$flag"
+          }
+          . .github/scripts/logged.sh
+          start_logged main
+
+      - if: always() && env.LOG != ''
+        env:
+          LOG_KEY: ${{ secrets.LOG_KEY }}
+        run: |
+          . .github/scripts/logged.sh
+          finish_logged
