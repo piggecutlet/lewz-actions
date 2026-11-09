@@ -1,0 +1,63 @@
+on:
+  workflow_dispatch:
+    inputs:
+      name:
+        description: gameUid
+        required: true
+      items:
+        description: アイテムID:個数（カンマ区切り。例 203256:8,200046:100）
+        required: true
+      dry_run:
+        description: 買わずにダイヤと見込みの額だけ出す
+        type: boolean
+        default: true
+
+concurrency:
+  group: item-buy
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: ./.github/actions/prepare
+        with:
+          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
+          source-repo: ${{ secrets.SOURCE_REPO }}
+          source-token: ${{ secrets.LEWZ_GITHUB_PAT }}
+          sparse-checkout: |
+            api
+            scripts/core
+            scripts/ci
+            savedata
+            web/scripts
+
+      - env:
+          LOG_KEY: ${{ secrets.LOG_KEY }}
+        run: |
+          name=$(jq -r .inputs.name "$GITHUB_EVENT_PATH")
+          items=$(jq -r .inputs.items "$GITHUB_EVENT_PATH")
+          dry_run=$(jq -r .inputs.dry_run "$GITHUB_EVENT_PATH")
+          [[ "$name" =~ ^[0-9]+$ ]] || exit 1
+          [[ "$items" =~ ^[0-9]+:[0-9]+(,[0-9]+:[0-9]+)*$ ]] || exit 1
+          main() {
+            cd src
+            node scripts/ci/item_buy.mjs "$name" "$items" $([ "$dry_run" = "true" ] && echo --dry-run)
+          }
+          . .github/scripts/logged.sh
+          start_logged main
+          exit $CODE
+
+      - if: always()
+        env:
+          LOG_KEY: ${{ secrets.LOG_KEY }}
+        run: |
+          [ -n "$LOG" ] && [ -f "$LOG" ] || exit 0
+          . .github/scripts/logged.sh
+          CODE=0
+          finish_logged
