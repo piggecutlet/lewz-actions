@@ -1,0 +1,69 @@
+on:
+  workflow_dispatch:
+    inputs:
+      game_uid:
+        description: gameUid
+        required: true
+      dry_run:
+        type: boolean
+        default: true
+      product_id:
+        description: 特価セールの商品の id
+        required: false
+        default: ""
+      cost_item_id:
+        description: pay.before.check に送る costItemId（2260073 / 2260074 は不可）
+        required: false
+        default: ""
+
+permissions:
+  contents: write
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: ./.github/actions/prepare
+        with:
+          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
+          source-repo: ${{ secrets.SOURCE_REPO }}
+          source-token: ${{ secrets.LEWZ_GITHUB_PAT }}
+          sparse-checkout-cone-mode: false
+          sparse-checkout: |
+            /api/
+            /scripts/core/
+            /savedata/
+            /scripts/ci/exchange_gold_test.mjs
+            /decompile/device/files/ja/ja_ilocalize_base.json
+
+      - env:
+          LOG_KEY: ${{ secrets.LOG_KEY }}
+          DRY_RUN: ${{ inputs.dry_run && '--dry-run' || '' }}
+        run: |
+          uid=$(jq -r .inputs.game_uid "$GITHUB_EVENT_PATH")
+          case "$uid" in
+            "" | *[!0-9]*) exit 1 ;;
+          esac
+          product=$(jq -r ".inputs.product_id // \"\"" "$GITHUB_EVENT_PATH")
+          case "$product" in
+            *[!0-9]*) exit 1 ;;
+          esac
+          cost=$(jq -r ".inputs.cost_item_id // \"\"" "$GITHUB_EVENT_PATH")
+          case "$cost" in
+            *[!0-9A-Za-z_]* | 2260073 | 2260074) exit 1 ;;
+          esac
+          main() {
+            cd src
+            node scripts/ci/exchange_gold_test.mjs "$uid" ${product:+"--product=$product"} ${cost:+"--cost=$cost"} $DRY_RUN
+          }
+          . .github/scripts/logged.sh
+          start_logged main
+
+      - if: always() && env.LOG != ''
+        env:
+          LOG_KEY: ${{ secrets.LOG_KEY }}
+        run: |
+          . .github/scripts/logged.sh
+          finish_logged
