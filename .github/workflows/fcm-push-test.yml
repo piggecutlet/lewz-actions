@@ -40,7 +40,7 @@ jobs:
           done
           main() {
             cd src/scripts/ci/fcm_push_test
-            npx -y pnpm@12.15.0 install --frozen-lockfile
+            npx -y pnpm@12.15.0 install --frozen-lockfile --ignore-scripts
             node fcm_push_test.mjs "$to" "$from"
           }
           . .github/scripts/logged.sh
