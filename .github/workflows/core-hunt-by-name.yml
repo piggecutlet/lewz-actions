@@ -27,6 +27,9 @@ on:
         description: ピースシールドを買わない（--no-shield）
         type: boolean
         default: false
+      daily:
+        description: 毎日この時間帯（JST）だけ回す（例 03:00-07:00。空なら今すぐ回す。limit・earth とは一緒に使えない）
+        default: ""
 
 concurrency:
   group: core-hunt-by-name-${{ inputs.name }}
@@ -52,6 +55,7 @@ jobs:
           sparse-checkout: |
             api
             scripts/core
+            scripts/ci
             savedata
 
       - id: hunt
@@ -79,14 +83,35 @@ jobs:
             fi
           done
           [ "$(jq -r '.inputs.no_shield // false' "$GITHUB_EVENT_PATH")" = "true" ] && opts="$opts --no-shield"
+          daily=$(jq -r '.inputs.daily // ""' "$GITHUB_EVENT_PATH")
+          [[ "$daily" =~ ^([0-2][0-9]:[0-5][0-9]-[0-2][0-9]:[0-5][0-9])?$ ]] || exit 1
+          if [ -n "$daily" ]; then
+            [[ "$opts" == *--limit=* || "$opts" == *--earth=* ]] && exit 1
+            day=""
+            [ "$(date +%s)" -ge "$(TZ=Asia/Tokyo date -d "${daily#*-}" +%s)" ] && day="tomorrow "
+            start=$(TZ=Asia/Tokyo date -d "$day${daily%-*}" +%FT%T+09:00)
+            end=$(TZ=Asia/Tokyo date -d "$day${daily#*-}" +%FT%T+09:00)
+            opts="$opts --until=$end"
+          fi
           main() {
             cd src
+            if [ -n "$daily" ]; then
+              node scripts/ci/wait_until.mjs "$start"
+              case $? in
+                0) ;;
+                10) exit 10 ;;
+                *) exit 1 ;;
+              esac
+            fi
             node scripts/core/core_hunt.mjs "$name" $opts
           }
           . .github/scripts/logged.sh
           start_logged main
           [ -f src/left.txt ] && echo "left=$(cat src/left.txt)" >> "$GITHUB_OUTPUT"
           code=$CODE
+          if [ -n "$daily" ] && { [ $code -eq 0 ] || [ $code -eq 2 ] || [ $code -eq 10 ]; }; then
+            code=3
+          fi
           if [ $code -eq 3 ]; then
             echo "timeout=1" >> "$GITHUB_ENV"
             code=0
@@ -136,8 +161,9 @@ jobs:
             [ -n "$limit" ] && limit="$LEFT"
             earth=$(jq -r '.inputs.earth // ""' "$GITHUB_EVENT_PATH")
             no_shield=$(jq -r '.inputs.no_shield // false' "$GITHUB_EVENT_PATH")
+            daily=$(jq -r '.inputs.daily // ""' "$GITHUB_EVENT_PATH")
             for i in 1 2 3 4 5; do
-              if gh workflow run core-hunt-by-name.yml -R "$GITHUB_REPOSITORY" -f name="$name" -f size="$size" -f high="$high" -f lv="$lv" -f army="$army" -f limit="$limit" -f earth="$earth" -f no_shield="$no_shield"; then
+              if gh workflow run core-hunt-by-name.yml -R "$GITHUB_REPOSITORY" -f name="$name" -f size="$size" -f high="$high" -f lv="$lv" -f army="$army" -f limit="$limit" -f earth="$earth" -f no_shield="$no_shield" -f daily="$daily"; then
                 echo "続きを起動した"
                 exit 0
               fi
