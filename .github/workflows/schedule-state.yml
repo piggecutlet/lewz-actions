@@ -33,12 +33,12 @@ jobs:
             if [ "$(TZ=Asia/Tokyo date +%H)" = 09 ]; then
               gh workflow run team-zombie.yml -R "$GITHUB_REPOSITORY" -f state="$STATE"
               read -r to alliance <<< "$(cd src && node -e "import('./scripts/core/_state.mjs').then(({stateOf})=>{const s=stateOf(process.argv[1]);console.log(s.manual[0],s.id)})" "$STATE")"
-              until=$(TZ=Asia/Tokyo date -d "tomorrow 10:00" +%FT%H:%M+09:00)
+              before=$(TZ=Asia/Tokyo date -d "tomorrow 00:00" +%FT%H:%M+09:00)
               for arm in "Lv.10 ゾンビ" "Lv.10 車両"; do
                 until [ "$(gh run list -R "$GITHUB_REPOSITORY" -w account-gift-soldier.yml -L 20 --json status -q '[.[] | select(.status == "queued" or .status == "pending" or .status == "waiting" or .status == "requested")] | length')" = 0 ]; do
                   sleep 30
                 done
-                gh workflow run account-gift-soldier.yml -R "$GITHUB_REPOSITORY" -f alliance="$alliance" -f to="$to" -f arm="$arm" -f amount=1000000000 -f shield_before="$until" -f state="$STATE"
+                gh workflow run account-gift-soldier.yml -R "$GITHUB_REPOSITORY" -f alliance="$alliance" -f to="$to" -f arm="$arm" -f amount=1000000000 -f shield_before="$before" -f state="$STATE"
                 sleep 15
               done
             fi
