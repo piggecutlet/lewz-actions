@@ -1,0 +1,52 @@
+on:
+  workflow_dispatch:
+    inputs:
+      run:
+        description: 前の run の番号
+        required: true
+      workflow:
+        description: 見張るワークフローのファイル名
+        required: true
+
+permissions:
+  contents: write
+  actions: write
+
+jobs:
+  run:
+    name: ${{ inputs.run }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: ./.github/actions/prepare
+        with:
+          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
+          source-repo: ${{ secrets.SOURCE_REPO }}
+          source-token: ${{ secrets.LEWZ_GITHUB_PAT }}
+          sparse-checkout-cone-mode: false
+          sparse-checkout: |
+            /scripts/ci/rerun_next.mjs
+
+      - env:
+          GH_TOKEN: ${{ secrets.LEWZ_GITHUB_PAT }}
+          LOG_KEY: ${{ secrets.LOG_KEY }}
+        run: |
+          run=$(jq -r .inputs.run "$GITHUB_EVENT_PATH")
+          workflow=$(jq -r .inputs.workflow "$GITHUB_EVENT_PATH")
+          [[ "$run" =~ ^[0-9]+$ ]] || exit 1
+          [[ "$workflow" =~ ^[a-z0-9-]+\.yml$ ]] || exit 1
+          main() {
+            cd src
+            node scripts/ci/rerun_next.mjs --run="$run" --workflow="$workflow"
+          }
+          . .github/scripts/logged.sh
+          start_logged main
+          exit $CODE
+
+      - if: always() && env.LOG != ''
+        env:
+          LOG_KEY: ${{ secrets.LOG_KEY }}
+        run: |
+          . .github/scripts/logged.sh
+          finish_logged

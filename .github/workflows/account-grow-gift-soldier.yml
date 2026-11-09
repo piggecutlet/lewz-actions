@@ -78,6 +78,7 @@ jobs:
             *[!0-9]*) exit 1 ;;
           esac
           main() {
+            [ -z "$DRY_RUN" ] && gh workflow run tool-rerun-next.yml -R "$GITHUB_REPOSITORY" -f run="$GITHUB_RUN_ID" -f workflow=account-grow-gift-soldier.yml
             cd src
             me=$(gh run view "$GITHUB_RUN_ID" -R "$GITHUB_REPOSITORY" --json createdAt -q .createdAt)
             while [ "$(gh run list -R "$GITHUB_REPOSITORY" -w account-grow-army.yml -s in_progress --json createdAt -q "[.[] | select(.createdAt < \"$me\")] | length")" != 0 ]; do

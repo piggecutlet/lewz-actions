@@ -135,6 +135,7 @@ jobs:
             *) exit 1 ;;
           esac
           main() {
+            [ -z "$DRY_RUN" ] && gh workflow run tool-rerun-next.yml -R "$GITHUB_REPOSITORY" -f run="$GITHUB_RUN_ID" -f workflow=account-setup.yml
             cd src
             node scripts/core/new_dev.mjs $COUNT $DELETE_ACCOUNT $SECOND_DELETE ${grow_army:+"$grow_army"} $GROW_ARMY_DEFAULT ${TARGET:+"--target=$TARGET"} ${SEC:+"--sec=$SEC"} ${SEATS:+"--seats=$SEATS"} $SKIP_BUILD_BASE $OFFICER $FIRE $FORCE $DRY_RUN --ci --state="$STATE" --grow-army-option="${GROW_ARMY:-なし}" ${VIP_CENTER:+"--vip-center=$VIP_CENTER"}
           }
