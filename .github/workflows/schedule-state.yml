@@ -32,6 +32,11 @@ jobs:
             gh workflow run schedule-manual-daily.yml -R "$GITHUB_REPOSITORY" -f state="$STATE"
             if [ "$(TZ=Asia/Tokyo date +%H)" = 09 ]; then
               gh workflow run team-zombie.yml -R "$GITHUB_REPOSITORY" -f state="$STATE"
+              read -r to alliance <<< "$(cd src && node -e "import('./scripts/core/_state.mjs').then(({stateOf})=>{const s=stateOf(process.argv[1]);console.log(s.manual[0],s.id)})" "$STATE")"
+              until=$(TZ=Asia/Tokyo date -d "tomorrow 10:00" +%FT%H:%M+09:00)
+              for arm in "Lv.10 ゾンビ" "Lv.10 車両"; do
+                gh workflow run account-gift-soldier.yml -R "$GITHUB_REPOSITORY" -f alliance="$alliance" -f to="$to" -f arm="$arm" -f amount=1000000000 -f shield_before="$until" -f state="$STATE"
+              done
             fi
           }
           . .github/scripts/logged.sh
