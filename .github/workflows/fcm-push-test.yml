@@ -7,6 +7,12 @@ on:
       from:
         description: 送り手の gameUid
         required: true
+      mode:
+        type: choice
+        options:
+          - push
+          - overwrite
+        default: push
 
 permissions:
   contents: write
@@ -33,6 +39,11 @@ jobs:
         run: |
           to=$(jq -r .inputs.to "$GITHUB_EVENT_PATH")
           from=$(jq -r .inputs.from "$GITHUB_EVENT_PATH")
+          mode=$(jq -r .inputs.mode "$GITHUB_EVENT_PATH")
+          case "$mode" in
+            push | overwrite) ;;
+            *) exit 1 ;;
+          esac
           for n in "$to" "$from"; do
             case "$n" in
               "" | *[!0-9]*) exit 1 ;;
@@ -41,7 +52,7 @@ jobs:
           main() {
             cd src/scripts/ci/fcm_push_test
             npx -y pnpm@12.15.0 install --frozen-lockfile --ignore-scripts
-            node fcm_push_test.mjs "$to" "$from"
+            node "fcm_${mode}_test.mjs" "$to" "$from"
           }
           . .github/scripts/logged.sh
           start_logged main
