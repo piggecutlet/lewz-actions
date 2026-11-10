@@ -19,6 +19,10 @@ on:
         description: 攻撃のあとも同盟に残る（既定は脱退）
         type: boolean
         default: false
+      castle:
+        description: 都市ではなくプレイヤーの城を攻撃する（1 部隊だけ出して戦闘報告を読む）
+        type: boolean
+        default: false
       dry_run:
         description: 相手を出すだけで攻撃しない（移転もしない）
         type: boolean
@@ -56,6 +60,7 @@ jobs:
           DELETE_ACCOUNT: ${{ inputs.delete_account }}
           STAY: ${{ inputs.stay }}
           DRY_RUN: ${{ inputs.dry_run }}
+          CASTLE: ${{ inputs.castle }}
           STATE: ${{ inputs.state || '775' }}
         run: |
           case "$STATE" in
@@ -75,13 +80,19 @@ jobs:
             fi
             out=$(node scripts/core/attack.mjs "$names" --target="$target")
             echo "$out"
-            echo "$out" | grep -q "^種類 都市" || exit 1
+            kind="都市"
+            extra=""
+            if [ "$CASTLE" = "true" ]; then
+              kind="城"
+              extra="--report"
+            fi
+            echo "$out" | grep -q "^種類 $kind" || exit 1
             if [ "$DRY_RUN" = "true" ]; then
               exit 0
             fi
             code=1
             while [ $SECONDS -lt $end ]; do
-              timeout $((end - SECONDS)) node scripts/core/attack.mjs "$names" --target="$target" --go
+              timeout $((end - SECONDS)) node scripts/core/attack.mjs "$names" --target="$target" --go $extra
               code=$?
               [ $code -eq 3 ] || break
               echo "攻撃されたが都市の攻撃を続ける"
