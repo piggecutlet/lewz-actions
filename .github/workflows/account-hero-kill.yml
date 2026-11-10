@@ -1,0 +1,58 @@
+on:
+  workflow_dispatch:
+    inputs:
+      name:
+        description: 捕まえた側の gameUid
+        required: true
+      target:
+        description: 捕虜の持ち主の gameUid
+        required: true
+      hero_id:
+        description: 捕虜の heroId（省くと教官 240031）
+        default: "240031"
+
+permissions:
+  contents: write
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: ./.github/actions/prepare
+        with:
+          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
+          source-repo: ${{ secrets.SOURCE_REPO }}
+          source-token: ${{ secrets.LEWZ_GITHUB_PAT }}
+          sparse-checkout-cone-mode: false
+          sparse-checkout: |
+            /api/
+            /scripts/core/
+            /savedata/
+            /scripts/ci/hero_kill.mjs
+
+      - env:
+          LOG_KEY: ${{ secrets.LOG_KEY }}
+        run: |
+          name=$(jq -r .inputs.name "$GITHUB_EVENT_PATH")
+          target=$(jq -r .inputs.target "$GITHUB_EVENT_PATH")
+          hero=$(jq -r .inputs.hero_id "$GITHUB_EVENT_PATH")
+          for v in "$name" "$target" "$hero"; do
+            case "$v" in
+              "" | *[!0-9]*) exit 1 ;;
+            esac
+          done
+          main() {
+            cd src
+            node scripts/ci/hero_kill.mjs "$name" "$target" "$hero"
+          }
+          . .github/scripts/logged.sh
+          start_logged main
+
+      - if: always() && env.LOG != ''
+        env:
+          LOG_KEY: ${{ secrets.LOG_KEY }}
+        run: |
+          . .github/scripts/logged.sh
+          finish_logged

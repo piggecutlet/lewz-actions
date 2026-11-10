@@ -4,6 +4,9 @@ on:
       names:
         description: gameUid（カンマ区切り）
         required: true
+      goal:
+        description: 作る体数（待機兵がこの数になるまで）
+        default: "10000"
 
 permissions:
   contents: write
@@ -40,9 +43,13 @@ jobs:
           case "$names" in
             "" | *[!0-9,]*) exit 1 ;;
           esac
+          goal=$(jq -r '.inputs.goal // "10000"' "$GITHUB_EVENT_PATH")
+          case "$goal" in
+            "" | *[!0-9]*) exit 1 ;;
+          esac
           main() {
             cd src
-            node scripts/core/vip_boost.mjs "$names" --zombie-only
+            node scripts/core/vip_boost.mjs "$names" --zombie-only --goal="$goal"
             code=$?
             node -e "import('./scripts/core/_ci.mjs').then(({pushAccounts})=>pushAccounts('chore: CI の vip-zombie で accounts.json を更新する'))"
             exit $code
