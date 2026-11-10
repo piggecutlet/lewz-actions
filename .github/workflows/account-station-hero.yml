@@ -8,8 +8,8 @@ on:
         description: 士官の heroId（省くと教官 240031）
         default: "240031"
       index:
-        description: 駐屯の枠（省くと 0）
-        default: "0"
+        description: 駐屯の枠（省くと 1。駐屯部隊 1）
+        default: "1"
 
 permissions:
   contents: write
