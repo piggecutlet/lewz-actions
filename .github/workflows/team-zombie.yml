@@ -39,7 +39,6 @@ jobs:
             /savedata/
             /decompile/device/files/ja/ja_ilocalize_base.json
             /decompile/device/files/WarZDoc/config/database.activity.xml
-            /scripts/skip/team-zombie.txt
 
       - env:
           LOG_KEY: ${{ secrets.LOG_KEY }}
