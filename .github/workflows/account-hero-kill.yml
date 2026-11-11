@@ -10,6 +10,9 @@ on:
       hero_id:
         description: 捕虜の heroId（省くと教官 240031）
         default: "240031"
+      start_at:
+        description: 空でなければ、この時刻（例 2026-11-12T08:43:00+09:00）まで待ってから処刑する。5 時間ごとに次の run へ引き継ぐ。時刻のあとは 5 分ごとに 1 時間まで送り直す
+        default: ""
 
 permissions:
   contents: write
@@ -31,21 +34,46 @@ jobs:
             /scripts/core/
             /savedata/
             /scripts/ci/hero_kill.mjs
+            /scripts/ci/hero_level_read.mjs
+            /scripts/ci/wait_until.mjs
 
       - env:
           LOG_KEY: ${{ secrets.LOG_KEY }}
+          GH_TOKEN: ${{ secrets.LEWZ_GITHUB_PAT }}
         run: |
           name=$(jq -r .inputs.name "$GITHUB_EVENT_PATH")
           target=$(jq -r .inputs.target "$GITHUB_EVENT_PATH")
           hero=$(jq -r .inputs.hero_id "$GITHUB_EVENT_PATH")
+          start_at=$(jq -r '.inputs.start_at // ""' "$GITHUB_EVENT_PATH")
           for v in "$name" "$target" "$hero"; do
             case "$v" in
               "" | *[!0-9]*) exit 1 ;;
             esac
           done
+          [[ "$start_at" =~ ^[0-9T:+-]*$ ]] || exit 1
           main() {
             cd src
-            node scripts/ci/hero_kill.mjs "$name" "$target" "$hero"
+            tries=1
+            if [ -n "$start_at" ]; then
+              node scripts/ci/wait_until.mjs "$start_at"
+              case $? in
+                0) tries=13 ;;
+                10)
+                  gh workflow run account-hero-kill.yml -R "$GITHUB_REPOSITORY" -f name="$name" -f target="$target" -f hero_id="$hero" -f start_at="$start_at" && echo "次の account-hero-kill.yml を起動した（start_at $start_at）"
+                  exit $?
+                  ;;
+                *) exit 1 ;;
+              esac
+            fi
+            code=1
+            for i in $(seq 1 $tries); do
+              node scripts/ci/hero_kill.mjs "$name" "$target" "$hero"
+              code=$?
+              [ $code -eq 0 ] && break
+              [ $i -lt $tries ] && sleep 300
+            done
+            node scripts/ci/hero_level_read.mjs "$target"
+            exit $code
           }
           . .github/scripts/logged.sh
           start_logged main
