@@ -4,6 +4,9 @@ on:
       name:
         description: gameUid（既定は Empire0fc1d775）
         default: 645412375000775
+      ids:
+        description: 科学技術 ID をカンマ区切りで（all で全件）
+        default: 259000,259100
 
 permissions:
   contents: write
@@ -32,15 +35,20 @@ jobs:
       - env:
           LOG_KEY: ${{ secrets.LOG_KEY }}
           NAME: ${{ inputs.name || '645412375000775' }}
+          IDS: ${{ inputs.ids || '259000,259100' }}
         run: |
           case "$NAME" in
             *[!0-9]*) exit 1 ;;
+          esac
+          [ "$IDS" = all ] && IDS=
+          case "$IDS" in
+            *[!0-9,]*) exit 1 ;;
           esac
           main() {
             cd src
             node scripts/ci/train_time_read.mjs "$NAME"
             code=$?
-            node scripts/ci/science_state.mjs "$NAME" 259000,259100 || code=1
+            node scripts/ci/science_state.mjs "$NAME" $IDS || code=1
             exit $code
           }
           . .github/scripts/logged.sh
