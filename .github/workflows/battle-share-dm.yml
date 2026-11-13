@@ -1,0 +1,78 @@
+on:
+  workflow_dispatch:
+    inputs:
+      from:
+        description: 送り手の gameUid
+        required: true
+      to:
+        description: 受け手の gameUid
+        required: true
+      mail_uid:
+        description: 戦闘報告のメール uid
+        required: true
+      report_lang:
+        description: reportLang の文言 ID
+        required: true
+      attacker:
+        description: msgarr の名前
+        required: true
+      send:
+        description: 送る（false なら表示名の確認だけ）
+        type: boolean
+        default: false
+
+permissions:
+  contents: write
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: ./.github/actions/prepare
+        with:
+          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
+          source-repo: ${{ secrets.SOURCE_REPO }}
+          source-token: ${{ secrets.LEWZ_GITHUB_PAT }}
+          sparse-checkout: |
+            api
+            scripts/core
+            scripts/ci
+            savedata
+
+      - env:
+          LOG_KEY: ${{ secrets.LOG_KEY }}
+        run: |
+          from=$(jq -r .inputs.from "$GITHUB_EVENT_PATH")
+          to=$(jq -r .inputs.to "$GITHUB_EVENT_PATH")
+          mail_uid=$(jq -r .inputs.mail_uid "$GITHUB_EVENT_PATH")
+          report_lang=$(jq -r .inputs.report_lang "$GITHUB_EVENT_PATH")
+          attacker=$(jq -r .inputs.attacker "$GITHUB_EVENT_PATH")
+          send=$(jq -r .inputs.send "$GITHUB_EVENT_PATH")
+          for n in "$from" "$to" "$report_lang"; do
+            case "$n" in
+              "" | *[!0-9]*) exit 1 ;;
+            esac
+          done
+          case "$mail_uid" in
+            "" | *[!0-9a-f]*) exit 1 ;;
+          esac
+          case "$attacker" in
+            "" | *[!0-9A-Za-z]*) exit 1 ;;
+          esac
+          flag=""
+          [ "$send" = "true" ] && flag="--send"
+          main() {
+            cd src
+            node scripts/ci/battle_share_dm.mjs "$from" "$to" "$mail_uid" "$report_lang" "$attacker" $flag
+          }
+          . .github/scripts/logged.sh
+          start_logged main
+
+      - if: always() && env.LOG != ''
+        env:
+          LOG_KEY: ${{ secrets.LOG_KEY }}
+        run: |
+          . .github/scripts/logged.sh
+          finish_logged
