@@ -1,0 +1,61 @@
+on:
+  workflow_dispatch:
+    inputs:
+      state:
+        description: 州
+        default: "775"
+
+permissions:
+  contents: write
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: ./.github/actions/prepare
+        with:
+          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
+          source-repo: ${{ secrets.SOURCE_REPO }}
+          source-token: ${{ secrets.LEWZ_GITHUB_PAT }}
+          sparse-checkout-cone-mode: false
+          sparse-checkout: |
+            /api/
+            /scripts/core/
+            /savedata/
+
+      - env:
+          LOG_KEY: ${{ secrets.LOG_KEY }}
+          STATE: ${{ inputs.state || '775' }}
+        run: |
+          case "$STATE" in
+            "" | *[!0-9]*) exit 1 ;;
+          esac
+          main() {
+            cd src
+            node scripts/core/new_account.mjs --repeat=1 --state="$STATE" > /tmp/new.txt 2>&1
+            code=$?
+            cat /tmp/new.txt
+            node -e "import('./scripts/core/_ci.mjs').then(({pushAccounts})=>pushAccounts('chore: CI で新規 1 件を作り、accounts.json を更新する'))"
+            if [ $code -ne 0 ]; then
+              exit $code
+            fi
+            uid=$(sed -n 's/^ *gameUid  *\([0-9][0-9]*\)$/\1/p' /tmp/new.txt | tail -1)
+            case "$uid" in
+              "" | *[!0-9]*) exit 1 ;;
+            esac
+            node scripts/core/back_return.mjs "$uid"
+            code=$?
+            node -e "import('./scripts/core/_ci.mjs').then(({pushAccounts})=>pushAccounts('chore: CI で新規 1 件の復帰ギフトを読み、accounts.json を更新する'))"
+            exit $code
+          }
+          . .github/scripts/logged.sh
+          start_logged main
+
+      - if: always() && env.LOG != ''
+        env:
+          LOG_KEY: ${{ secrets.LOG_KEY }}
+        run: |
+          . .github/scripts/logged.sh
+          finish_logged
