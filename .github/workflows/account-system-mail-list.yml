@@ -4,6 +4,10 @@ on:
       name:
         description: gameUid
         required: true
+      saved:
+        description: saved でお気に入りだけ
+        required: false
+        default: ""
 
 permissions:
   contents: write
@@ -31,9 +35,10 @@ jobs:
           case "$name" in
             "" | *[!0-9]*) exit 1 ;;
           esac
+          saved=$(jq -r .inputs.saved "$GITHUB_EVENT_PATH")
           main() {
             cd src
-            node scripts/core/mail_list.mjs "$name"
+            node scripts/core/mail_list.mjs "$name" "$saved"
           }
           . .github/scripts/logged.sh
           start_logged main
