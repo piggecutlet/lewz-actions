@@ -1,0 +1,63 @@
+on:
+  workflow_dispatch:
+    inputs:
+      login:
+        description: ログイン元の gameUid
+        required: true
+      state:
+        description: 相手の州
+        required: true
+      name:
+        description: 相手の表示名
+        required: true
+      item_id:
+        description: uuid の元になる itemId
+        required: false
+        default: "400875"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: user-last-online-${{ github.event.inputs.login }}
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: ./.github/actions/prepare
+        with:
+          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
+          source-repo: ${{ secrets.SOURCE_REPO }}
+          source-token: ${{ secrets.LEWZ_GITHUB_PAT }}
+          sparse-checkout-cone-mode: false
+          sparse-checkout: |
+            /api/
+            /scripts/core/
+            /savedata/
+            /scripts/ci/user_last_online.mjs
+
+      - env:
+          LOG_KEY: ${{ secrets.LOG_KEY }}
+        run: |
+          login=$(jq -r .inputs.login "$GITHUB_EVENT_PATH")
+          state=$(jq -r .inputs.state "$GITHUB_EVENT_PATH")
+          name=$(jq -r .inputs.name "$GITHUB_EVENT_PATH")
+          item_id=$(jq -r '.inputs.item_id // "400875"' "$GITHUB_EVENT_PATH")
+          case "$login$state$item_id" in
+            "" | *[!0-9]*) exit 1 ;;
+          esac
+          main() {
+            cd src && node scripts/ci/user_last_online.mjs "$login" "$state" "$name" "$item_id"
+          }
+          . .github/scripts/logged.sh
+          start_logged main
+
+      - if: always() && env.LOG != ''
+        env:
+          LOG_KEY: ${{ secrets.LOG_KEY }}
+        run: |
+          . .github/scripts/logged.sh
+          finish_logged
