@@ -1,0 +1,54 @@
+on:
+  workflow_dispatch:
+    inputs:
+      login:
+        description: ログイン元の gameUid
+        required: true
+      uid:
+        description: 相手の gameUid
+        required: true
+
+permissions:
+  contents: write
+
+concurrency:
+  group: alliance-rank-other-${{ github.event.inputs.login }}
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: ./.github/actions/prepare
+        with:
+          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
+          source-repo: ${{ secrets.SOURCE_REPO }}
+          source-token: ${{ secrets.LEWZ_GITHUB_PAT }}
+          sparse-checkout-cone-mode: false
+          sparse-checkout: |
+            /api/
+            /scripts/core/
+            /savedata/
+            /scripts/ci/alliance_rank_other.mjs
+
+      - env:
+          LOG_KEY: ${{ secrets.LOG_KEY }}
+        run: |
+          login=$(jq -r .inputs.login "$GITHUB_EVENT_PATH")
+          uid=$(jq -r .inputs.uid "$GITHUB_EVENT_PATH")
+          case "$login$uid" in
+            "" | *[!0-9]*) exit 1 ;;
+          esac
+          main() {
+            cd src && node scripts/ci/alliance_rank_other.mjs "$login" "$uid"
+          }
+          . .github/scripts/logged.sh
+          start_logged main
+
+      - if: always() && env.LOG != ''
+        env:
+          LOG_KEY: ${{ secrets.LOG_KEY }}
+        run: |
+          . .github/scripts/logged.sh
+          finish_logged
