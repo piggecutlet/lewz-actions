@@ -24,6 +24,7 @@ jobs:
           sparse-checkout: |
             /scripts/core/
             /savedata/
+            /scripts/skip/schedule-state.txt
 
       - env:
           GH_TOKEN: ${{ secrets.LEWZ_GITHUB_PAT }}
@@ -38,6 +39,7 @@ jobs:
             gh workflow run schedule-manual-daily.yml -R "$GITHUB_REPOSITORY" -f state="$STATE"
             if [ "$(TZ=Asia/Tokyo date +%H)" = 09 ]; then
               gh workflow run team-zombie.yml -R "$GITHUB_REPOSITORY" -f state="$STATE"
+              if grep -qxF "$(TZ=Asia/Tokyo date +%F)" src/scripts/skip/schedule-state.txt; then return 0; fi
               read -r to alliance <<< "$(cd src && node -e "import('./scripts/core/_state.mjs').then(({stateOf})=>{const s=stateOf(process.argv[1]);console.log(s.manual[0],s.id)})" "$STATE")"
               if [ -z "$to" ] || [ -z "$alliance" ]; then exit 1; fi
               before=$(TZ=Asia/Tokyo date -d "tomorrow 00:00" +%FT%H:%M+09:00)
