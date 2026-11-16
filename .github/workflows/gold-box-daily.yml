@@ -1,0 +1,71 @@
+on:
+  workflow_dispatch:
+    inputs:
+      start_at:
+        description: 空でなければ、この時刻（例 2026-11-17T04:00:00+09:00）まで待ってから始める。5 時間ごとに次の run へ引き継ぐ。終わったら次の 4:00 で次の run を起動する
+        default: ""
+
+concurrency:
+  group: gold-box-daily
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: ./.github/actions/prepare
+        with:
+          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
+          source-repo: ${{ secrets.SOURCE_REPO }}
+          source-token: ${{ secrets.LEWZ_GITHUB_PAT }}
+          sparse-checkout-cone-mode: false
+          sparse-checkout: |
+            /api/
+            /scripts/core/
+            /scripts/ci/wait_until.mjs
+            /savedata/
+
+      - env:
+          LOG_KEY: ${{ secrets.LOG_KEY }}
+          GH_TOKEN: ${{ secrets.LEWZ_GITHUB_PAT }}
+        run: |
+          start_at=$(jq -r '.inputs.start_at // ""' "$GITHUB_EVENT_PATH")
+          [[ "$start_at" =~ ^[0-9T:+-]*$ ]] || exit 1
+          main() {
+            cd src
+            if [ -n "$start_at" ]; then
+              node scripts/ci/wait_until.mjs "$start_at"
+              case $? in
+                0) ;;
+                10)
+                  gh workflow run gold-box-daily.yml -R "$GITHUB_REPOSITORY" -f start_at="$start_at" && echo "同じ start_at で次の gold-box-daily.yml を起動した"
+                  exit $?
+                  ;;
+                *) exit 1 ;;
+              esac
+            fi
+            node --max-old-space-size=8192 scripts/core/gold_box.mjs manual deleted
+            code=$?
+            node -e "import('./scripts/core/_ci.mjs').then(({pushAccounts})=>pushAccounts('chore: CI の gold-box-daily で accounts.json を更新する'))"
+            if [ "$(TZ=Asia/Tokyo date +%H)" -lt 4 ]; then
+              next=$(TZ=Asia/Tokyo date +%Y-%m-%dT04:00:00+09:00)
+            else
+              next=$(TZ=Asia/Tokyo date -d tomorrow +%Y-%m-%dT04:00:00+09:00)
+            fi
+            gh workflow run gold-box-daily.yml -R "$GITHUB_REPOSITORY" -f start_at="$next" && echo "次の gold-box-daily.yml を起動した（start_at $next）"
+            exit $code
+          }
+          . .github/scripts/logged.sh
+          start_logged main
+
+      - if: always() && env.LOG != ''
+        env:
+          LOG_KEY: ${{ secrets.LOG_KEY }}
+        run: |
+          . .github/scripts/logged.sh
+          finish_logged
