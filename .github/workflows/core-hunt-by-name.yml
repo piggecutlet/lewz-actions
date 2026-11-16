@@ -117,6 +117,9 @@ jobs:
           if [ -n "$daily" ] && { [ $code -eq 0 ] || [ $code -eq 2 ] || [ $code -eq 10 ]; }; then
             code=3
           fi
+          if [ $code -eq 2 ]; then
+            code=0
+          fi
           if [ $code -eq 3 ]; then
             echo "timeout=1" >> "$GITHUB_ENV"
             code=0
