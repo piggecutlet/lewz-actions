@@ -28,7 +28,7 @@ on:
         type: boolean
         default: false
       daily:
-        description: 毎日この時間帯（JST）だけ回す（例 03:00-07:00。空なら今すぐ回す。limit・earth とは一緒に使えない）
+        description: 毎日この時間帯（JST）だけ回す（例 03:00-07:00。空なら今すぐ回す。limit とは一緒に使えない。earth と一緒なら、届いた日は終わりの時刻まで待って翌日へ）
         default: ""
 
 concurrency:
@@ -86,7 +86,7 @@ jobs:
           daily=$(jq -r '.inputs.daily // ""' "$GITHUB_EVENT_PATH")
           [[ "$daily" =~ ^([0-2][0-9]:[0-5][0-9]-[0-2][0-9]:[0-5][0-9])?$ ]] || exit 1
           if [ -n "$daily" ]; then
-            [[ "$opts" == *--limit=* || "$opts" == *--earth=* ]] && exit 1
+            [[ "$opts" == *--limit=* ]] && exit 1
             day=""
             [ "$(date +%s)" -ge "$(TZ=Asia/Tokyo date -d "${daily#*-}" +%s)" ] && day="tomorrow "
             start=$(TZ=Asia/Tokyo date -d "$day${daily%-*}" +%FT%T+09:00)
@@ -104,6 +104,11 @@ jobs:
               esac
             fi
             node scripts/core/core_hunt.mjs "$name" $opts
+            rc=$?
+            if [ -n "$daily" ] && [[ "$opts" == *--earth=* ]] && { [ $rc -eq 0 ] || [ $rc -eq 2 ]; }; then
+              node scripts/ci/wait_until.mjs "$end"
+            fi
+            return $rc
           }
           . .github/scripts/logged.sh
           start_logged main
