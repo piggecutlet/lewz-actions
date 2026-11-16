@@ -70,7 +70,7 @@ jobs:
 
       - name: レスポンスコアが落ちた
         if: env.dropped == '1'
-        run: exit 1
+        run: echo "レスポンスコアが落ちた"
 
       - if: always()
         run: |
@@ -101,7 +101,7 @@ jobs:
           kinds=$(jq -r '.inputs.kinds // "[\"core-hunt\"]"' "$GITHUB_EVENT_PATH")
           n=""
           for i in 1 2 3 4 5; do
-            n=$(gh api "repos/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID/jobs" --jq '[.jobs[].steps[] | select((.name == "時間切れ" and .conclusion == "success") or (.name == "レスポンスコアが落ちた" and .conclusion == "failure"))] | length') && break
+            n=$(gh api "repos/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID/jobs" --jq '[.jobs[].steps[] | select((.name == "時間切れ" and .conclusion == "success") or (.name == "レスポンスコアが落ちた" and .conclusion == "success"))] | length') && break
             n=""
             echo "run の結果を読めなかったので 30 秒後にやり直す（$i 回目）"
             sleep 30
