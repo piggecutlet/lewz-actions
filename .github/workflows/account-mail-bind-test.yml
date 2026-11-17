@@ -4,6 +4,10 @@ on:
       uid:
         description: 試す gameUid（kind deleted・未加入・備考なし・小隊なしの捨てる件）
         required: true
+      replace:
+        description: 連携のあとに別のメールアドレスへ付け替える
+        type: boolean
+        default: false
 
 concurrency:
   group: mail-bind-test
@@ -32,10 +36,15 @@ jobs:
       - env:
           LOG_KEY: ${{ secrets.LOG_KEY }}
           UID: ${{ inputs.uid }}
+          REPLACE: ${{ inputs.replace }}
         run: |
           main() {
             cd src
-            node scripts/ci/mail_bind_test.mjs --uid="$UID"
+            opt=""
+            if [ "$REPLACE" = "true" ]; then
+              opt="--replace"
+            fi
+            node scripts/ci/mail_bind_test.mjs --uid="$UID" $opt
           }
           . .github/scripts/logged.sh
           start_logged main
