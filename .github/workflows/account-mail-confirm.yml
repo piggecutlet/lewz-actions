@@ -1,0 +1,58 @@
+on:
+  workflow_dispatch:
+    inputs:
+      uid:
+        description: 受信箱を持っている gameUid
+        required: true
+      all:
+        description: 届いている全部のリンクを古い順に開く
+        type: boolean
+        default: false
+
+concurrency:
+  group: mail-bind-test
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: ./.github/actions/prepare
+        with:
+          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
+          source-repo: ${{ secrets.SOURCE_REPO }}
+          source-token: ${{ secrets.LEWZ_GITHUB_PAT }}
+          sparse-checkout-cone-mode: false
+          sparse-checkout: |
+            /scripts/core/
+            /savedata/
+            /scripts/ci/mail_confirm.mjs
+            /scripts/ci/mail_bind_mailboxes.json
+
+      - env:
+          LOG_KEY: ${{ secrets.LOG_KEY }}
+          UID: ${{ inputs.uid }}
+          ALL: ${{ inputs.all }}
+        run: |
+          main() {
+            cd src
+            opt=""
+            if [ "$ALL" = "true" ]; then
+              opt="--all"
+            fi
+            node scripts/ci/mail_confirm.mjs --uid="$UID" $opt
+          }
+          . .github/scripts/logged.sh
+          start_logged main
+
+      - if: always() && env.LOG != ''
+        env:
+          LOG_KEY: ${{ secrets.LOG_KEY }}
+        run: |
+          . .github/scripts/logged.sh
+          finish_logged
