@@ -1,0 +1,183 @@
+on:
+  workflow_dispatch:
+    inputs:
+      name:
+        description: gameUid
+        required: true
+      size:
+        description: 1 部隊の体数の上限（--size。空なら待機兵を均等に割る）
+        default: ""
+      high:
+        description: 狙える一番高い Lv から倒す（--high）
+        type: boolean
+        default: false
+      lv:
+        description: 狙う Lv をこの順に（--lv。例 13,14。空なら Lv.1 から）
+        default: ""
+      army:
+        description: 出す兵種の armId（--army。例 107309。空なら 4 兵種）
+        default: ""
+      limit:
+        description: 出撃の回数の上限（--limit。空なら上限なし）
+        default: ""
+      earth:
+        description: 手持ちのアースコアがこの個数以上なら止める（--earth。空なら止めない）
+        default: ""
+      no_shield:
+        description: ピースシールドを買わない（--no-shield）
+        type: boolean
+        default: false
+      daily:
+        description: 毎日この時間帯（JST）だけ回す（例 03:00-07:00。空なら今すぐ回す。limit とは一緒に使えない。earth と一緒なら、届いた日は終わりの時刻まで待って翌日へ）
+        default: ""
+
+concurrency:
+  group: core-hunt-vein-${{ inputs.name }}
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+  actions: write
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    outputs:
+      left: ${{ steps.hunt.outputs.left }}
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: ./.github/actions/prepare
+        with:
+          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
+          source-repo: ${{ secrets.SOURCE_REPO }}
+          source-token: ${{ secrets.LEWZ_GITHUB_PAT }}
+          sparse-checkout: |
+            api
+            scripts/core
+            scripts/ci
+            savedata
+
+      - id: hunt
+        env:
+          LOG_KEY: ${{ secrets.LOG_KEY }}
+        run: |
+          name=$(jq -r .inputs.name "$GITHUB_EVENT_PATH")
+          case "$name" in
+            "" | *[!0-9]*) exit 1 ;;
+          esac
+          size=$(jq -r '.inputs.size // ""' "$GITHUB_EVENT_PATH")
+          case "$size" in
+            *[!0-9]*) exit 1 ;;
+          esac
+          opts=""
+          [ -n "$size" ] && opts="$opts --size=$size"
+          [ "$(jq -r '.inputs.high // false' "$GITHUB_EVENT_PATH")" = "true" ] && opts="$opts --high"
+          for key in lv army limit earth; do
+            v=$(jq -r --arg k "$key" '.inputs[$k] // ""' "$GITHUB_EVENT_PATH")
+            case "$v" in
+              *[!0-9,]*) exit 1 ;;
+            esac
+            if [ -n "$v" ]; then
+              opts="$opts --$key=$v"
+            fi
+          done
+          [ "$(jq -r '.inputs.no_shield // false' "$GITHUB_EVENT_PATH")" = "true" ] && opts="$opts --no-shield"
+          daily=$(jq -r '.inputs.daily // ""' "$GITHUB_EVENT_PATH")
+          [[ "$daily" =~ ^([0-2][0-9]:[0-5][0-9]-[0-2][0-9]:[0-5][0-9])?$ ]] || exit 1
+          if [ -n "$daily" ]; then
+            [[ "$opts" == *--limit=* ]] && exit 1
+            day=""
+            [ "$(date +%s)" -ge "$(TZ=Asia/Tokyo date -d "${daily#*-}" +%s)" ] && day="tomorrow "
+            start=$(TZ=Asia/Tokyo date -d "$day${daily%-*}" +%FT%T+09:00)
+            end=$(TZ=Asia/Tokyo date -d "$day${daily#*-}" +%FT%T+09:00)
+            opts="$opts --until=$end"
+          fi
+          main() {
+            cd src
+            if [ -n "$daily" ]; then
+              node scripts/ci/wait_until.mjs "$start"
+              case $? in
+                0) ;;
+                10) exit 10 ;;
+                *) exit 1 ;;
+              esac
+            fi
+            node scripts/core/core_hunt.mjs "$name" $opts
+            rc=$?
+            if [ -n "$daily" ] && [[ "$opts" == *--earth=* ]] && { [ $rc -eq 0 ] || [ $rc -eq 2 ]; }; then
+              node scripts/ci/wait_until.mjs "$end"
+            fi
+            return $rc
+          }
+          . .github/scripts/logged.sh
+          start_logged main
+          [ -f src/left.txt ] && echo "left=$(cat src/left.txt)" >> "$GITHUB_OUTPUT"
+          code=$CODE
+          if [ -n "$daily" ] && { [ $code -eq 0 ] || [ $code -eq 2 ] || [ $code -eq 10 ]; }; then
+            code=3
+          fi
+          if [ $code -eq 2 ]; then
+            code=0
+          fi
+          if [ $code -eq 3 ]; then
+            echo "timeout=1" >> "$GITHUB_ENV"
+            code=0
+          fi
+          exit $code
+
+      - name: 時間切れ
+        if: env.timeout == '1'
+        run: echo "時間切れ"
+
+      - if: always()
+        env:
+          LOG_KEY: ${{ secrets.LOG_KEY }}
+        run: |
+          [ -n "$LOG" ] && [ -f "$LOG" ] || exit 0
+          . .github/scripts/logged.sh
+          CODE=0
+          finish_logged
+
+  next:
+    needs: run
+    if: success()
+    runs-on: ubuntu-latest
+    steps:
+      - env:
+          GH_TOKEN: ${{ secrets.LEWZ_GITHUB_PAT || github.token }}
+          LEFT: ${{ needs.run.outputs.left }}
+        run: |
+          name=$(jq -r .inputs.name "$GITHUB_EVENT_PATH")
+          n=""
+          for i in 1 2 3 4 5; do
+            n=$(gh api "repos/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID/jobs" --jq '[.jobs[].steps[] | select(.name == "時間切れ" and .conclusion == "success")] | length') && break
+            n=""
+            echo "run の結果を読めなかったので 30 秒後にやり直す（$i 回目）"
+            sleep 30
+          done
+          if [ -z "$n" ]; then
+            echo "run の結果を 5 回とも読めなかった"
+            exit 1
+          fi
+          if [ "$n" -gt 0 ]; then
+            size=$(jq -r '.inputs.size // ""' "$GITHUB_EVENT_PATH")
+            high=$(jq -r '.inputs.high // false' "$GITHUB_EVENT_PATH")
+            lv=$(jq -r '.inputs.lv // ""' "$GITHUB_EVENT_PATH")
+            army=$(jq -r '.inputs.army // ""' "$GITHUB_EVENT_PATH")
+            limit=$(jq -r '.inputs.limit // ""' "$GITHUB_EVENT_PATH")
+            [ -n "$limit" ] && limit="$LEFT"
+            earth=$(jq -r '.inputs.earth // ""' "$GITHUB_EVENT_PATH")
+            no_shield=$(jq -r '.inputs.no_shield // false' "$GITHUB_EVENT_PATH")
+            daily=$(jq -r '.inputs.daily // ""' "$GITHUB_EVENT_PATH")
+            for i in 1 2 3 4 5; do
+              if gh workflow run core-hunt-vein.yml -R "$GITHUB_REPOSITORY" -f name="$name" -f size="$size" -f high="$high" -f lv="$lv" -f army="$army" -f limit="$limit" -f earth="$earth" -f no_shield="$no_shield" -f daily="$daily"; then
+                echo "続きを起動した"
+                exit 0
+              fi
+              echo "続きを起動できなかったので 30 秒後にやり直す（$i 回目）"
+              sleep 30
+            done
+            echo "続きを 5 回とも起動できなかった"
+            exit 1
+          fi
