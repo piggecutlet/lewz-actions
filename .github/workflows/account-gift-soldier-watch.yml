@@ -17,6 +17,10 @@ on:
       amount:
         description: 贈る体数の合計
         required: true
+      ignore_shield:
+        description: 申請が来て本番を起動するとき、シールドが切れた件・残りが 1 時間を切る件も使う
+        type: boolean
+        default: false
       state:
         description: 州
         default: "775"
@@ -52,6 +56,7 @@ jobs:
           ARM: ${{ inputs.arm }}
           AMOUNT: ${{ inputs.amount }}
           STATE: ${{ inputs.state || '775' }}
+          IGNORE_SHIELD: ${{ inputs.ignore_shield && 'true' || 'false' }}
         run: |
           alliance=$(jq -r .inputs.alliance "$GITHUB_EVENT_PATH")
           case "$alliance" in
@@ -66,7 +71,7 @@ jobs:
           esac
           main() {
             cd src
-            node scripts/ci/watch_applicant.mjs --alliance="$alliance" --accept="$accept" --arm="$ARM" --amount="$AMOUNT" --state="$STATE"
+            node scripts/ci/watch_applicant.mjs --alliance="$alliance" --accept="$accept" --arm="$ARM" --amount="$AMOUNT" --state="$STATE" --ignore-shield="$IGNORE_SHIELD"
           }
           . .github/scripts/logged.sh
           start_logged main
