@@ -1,0 +1,79 @@
+on:
+  workflow_dispatch:
+    inputs:
+      alliance:
+        description: 贈る同盟の ID（775_002 など）
+        required: true
+      accept:
+        description: 加入申請を待つ gameUid（この人が申請したら承認して贈る）
+        required: true
+      arm:
+        type: choice
+        options:
+          - Lv.10 ゾンビ
+          - Lv.10 戦士
+          - Lv.10 車両
+          - Lv.10 射手
+      amount:
+        description: 贈る体数の合計
+        required: true
+      state:
+        description: 州
+        default: "775"
+
+concurrency:
+  group: gift-soldier-watch-${{ inputs.state }}-${{ inputs.alliance }}-${{ inputs.accept }}
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: ./.github/actions/prepare
+        with:
+          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
+          source-repo: ${{ secrets.SOURCE_REPO }}
+          source-token: ${{ secrets.LEWZ_GITHUB_PAT }}
+          sparse-checkout-cone-mode: false
+          sparse-checkout: |
+            /api/
+            /scripts/core/
+            /savedata/
+            /scripts/ci/watch_applicant.mjs
+
+      - env:
+          LOG_KEY: ${{ secrets.LOG_KEY }}
+          GH_TOKEN: ${{ secrets.LEWZ_GITHUB_PAT }}
+          ARM: ${{ inputs.arm }}
+          AMOUNT: ${{ inputs.amount }}
+          STATE: ${{ inputs.state || '775' }}
+        run: |
+          alliance=$(jq -r .inputs.alliance "$GITHUB_EVENT_PATH")
+          case "$alliance" in
+            "" | *[!0-9_]*) exit 1 ;;
+          esac
+          accept=$(jq -r .inputs.accept "$GITHUB_EVENT_PATH")
+          case "$accept" in
+            "" | *[!0-9]*) exit 1 ;;
+          esac
+          case "$AMOUNT$STATE" in
+            *[!0-9]*) exit 1 ;;
+          esac
+          main() {
+            cd src
+            node scripts/ci/watch_applicant.mjs --alliance="$alliance" --accept="$accept" --arm="$ARM" --amount="$AMOUNT" --state="$STATE"
+          }
+          . .github/scripts/logged.sh
+          start_logged main
+
+      - if: always() && env.LOG != ''
+        env:
+          LOG_KEY: ${{ secrets.LOG_KEY }}
+        run: |
+          . .github/scripts/logged.sh
+          finish_logged
