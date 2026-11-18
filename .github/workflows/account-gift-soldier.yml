@@ -35,6 +35,10 @@ on:
         description: 贈ったあと相手を贈る同盟から外さない
         type: boolean
         default: false
+      ignore_shield:
+        description: 他人へ贈るときも、シールドが切れた件・残りが 1 時間を切る件を使う
+        type: boolean
+        default: false
       dry_run:
         type: boolean
         default: false
@@ -77,6 +81,7 @@ jobs:
           AMOUNT: ${{ inputs.amount }}
           DRY_RUN: ${{ inputs.dry_run && '--dry-run' || '' }}
           NO_KICK: ${{ inputs.no_kick && '--no-kick' || '' }}
+          IGNORE_SHIELD: ${{ inputs.ignore_shield && '--ignore-shield' || '' }}
           STATE: ${{ inputs.state || '775' }}
         run: |
           case "$AMOUNT$STATE" in
@@ -101,7 +106,7 @@ jobs:
           esac
           main() {
             cd src
-            node --max-old-space-size=8192 scripts/ci/gift_soldier.mjs --arm="$ARM" ${alliance:+"--alliance=$alliance"} ${to:+"--to=$to"} ${accept:+"--accept=$accept"} ${refuse:+"--refuse=$refuse"} ${AMOUNT:+"--amount=$AMOUNT"} ${shield:+"--shield-before=$shield"} --state="$STATE" $DRY_RUN $NO_KICK
+            node --max-old-space-size=8192 scripts/ci/gift_soldier.mjs --arm="$ARM" ${alliance:+"--alliance=$alliance"} ${to:+"--to=$to"} ${accept:+"--accept=$accept"} ${refuse:+"--refuse=$refuse"} ${AMOUNT:+"--amount=$AMOUNT"} ${shield:+"--shield-before=$shield"} --state="$STATE" $DRY_RUN $NO_KICK $IGNORE_SHIELD
             code=$?
             node -e "import('./scripts/core/_ci.mjs').then(({pushAccounts})=>pushAccounts('chore: CI の gift-soldier で accounts.json を更新する'))"
             exit $code
