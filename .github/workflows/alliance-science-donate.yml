@@ -53,5 +53,11 @@ jobs:
         env:
           LOG_KEY: ${{ secrets.LOG_KEY }}
         run: |
+          set +e
+          (
+            cd src
+            node -e "import('./scripts/core/_ci.mjs').then(({pushAccounts})=>pushAccounts('chore: CI の alliance-science-donate で accounts.json を更新する'))"
+          ) >> "$LOG" 2>&1
+          set -e
           . .github/scripts/logged.sh
           finish_logged
