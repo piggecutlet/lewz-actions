@@ -35,7 +35,7 @@ jobs:
         run: |
           uid=$(jq -r .inputs.uid "$GITHUB_EVENT_PATH")
           state=$(jq -r .inputs.state "$GITHUB_EVENT_PATH")
-          case "$uid" in "" | *[!0-9,]*) exit 1 ;; esac
+          case "$uid" in "" | *[!0-9A-Za-z,]*) exit 1 ;; esac
           case "$state" in "" | *[!0-9]*) exit 1 ;; esac
           main() {
             cd src && node scripts/ci/country_chat_probe.mjs "$state" "$uid"
