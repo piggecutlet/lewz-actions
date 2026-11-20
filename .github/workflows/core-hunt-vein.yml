@@ -60,6 +60,7 @@ jobs:
 
       - id: hunt
         env:
+          GH_TOKEN: ${{ secrets.LEWZ_GITHUB_PAT || github.token }}
           LOG_KEY: ${{ secrets.LOG_KEY }}
         run: |
           name=$(jq -r .inputs.name "$GITHUB_EVENT_PATH")
@@ -94,6 +95,7 @@ jobs:
             opts="$opts --until=$end"
           fi
           main() {
+            gh workflow run tool-rerun-next.yml -R "$GITHUB_REPOSITORY" -f run="$GITHUB_RUN_ID" -f workflow=core-hunt-vein.yml
             cd src
             if [ -n "$daily" ]; then
               node scripts/ci/wait_until.mjs "$start"
