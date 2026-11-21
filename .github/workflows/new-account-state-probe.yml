@@ -1,0 +1,50 @@
+on:
+  workflow_dispatch:
+    inputs:
+      state:
+        description: 州
+        required: true
+
+permissions:
+  contents: write
+
+concurrency:
+  group: new-account-state-probe
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: ./.github/actions/prepare
+        with:
+          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
+          source-repo: ${{ secrets.SOURCE_REPO }}
+          source-token: ${{ secrets.LEWZ_GITHUB_PAT }}
+          sparse-checkout-cone-mode: false
+          sparse-checkout: |
+            /api/
+            /scripts/core/
+            /scripts/ci/new_account_state_probe.mjs
+            /savedata/
+
+      - env:
+          LOG_KEY: ${{ secrets.LOG_KEY }}
+        run: |
+          state=$(jq -r .inputs.state "$GITHUB_EVENT_PATH")
+          case "$state" in
+            "" | *[!0-9]*) exit 1 ;;
+          esac
+          main() {
+            cd src && node scripts/ci/new_account_state_probe.mjs "$state"
+          }
+          . .github/scripts/logged.sh
+          start_logged main
+
+      - if: always() && env.LOG != ''
+        env:
+          LOG_KEY: ${{ secrets.LOG_KEY }}
+        run: |
+          . .github/scripts/logged.sh
+          finish_logged
