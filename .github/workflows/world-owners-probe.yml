@@ -7,6 +7,17 @@ on:
       state:
         description: 見る州
         default: "775"
+      full:
+        description: 全域を走査する
+        type: boolean
+        default: false
+      dry_run:
+        description: 全域の確認用（漏れと件数の目安だけ）
+        type: boolean
+        default: false
+      from:
+        description: 敷き詰めの何番目から（分割用）
+        default: ""
 
 permissions:
   contents: write
@@ -31,18 +42,31 @@ jobs:
             /scripts/core/
             /savedata/
             /scripts/ci/world_owners_probe.mjs
+            /scripts/scratch/world_owners_*.json
 
       - env:
           LOG_KEY: ${{ secrets.LOG_KEY }}
         run: |
           login=$(jq -r '.inputs.login // ""' "$GITHUB_EVENT_PATH")
           state=$(jq -r '.inputs.state // "775"' "$GITHUB_EVENT_PATH")
-          case "$login$state" in
+          full=$(jq -r '.inputs.full // "false"' "$GITHUB_EVENT_PATH")
+          dry=$(jq -r '.inputs.dry_run // "false"' "$GITHUB_EVENT_PATH")
+          from=$(jq -r '.inputs.from // ""' "$GITHUB_EVENT_PATH")
+          case "$login$state$from" in
             *[!0-9]*) exit 1 ;;
           esac
           flags="--state=$state"
           if [ -n "$login" ]; then
             flags="$flags --login=$login"
+          fi
+          if [ "$full" = "true" ]; then
+            flags="$flags --full"
+          fi
+          if [ "$dry" = "true" ]; then
+            flags="$flags --dry-run"
+          fi
+          if [ -n "$from" ]; then
+            flags="$flags --from=$from"
           fi
           main() {
             cd src && node scripts/ci/world_owners_probe.mjs $flags
