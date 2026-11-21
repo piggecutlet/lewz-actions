@@ -2,7 +2,7 @@ on:
   workflow_dispatch:
     inputs:
       login:
-        description: ログイン元の gameUid
+        description: ログイン元の gameUid（カンマ区切りで複数なら、その数だけ並列）
         required: true
       states:
         description: 走査する州をカンマ区切りで（空なら 774・775 と保存済みを除く全部）
