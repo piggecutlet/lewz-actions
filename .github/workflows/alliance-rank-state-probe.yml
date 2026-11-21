@@ -2,10 +2,10 @@ on:
   workflow_dispatch:
     inputs:
       login:
-        description: ログイン元の gameUid
+        description: deviceId の出所の gameUid
         required: true
-      state:
-        description: 州（3 桁）
+      gameUid:
+        description: ログインに使う gameUid
         required: true
 
 permissions:
@@ -36,12 +36,12 @@ jobs:
           LOG_KEY: ${{ secrets.LOG_KEY }}
         run: |
           login=$(jq -r .inputs.login "$GITHUB_EVENT_PATH")
-          state=$(jq -r .inputs.state "$GITHUB_EVENT_PATH")
-          case "$login$state" in
+          gameUid=$(jq -r .inputs.gameUid "$GITHUB_EVENT_PATH")
+          case "$login$gameUid" in
             "" | *[!0-9]*) exit 1 ;;
           esac
           main() {
-            cd src && node scripts/ci/alliance_rank_state_probe.mjs "$login" "$state"
+            cd src && node scripts/ci/alliance_rank_state_probe.mjs "$login" "$gameUid"
           }
           . .github/scripts/logged.sh
           start_logged main
