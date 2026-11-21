@@ -1,5 +1,12 @@
 on:
   workflow_dispatch:
+    inputs:
+      login:
+        description: ログイン元の gameUid（省くと自動で選ぶ）
+        default: ""
+      state:
+        description: 見る州
+        default: "775"
 
 permissions:
   contents: write
@@ -28,8 +35,17 @@ jobs:
       - env:
           LOG_KEY: ${{ secrets.LOG_KEY }}
         run: |
+          login=$(jq -r '.inputs.login // ""' "$GITHUB_EVENT_PATH")
+          state=$(jq -r '.inputs.state // "775"' "$GITHUB_EVENT_PATH")
+          case "$login$state" in
+            *[!0-9]*) exit 1 ;;
+          esac
+          flags="--state=$state"
+          if [ -n "$login" ]; then
+            flags="$flags --login=$login"
+          fi
           main() {
-            cd src && node scripts/ci/world_owners_probe.mjs
+            cd src && node scripts/ci/world_owners_probe.mjs $flags
           }
           . .github/scripts/logged.sh
           start_logged main
