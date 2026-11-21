@@ -1,0 +1,54 @@
+on:
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: 確認用（件数だけ。get.remote.al.info は 1 同盟だけ）
+        type: boolean
+        default: true
+
+permissions:
+  contents: write
+
+concurrency:
+  group: country-members-last-online
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: ./.github/actions/prepare
+        with:
+          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
+          source-repo: ${{ secrets.SOURCE_REPO }}
+          source-token: ${{ secrets.LEWZ_GITHUB_PAT }}
+          sparse-checkout-cone-mode: false
+          sparse-checkout: |
+            /api/
+            /scripts/core/
+            /savedata/
+            /scripts/ci/country_chat_all.mjs
+            /scripts/ci/country_members_last_online.mjs
+            /scripts/scratch/country_members_last_online.json
+
+      - env:
+          LOG_KEY: ${{ secrets.LOG_KEY }}
+        run: |
+          dry=$(jq -r '.inputs.dry_run // "true"' "$GITHUB_EVENT_PATH")
+          flag=""
+          if [ "$dry" = "true" ]; then
+            flag="--dry-run"
+          fi
+          main() {
+            cd src && node scripts/ci/country_members_last_online.mjs $flag
+          }
+          . .github/scripts/logged.sh
+          start_logged main
+
+      - if: always() && env.LOG != ''
+        env:
+          LOG_KEY: ${{ secrets.LOG_KEY }}
+        run: |
+          . .github/scripts/logged.sh
+          finish_logged
