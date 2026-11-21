@@ -92,18 +92,21 @@ jobs:
             start=""
             end=""
             now=$(date +%s)
-            for day in "" "tomorrow "; do
+            for day in "yesterday " "" "tomorrow "; do
               for w in ${daily//,/ }; do
                 s=$(TZ=Asia/Tokyo date -d "$day${w%-*}" +%FT%T+09:00)
                 e=$(TZ=Asia/Tokyo date -d "$day${w#*-}" +%FT%T+09:00)
+                if [ "$(date -d "$e" +%s)" -le "$(date -d "$s" +%s)" ]; then
+                  e=$(TZ=Asia/Tokyo date -d "@$(( $(date -d "$e" +%s) + 86400 ))" +%FT%T+09:00)
+                fi
                 if [ -z "$end" ] && [ "$(date -d "$e" +%s)" -gt "$now" ]; then
                   start=$s
                   end=$e
                 fi
               done
             done
-            opts="$opts --until=$end"
           fi
+          job_start=$(date +%s)
           main() {
             gh workflow run tool-rerun-next.yml -R "$GITHUB_REPOSITORY" -f run="$GITHUB_RUN_ID" -f workflow=core-hunt-vein.yml
             cd src
@@ -115,17 +118,50 @@ jobs:
                 *) exit 1 ;;
               esac
             fi
-            git pull -q
-            if [ "$(tr -d '[:space:]' < scripts/skip/core-hunt-vein.txt)" = true ]; then
-              echo "scripts/skip/core-hunt-vein.txt が true なのでログインしない"
-              if [ -n "$daily" ]; then
-                node scripts/ci/wait_until.mjs "$end"
-                return $?
-              fi
-              return 0
+            skip_on() {
+              git fetch -q origin main
+              [ "$(git show origin/main:scripts/skip/core-hunt-vein.txt | tr -d '[:space:]')" = true ]
+            }
+            stop_at=9999999999
+            until_opt=""
+            if [ -n "$daily" ]; then
+              stop_at=$(date -d "$end" +%s)
+              [ $((job_start + 20400)) -lt $stop_at ] && stop_at=$((job_start + 20400))
+              until_opt="--until=$(TZ=Asia/Tokyo date -d @$stop_at +%FT%T+09:00)"
             fi
-            node scripts/core/core_hunt.mjs "$name" $opts
-            rc=$?
+            rc=0
+            while [ "$(date +%s)" -lt $stop_at ]; do
+              if skip_on; then
+                echo "scripts/skip/core-hunt-vein.txt が true なのでログインしない"
+                [ -z "$daily" ] && return 0
+                sleep 60
+                continue
+              fi
+              node scripts/core/core_hunt.mjs "$name" $opts $until_opt &
+              pid=$!
+              stopped=0
+              t=0
+              while kill -0 $pid 2>/dev/null; do
+                sleep 5
+                t=$((t + 5))
+                if [ $t -ge 60 ]; then
+                  t=0
+                  if skip_on; then
+                    echo "scripts/skip/core-hunt-vein.txt が true になったので止める"
+                    kill $pid
+                    stopped=1
+                    break
+                  fi
+                fi
+              done
+              wait $pid
+              rc=$?
+              if [ $stopped -eq 1 ]; then
+                rc=0
+                continue
+              fi
+              break
+            done
             if [ -n "$daily" ] && [[ "$opts" == *--earth=* ]] && { [ $rc -eq 0 ] || [ $rc -eq 2 ]; }; then
               node scripts/ci/wait_until.mjs "$end"
             fi
