@@ -28,7 +28,7 @@ on:
         type: boolean
         default: false
       daily:
-        description: 毎日この時間帯（JST）だけ回す（例 03:00-07:00。空なら今すぐ回す。limit とは一緒に使えない。earth と一緒なら、届いた日は終わりの時刻まで待って翌日へ）
+        description: 毎日この時間帯（JST）だけ回す（例 01:00-07:00,13:00-19:00。時刻の早い順にカンマで並べる。空なら今すぐ回す。limit とは一緒に使えない。earth と一緒なら、届いた日は終わりの時刻まで待って翌日へ）
         default: ""
 
 concurrency:
@@ -56,6 +56,7 @@ jobs:
             api
             scripts/core
             scripts/ci
+            scripts/skip
             savedata
 
       - id: hunt
@@ -85,13 +86,22 @@ jobs:
           done
           [ "$(jq -r '.inputs.no_shield // false' "$GITHUB_EVENT_PATH")" = "true" ] && opts="$opts --no-shield"
           daily=$(jq -r '.inputs.daily // ""' "$GITHUB_EVENT_PATH")
-          [[ "$daily" =~ ^([0-2][0-9]:[0-5][0-9]-[0-2][0-9]:[0-5][0-9])?$ ]] || exit 1
+          [[ "$daily" =~ ^([0-2][0-9]:[0-5][0-9]-[0-2][0-9]:[0-5][0-9](,[0-2][0-9]:[0-5][0-9]-[0-2][0-9]:[0-5][0-9])*)?$ ]] || exit 1
           if [ -n "$daily" ]; then
             [[ "$opts" == *--limit=* ]] && exit 1
-            day=""
-            [ "$(date +%s)" -ge "$(TZ=Asia/Tokyo date -d "${daily#*-}" +%s)" ] && day="tomorrow "
-            start=$(TZ=Asia/Tokyo date -d "$day${daily%-*}" +%FT%T+09:00)
-            end=$(TZ=Asia/Tokyo date -d "$day${daily#*-}" +%FT%T+09:00)
+            start=""
+            end=""
+            now=$(date +%s)
+            for day in "" "tomorrow "; do
+              for w in ${daily//,/ }; do
+                s=$(TZ=Asia/Tokyo date -d "$day${w%-*}" +%FT%T+09:00)
+                e=$(TZ=Asia/Tokyo date -d "$day${w#*-}" +%FT%T+09:00)
+                if [ -z "$end" ] && [ "$(date -d "$e" +%s)" -gt "$now" ]; then
+                  start=$s
+                  end=$e
+                fi
+              done
+            done
             opts="$opts --until=$end"
           fi
           main() {
@@ -104,6 +114,15 @@ jobs:
                 10) exit 10 ;;
                 *) exit 1 ;;
               esac
+            fi
+            git pull -q
+            if [ "$(tr -d '[:space:]' < scripts/skip/core-hunt-vein.txt)" = true ]; then
+              echo "scripts/skip/core-hunt-vein.txt が true なのでログインしない"
+              if [ -n "$daily" ]; then
+                node scripts/ci/wait_until.mjs "$end"
+                return $?
+              fi
+              return 0
             fi
             node scripts/core/core_hunt.mjs "$name" $opts
             rc=$?
