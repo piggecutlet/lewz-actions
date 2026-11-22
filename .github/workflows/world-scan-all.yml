@@ -15,7 +15,7 @@ permissions:
   contents: write
 
 concurrency:
-  group: world-scan-all-${{ inputs.login }}
+  group: world-scan-all
 
 jobs:
   run:
