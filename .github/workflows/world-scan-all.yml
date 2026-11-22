@@ -4,6 +4,9 @@ on:
       login:
         description: ログイン元の gameUid（カンマ区切りで複数なら、その数だけ並列）
         required: true
+      parallel:
+        description: 州を並列に走査する数
+        default: "1"
       states:
         description: 走査する州をカンマ区切りで（空なら 774・775 と保存済みを除く全部）
         default: ""
@@ -43,11 +46,12 @@ jobs:
           GH_TOKEN: ${{ secrets.LEWZ_GITHUB_PAT }}
           LOGIN: ${{ inputs.login }}
           STATES: ${{ inputs.states }}
+          PARALLEL: ${{ inputs.parallel || '1' }}
         run: |
-          case "$LOGIN$STATES" in
+          case "$LOGIN$STATES$PARALLEL" in
             *[!0-9,]*) exit 1 ;;
           esac
-          flags="--login=$LOGIN"
+          flags="--login=$LOGIN --parallel=$PARALLEL"
           if [ -n "$STATES" ]; then
             flags="$flags --states=$STATES"
           fi
