@@ -2,10 +2,8 @@ on:
   workflow_dispatch:
     inputs:
       login:
-        description: ログイン元の gameUid
         required: true
       uids:
-        description: 調べる gameUid（カンマ区切り）
         required: true
 
 permissions:

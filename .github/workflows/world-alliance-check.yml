@@ -2,13 +2,10 @@ on:
   workflow_dispatch:
     inputs:
       login:
-        description: ログイン元の gameUid
         required: true
       state:
-        description: 見る州（world_owners_<州>.json がある州）
         required: true
       limit:
-        description: 同盟の数の上限（確認用。0 なら全部）
         default: "0"
 
 permissions:

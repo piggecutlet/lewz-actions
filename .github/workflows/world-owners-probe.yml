@@ -2,21 +2,16 @@ on:
   workflow_dispatch:
     inputs:
       login:
-        description: ログイン元の gameUid（省くと自動で選ぶ）
         default: ""
       state:
-        description: 見る州
         default: "775"
       full:
-        description: 全域を走査する
         type: boolean
         default: false
       dry_run:
-        description: 全域の確認用（漏れと件数の目安だけ）
         type: boolean
         default: false
       from:
-        description: 敷き詰めの何番目から（分割用）
         default: ""
 
 permissions:
