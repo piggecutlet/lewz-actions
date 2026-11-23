@@ -50,7 +50,7 @@ jobs:
             /api/
             /scripts/core/
             /savedata/
-            /decompile/obb/assets/WorldMap.tmx
+            /decompile/resources/obb/assets/WorldMap.tmx
             /scripts/ci/leave_random_move.mjs
             /scripts/ci/leave_alliance.mjs
 

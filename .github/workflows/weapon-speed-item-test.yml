@@ -25,8 +25,8 @@ jobs:
             /scripts/core/
             /scripts/ci/
             /savedata/
-            /decompile/device/files/ja/ja_ilocalize_base.json
-            /decompile/device/files/WarZDoc/config/database.activity.xml
+            /decompile/resources/ja/ja_ilocalize_base.json
+            /decompile/resources/WarZDoc/config/database.activity.xml
 
       - env:
           LOG_KEY: ${{ secrets.LOG_KEY }}

@@ -47,8 +47,8 @@ jobs:
             /api/
             /scripts/core/
             /savedata/
-            /decompile/device/files/ja/ja_ilocalize_base.json
-            /decompile/device/files/WarZDoc/config/database.system.xml
+            /decompile/resources/ja/ja_ilocalize_base.json
+            /decompile/resources/WarZDoc/config/database.system.xml
 
       - env:
           COUNT: ${{ inputs.count }}

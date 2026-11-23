@@ -60,9 +60,9 @@ jobs:
             /scripts/ci/ci_defaults.mjs
             /scripts/ci/scout.mjs
             /scripts/ci/farm_finish.mjs
-            /decompile/obb/assets/WorldMap.tmx
-            /decompile/device/files/ja/ja_ilocalize_base.json
-            /decompile/device/files/WarZDoc/config/database.activity.xml
+            /decompile/resources/obb/assets/WorldMap.tmx
+            /decompile/resources/ja/ja_ilocalize_base.json
+            /decompile/resources/WarZDoc/config/database.activity.xml
 
       - env:
           LOG_KEY: ${{ secrets.LOG_KEY }}

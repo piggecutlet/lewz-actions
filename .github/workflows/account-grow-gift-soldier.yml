@@ -59,8 +59,8 @@ jobs:
             /scripts/ci/grow_gift_soldier.mjs
             /scripts/ci/ci_defaults.mjs
             /scripts/ci/leave_alliance.mjs
-            /decompile/device/files/ja/ja_ilocalize_base.json
-            /decompile/device/files/WarZDoc/config/database.activity.xml
+            /decompile/resources/ja/ja_ilocalize_base.json
+            /decompile/resources/WarZDoc/config/database.activity.xml
 
       - env:
           LOG_KEY: ${{ secrets.LOG_KEY }}

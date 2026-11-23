@@ -35,7 +35,7 @@ jobs:
             cd src
             node scripts/core/fetch_localize.mjs $languages || exit 1
             for l in $languages; do
-              git add --sparse "decompile/device/files/$l/${l}_ilocalize_base.json"
+              git add --sparse "decompile/resources/$l/${l}_ilocalize_base.json"
             done
             if ! git diff --cached --quiet; then
               git commit -m "chore: CI で翻訳ファイルを取り直す（$languages）"

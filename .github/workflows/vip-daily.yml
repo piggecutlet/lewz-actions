@@ -44,8 +44,8 @@ jobs:
             /scripts/core/
             /scripts/skip/
             /savedata/
-            /decompile/device/files/ja/ja_ilocalize_base.json
-            /decompile/device/files/WarZDoc/config/database.activity.xml
+            /decompile/resources/ja/ja_ilocalize_base.json
+            /decompile/resources/WarZDoc/config/database.activity.xml
             /scripts/ci/diamond_shield_read.mjs
 
       - timeout-minutes: 120

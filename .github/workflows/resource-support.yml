@@ -43,10 +43,10 @@ jobs:
             /api/
             /scripts/core/
             /savedata/
-            /decompile/obb/assets/WorldMap.tmx
+            /decompile/resources/obb/assets/WorldMap.tmx
             /scripts/ci/resource_support.mjs
-            /decompile/device/files/ja/ja_ilocalize_base.json
-            /decompile/device/files/WarZDoc/config/database.activity.xml
+            /decompile/resources/ja/ja_ilocalize_base.json
+            /decompile/resources/WarZDoc/config/database.activity.xml
 
       - env:
           LOG_KEY: ${{ secrets.LOG_KEY }}

@@ -28,8 +28,8 @@ jobs:
             /scripts/core/
             /savedata/
             /scripts/ci/giant_weapon_compare.mjs
-            /decompile/device/files/WarZDoc/config/weapon_equip.xml
-            /decompile/device/files/WarZDoc/config/weapon_level.xml
+            /decompile/resources/WarZDoc/config/weapon_equip.xml
+            /decompile/resources/WarZDoc/config/weapon_level.xml
 
       - env:
           LOG_KEY: ${{ secrets.LOG_KEY }}

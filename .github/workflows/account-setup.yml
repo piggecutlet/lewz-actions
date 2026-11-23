@@ -90,9 +90,9 @@ jobs:
             /scripts/core/
             /savedata/
             /scripts/ci/ci_defaults.mjs
-            /decompile/device/files/ja/ja_ilocalize_base.json
-            /decompile/device/files/WarZDoc/config/database.system.xml
-            /decompile/device/files/WarZDoc/config/database.local.xml
+            /decompile/resources/ja/ja_ilocalize_base.json
+            /decompile/resources/WarZDoc/config/database.system.xml
+            /decompile/resources/WarZDoc/config/database.local.xml
 
       - env:
           COUNT: ${{ inputs.count }}
