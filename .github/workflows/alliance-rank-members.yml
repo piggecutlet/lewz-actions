@@ -26,6 +26,7 @@ jobs:
             /scripts/ci/alliance_rank_members.mjs
             /scripts/ci/world_players_merge.mjs
             /scripts/scratch/alliance_rank_all.json
+            /scripts/scratch/country_members_lowest_power.json
             /scripts/scratch/alliance_rank_members.json
             /scripts/scratch/country_members_last_online.json
             /scripts/scratch/world_owners_*.json
