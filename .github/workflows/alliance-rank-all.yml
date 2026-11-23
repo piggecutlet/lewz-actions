@@ -1,0 +1,48 @@
+on:
+  workflow_dispatch:
+    inputs:
+      accounts:
+        description: '[{"state":"774","gameUid":"983953192000774"}] の JSON'
+        required: true
+
+permissions:
+  contents: write
+
+concurrency:
+  group: alliance-rank-all
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: ./.github/actions/prepare
+        with:
+          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
+          source-repo: ${{ secrets.SOURCE_REPO }}
+          source-token: ${{ secrets.LEWZ_GITHUB_PAT }}
+          sparse-checkout-cone-mode: false
+          sparse-checkout: |
+            /api/
+            /scripts/core/
+            /savedata/
+            /scripts/ci/alliance_rank_all.mjs
+
+      - env:
+          LOG_KEY: ${{ secrets.LOG_KEY }}
+        run: |
+          jq -e 'all(.[]; (.gameUid | test("^[0-9]+$")))' <<< "$(jq -r .inputs.accounts "$GITHUB_EVENT_PATH")" > /dev/null || exit 1
+          jq -r .inputs.accounts "$GITHUB_EVENT_PATH" > "$RUNNER_TEMP/accounts.json"
+          main() {
+            cd src && node scripts/ci/alliance_rank_all.mjs "$RUNNER_TEMP/accounts.json" "$RUNNER_TEMP/out.json" && cat "$RUNNER_TEMP/out.json"
+          }
+          . .github/scripts/logged.sh
+          start_logged main
+
+      - if: always() && env.LOG != ''
+        env:
+          LOG_KEY: ${{ secrets.LOG_KEY }}
+        run: |
+          . .github/scripts/logged.sh
+          finish_logged
