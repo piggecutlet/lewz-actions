@@ -1,0 +1,72 @@
+on:
+  workflow_dispatch:
+
+concurrency:
+  group: tool-resources-update
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    steps:
+      - run: sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc /opt/hostedtoolcache/CodeQL
+
+      - uses: actions/checkout@v7
+
+      - uses: ./.github/actions/prepare
+        with:
+          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
+          source-repo: ${{ secrets.SOURCE_REPO }}
+          source-token: ${{ secrets.LEWZ_GITHUB_PAT }}
+          sparse-checkout-cone-mode: false
+          sparse-checkout: |
+            /api/
+            /scripts/core/
+            /savedata/
+            /scripts/ci/update_resources.mjs
+            /scripts/ci/unzip_utf8.py
+            /decompile/resources/
+
+      - env:
+          LOG_KEY: ${{ secrets.LOG_KEY }}
+        run: |
+          main() {
+            cd src
+            node scripts/ci/update_resources.mjs || return 1
+            git add --sparse decompile/resources
+            if ! git diff --cached --quiet; then
+              git commit -q -m "chore: CI で decompile/resources を最新にする"
+              for i in 1 2 3 4 5; do
+                git pull --rebase --autostash && git push && break
+                sleep $((RANDOM % 20 + 5))
+              done
+            fi
+            git log -1 --format="commit %H"
+            mkdir -p "$RUNNER_TEMP/artifact"
+            while IFS= read -r f; do
+              mkdir -p "$RUNNER_TEMP/artifact/$(dirname "$f")"
+              ln "$f" "$RUNNER_TEMP/artifact/$f"
+            done < /tmp/ignored.txt
+            echo "artifact $(wc -l < /tmp/ignored.txt) files"
+          }
+          . .github/scripts/logged.sh
+          start_logged main
+
+      - if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: resources
+          path: ${{ runner.temp }}/artifact
+          if-no-files-found: ignore
+          retention-days: 3
+          compression-level: 1
+
+      - if: always() && env.LOG != ''
+        env:
+          LOG_KEY: ${{ secrets.LOG_KEY }}
+        run: |
+          . .github/scripts/logged.sh
+          finish_logged

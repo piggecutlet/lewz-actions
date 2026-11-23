@@ -2,11 +2,9 @@ on:
   workflow_dispatch:
     inputs:
       old:
-        description: 古い OBB の versionCode
         required: false
         default: "2423485"
       new:
-        description: 新しい OBB の versionCode
         required: false
         default: "2423487"
 

@@ -2,7 +2,6 @@ on:
   workflow_dispatch:
     inputs:
       version_code:
-        description: OBB の versionCode
         required: false
         default: "2423487"
 
