@@ -1,0 +1,49 @@
+on:
+  workflow_dispatch:
+    inputs:
+      version_code:
+        description: OBB の versionCode
+        required: false
+        default: "2423487"
+
+concurrency:
+  group: tool-obb-check
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: ./.github/actions/prepare
+        with:
+          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
+
+      - env:
+          LOG_KEY: ${{ secrets.LOG_KEY }}
+          VERSION_CODE: ${{ inputs.version_code }}
+        run: |
+          case "$VERSION_CODE" in
+            *[!0-9]* | "") exit 1 ;;
+          esac
+          main() {
+            for host in http://cdn.im30app.com http://cdn.im30app.cn; do
+              url="$host/aznew/cdn/main.$VERSION_CODE.com.longtech.lastwars.gp.obb"
+              echo "$url"
+              curl -sS -I --max-time 60 "$url" || echo "curl failed $?"
+              echo
+            done
+          }
+          . .github/scripts/logged.sh
+          start_logged main
+
+      - if: always() && env.LOG != ''
+        env:
+          LOG_KEY: ${{ secrets.LOG_KEY }}
+        run: |
+          . .github/scripts/logged.sh
+          finish_logged
