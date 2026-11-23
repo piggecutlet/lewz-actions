@@ -25,12 +25,20 @@ jobs:
             /savedata/
             /scripts/ci/alliance_rank_all.mjs
             /scripts/scratch/country_members_lowest_power.json
+            /scripts/scratch/alliance_rank_all.json
 
       - env:
           LOG_KEY: ${{ secrets.LOG_KEY }}
         run: |
           main() {
-            cd src && node scripts/ci/alliance_rank_all.mjs
+            cd src
+            node scripts/ci/alliance_rank_all.mjs
+            git add scripts/scratch/alliance_rank_all.json
+            git diff --cached --quiet || git commit -m "chore: CI の alliance-rank-all で同盟ランキングを更新する"
+            for i in 1 2 3; do
+              git pull --rebase && git push && break
+              sleep 5
+            done
           }
           . .github/scripts/logged.sh
           start_logged main
