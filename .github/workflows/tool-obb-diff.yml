@@ -1,0 +1,71 @@
+on:
+  workflow_dispatch:
+    inputs:
+      old:
+        description: 古い OBB の versionCode
+        required: false
+        default: "2423485"
+      new:
+        description: 新しい OBB の versionCode
+        required: false
+        default: "2423487"
+
+concurrency:
+  group: tool-obb-diff
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: ./.github/actions/prepare
+        with:
+          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
+
+      - env:
+          LOG_KEY: ${{ secrets.LOG_KEY }}
+          OLD: ${{ inputs.old }}
+          NEW: ${{ inputs.new }}
+        run: |
+          for v in "$OLD" "$NEW"; do
+            case "$v" in
+              *[!0-9]* | "") exit 1 ;;
+            esac
+          done
+          main() {
+            for v in "$OLD" "$NEW"; do
+              name="main.$v.com.longtech.lastwars.gp.obb"
+              curl -sSf --retry 3 -o "/tmp/$v.obb" "http://cdn.im30app.com/aznew/cdn/$name" || curl -sSf --retry 3 -o "/tmp/$v.obb" "http://cdn.im30app.cn/aznew/cdn/$name" || return 1
+              echo "$name $(stat -c %s "/tmp/$v.obb") $(md5sum "/tmp/$v.obb" | cut -d' ' -f1)"
+            done
+            python3 - "/tmp/$OLD.obb" "/tmp/$NEW.obb" <<'PY'
+          import sys, zipfile
+          def files(p):
+              return {i.filename: (i.CRC, i.file_size, i.date_time) for i in zipfile.ZipFile(p).infolist() if not i.is_dir()}
+          a, b = files(sys.argv[1]), files(sys.argv[2])
+          added = sorted(set(b) - set(a))
+          removed = sorted(set(a) - set(b))
+          changed = sorted(n for n in set(a) & set(b) if a[n][:2] != b[n][:2])
+          dateonly = sorted(n for n in set(a) & set(b) if a[n][:2] == b[n][:2] and a[n][2] != b[n][2])
+          print(f"old {len(a)} files / new {len(b)} files")
+          print(f"added {len(added)} / removed {len(removed)} / changed {len(changed)} / same content but different date {len(dateonly)}")
+          for title, names in (("added", added), ("removed", removed), ("changed", changed)):
+              print(f"--- {title}")
+              for n in names:
+                  print(n, a.get(n, ("", "-"))[1], b.get(n, ("", "-"))[1])
+          PY
+          }
+          . .github/scripts/logged.sh
+          start_logged main
+
+      - if: always() && env.LOG != ''
+        env:
+          LOG_KEY: ${{ secrets.LOG_KEY }}
+        run: |
+          . .github/scripts/logged.sh
+          finish_logged
