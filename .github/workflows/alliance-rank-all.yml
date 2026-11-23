@@ -24,7 +24,7 @@ jobs:
             /scripts/core/
             /savedata/
             /scripts/ci/alliance_rank_all.mjs
-            /scripts/ci/hoge.json
+            /scripts/scratch/country_members_lowest_power.json
 
       - env:
           LOG_KEY: ${{ secrets.LOG_KEY }}
