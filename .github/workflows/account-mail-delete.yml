@@ -7,6 +7,8 @@ on:
       types:
         description: 消すメールの type（カンマ区切り。例 41,4）
         required: true
+      titles:
+        default: ""
       limit:
         description: 古い順に消す通数（空なら全部）
         default: ""
@@ -35,14 +37,16 @@ jobs:
         run: |
           name=$(jq -r .inputs.name "$GITHUB_EVENT_PATH")
           types=$(jq -r .inputs.types "$GITHUB_EVENT_PATH")
+          titles=$(jq -r '.inputs.titles // ""' "$GITHUB_EVENT_PATH")
           limit=$(jq -r '.inputs.limit // ""' "$GITHUB_EVENT_PATH")
           [[ "$name" =~ ^[0-9]+$ ]] || exit 1
           [[ "$types" =~ ^[0-9]+(,[0-9]+)*$ ]] || exit 1
+          [[ "$titles" =~ ^[A-Za-z0-9_]*(,[A-Za-z0-9_]+)*$ ]] || exit 1
           [[ "$limit" =~ ^[0-9]*$ ]] || exit 1
           main() {
             cd src
             node scripts/core/mail_reward.mjs "$name"
-            node scripts/core/mail_delete.mjs "$name" --types="$types" ${limit:+--limit="$limit"}
+            node scripts/core/mail_delete.mjs "$name" --types="$types" ${titles:+--titles="$titles"} ${limit:+--limit="$limit"}
           }
           . .github/scripts/logged.sh
           start_logged main
