@@ -5,6 +5,9 @@ concurrency:
   group: tool-login-440-test
   cancel-in-progress: false
 
+permissions:
+  contents: write
+
 jobs:
   run:
     runs-on: ubuntu-latest
