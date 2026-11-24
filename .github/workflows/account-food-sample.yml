@@ -1,0 +1,55 @@
+on:
+  workflow_dispatch:
+    inputs:
+      login:
+        required: true
+      count:
+        required: false
+        default: "75"
+      interval:
+        required: false
+        default: "60"
+
+permissions:
+  contents: write
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: ./.github/actions/prepare
+        with:
+          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
+          source-repo: ${{ secrets.SOURCE_REPO }}
+          source-token: ${{ secrets.LEWZ_GITHUB_PAT }}
+          sparse-checkout-cone-mode: false
+          sparse-checkout: |
+            /api/
+            /scripts/core/
+            /savedata/
+            /scripts/ci/food_sample.mjs
+
+      - env:
+          LOG_KEY: ${{ secrets.LOG_KEY }}
+        run: |
+          login=$(jq -r .inputs.login "$GITHUB_EVENT_PATH")
+          count=$(jq -r '.inputs.count // "75"' "$GITHUB_EVENT_PATH")
+          interval=$(jq -r '.inputs.interval // "60"' "$GITHUB_EVENT_PATH")
+          case "$login$count$interval" in
+            "" | *[!0-9]*) exit 1 ;;
+          esac
+          main() {
+            cd src
+            node scripts/ci/food_sample.mjs "$login" --count="$count" --interval="$interval"
+          }
+          . .github/scripts/logged.sh
+          start_logged main
+
+      - if: always() && env.LOG != ''
+        env:
+          LOG_KEY: ${{ secrets.LOG_KEY }}
+        run: |
+          . .github/scripts/logged.sh
+          finish_logged
