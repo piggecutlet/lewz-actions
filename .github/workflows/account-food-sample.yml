@@ -9,6 +9,9 @@ on:
       interval:
         required: false
         default: "60"
+      pray:
+        required: false
+        default: "0"
 
 permissions:
   contents: write
@@ -37,12 +40,13 @@ jobs:
           login=$(jq -r .inputs.login "$GITHUB_EVENT_PATH")
           count=$(jq -r '.inputs.count // "75"' "$GITHUB_EVENT_PATH")
           interval=$(jq -r '.inputs.interval // "60"' "$GITHUB_EVENT_PATH")
-          case "$login$count$interval" in
+          pray=$(jq -r '.inputs.pray // "0"' "$GITHUB_EVENT_PATH")
+          case "$login$count$interval$pray" in
             "" | *[!0-9]*) exit 1 ;;
           esac
           main() {
             cd src
-            node scripts/ci/food_sample.mjs "$login" --count="$count" --interval="$interval"
+            node scripts/ci/food_sample.mjs "$login" --count="$count" --interval="$interval" --pray="$pray"
           }
           . .github/scripts/logged.sh
           start_logged main
