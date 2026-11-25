@@ -3,6 +3,9 @@ on:
     inputs:
       name:
         required: true
+      item:
+        required: false
+        default: "200814"
 
 concurrency:
   group: item-use-probe
@@ -33,10 +36,12 @@ jobs:
           LOG_KEY: ${{ secrets.LOG_KEY }}
         run: |
           name=$(jq -r .inputs.name "$GITHUB_EVENT_PATH")
+          item=$(jq -r .inputs.item "$GITHUB_EVENT_PATH")
           [[ "$name" =~ ^[0-9]+$ ]] || exit 1
+          [[ "$item" =~ ^[0-9]+$ ]] || exit 1
           main() {
             cd src
-            node scripts/ci/item_use_probe.mjs "$name"
+            node scripts/ci/item_use_probe.mjs "$name" "$item"
           }
           . .github/scripts/logged.sh
           start_logged main
