@@ -1,0 +1,70 @@
+on:
+  workflow_dispatch:
+    inputs:
+      names:
+        required: true
+      dry_run:
+        default: "true"
+      max_loops:
+        default: "200"
+      min_gold_left:
+        default: "1000000"
+
+permissions:
+  contents: write
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    timeout-minutes: 350
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: ./.github/actions/prepare
+        with:
+          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
+          source-repo: ${{ secrets.SOURCE_REPO }}
+          source-token: ${{ secrets.LEWZ_GITHUB_PAT }}
+          sparse-checkout-cone-mode: false
+          sparse-checkout: |
+            /api/
+            /scripts/core/
+            /savedata/
+            /scripts/ci/medal_auto.mjs
+
+      - env:
+          LOG_KEY: ${{ secrets.LOG_KEY }}
+        run: |
+          names=$(jq -r .inputs.names "$GITHUB_EVENT_PATH")
+          dry_run=$(jq -r '.inputs.dry_run // "true"' "$GITHUB_EVENT_PATH")
+          max_loops=$(jq -r '.inputs.max_loops // "200"' "$GITHUB_EVENT_PATH")
+          min_gold_left=$(jq -r '.inputs.min_gold_left // "1000000"' "$GITHUB_EVENT_PATH")
+          case "$names" in
+            "" | *[!0-9]*) exit 1 ;;
+          esac
+          case "$dry_run" in
+            true | false) ;;
+            *) exit 1 ;;
+          esac
+          case "$max_loops" in
+            "" | *[!0-9]*) exit 1 ;;
+          esac
+          case "$min_gold_left" in
+            "" | *[!0-9]*) exit 1 ;;
+          esac
+          if [ "$max_loops" -lt 1 ] || [ "$max_loops" -gt 2000 ]; then
+            exit 1
+          fi
+          main() {
+            cd src
+            node scripts/ci/medal_auto.mjs "$names" "$dry_run" "$max_loops" "$min_gold_left"
+          }
+          . .github/scripts/logged.sh
+          start_logged main
+
+      - if: always() && env.LOG != ''
+        env:
+          LOG_KEY: ${{ secrets.LOG_KEY }}
+        run: |
+          . .github/scripts/logged.sh
+          finish_logged
