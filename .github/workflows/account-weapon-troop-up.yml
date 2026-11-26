@@ -19,6 +19,8 @@ on:
       buy:
         description: 最初に item.buy で買うもの（<itemId>:<数>,...。空なら買わない）
         default: ""
+      buy_all:
+        default: ""
       hot_buy:
         description: hot.item.buy で買うもの（<itemId>:<数>:<1 個の値段>,...。空なら買わない）
         default: ""
@@ -93,6 +95,11 @@ jobs:
           [[ "$buy" =~ ^[0-9:,]*$ ]] || exit 1
           if [ -n "$buy" ]; then
             opt="$opt --buy=$buy"
+          fi
+          buy_all=$(jq -r '.inputs.buy_all // ""' "$GITHUB_EVENT_PATH")
+          [[ "$buy_all" =~ ^[0-9,]*$ ]] || exit 1
+          if [ -n "$buy_all" ]; then
+            opt="$opt --buy-all=$buy_all"
           fi
           hot=$(jq -r '.inputs.hot_buy // ""' "$GITHUB_EVENT_PATH")
           [[ "$hot" =~ ^[0-9:,]*$ ]] || exit 1
