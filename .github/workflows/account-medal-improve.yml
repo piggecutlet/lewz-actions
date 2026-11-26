@@ -1,0 +1,109 @@
+on:
+  workflow_dispatch:
+    inputs:
+      names:
+        required: true
+      mode:
+        default: "read"
+      dry_run:
+        default: "true"
+      core_num:
+        default: "1000"
+      tran_level:
+        default: "1"
+      type:
+        default: "0"
+      template_id:
+        default: ""
+      lock:
+        default: "1"
+      max_spend:
+        default: "30000"
+      min_gold_left:
+        default: "200000"
+
+permissions:
+  contents: write
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: ./.github/actions/prepare
+        with:
+          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
+          source-repo: ${{ secrets.SOURCE_REPO }}
+          source-token: ${{ secrets.LEWZ_GITHUB_PAT }}
+          sparse-checkout-cone-mode: false
+          sparse-checkout: |
+            /api/
+            /scripts/core/
+            /savedata/
+            /scripts/ci/medal_improve.mjs
+
+      - env:
+          LOG_KEY: ${{ secrets.LOG_KEY }}
+        run: |
+          names=$(jq -r .inputs.names "$GITHUB_EVENT_PATH")
+          mode=$(jq -r '.inputs.mode // "read"' "$GITHUB_EVENT_PATH")
+          dry_run=$(jq -r '.inputs.dry_run // "true"' "$GITHUB_EVENT_PATH")
+          core_num=$(jq -r '.inputs.core_num // "1000"' "$GITHUB_EVENT_PATH")
+          tran_level=$(jq -r '.inputs.tran_level // "1"' "$GITHUB_EVENT_PATH")
+          type=$(jq -r '.inputs.type // "0"' "$GITHUB_EVENT_PATH")
+          template_id=$(jq -r '.inputs.template_id // ""' "$GITHUB_EVENT_PATH")
+          lock=$(jq -r '.inputs.lock // "1"' "$GITHUB_EVENT_PATH")
+          max_spend=$(jq -r '.inputs.max_spend // "30000"' "$GITHUB_EVENT_PATH")
+          min_gold_left=$(jq -r '.inputs.min_gold_left // "200000"' "$GITHUB_EVENT_PATH")
+          case "$names" in
+            "" | *[!0-9]*) exit 1 ;;
+          esac
+          case "$mode" in
+            read | buy-core | improve | discard | save | lock) ;;
+            *) exit 1 ;;
+          esac
+          case "$dry_run" in
+            true | false) ;;
+            *) exit 1 ;;
+          esac
+          case "$core_num$max_spend$min_gold_left" in
+            "" | *[!0-9]*) exit 1 ;;
+          esac
+          case "$core_num" in
+            "" | *[!0-9]*) exit 1 ;;
+          esac
+          case "$max_spend" in
+            "" | *[!0-9]*) exit 1 ;;
+          esac
+          case "$min_gold_left" in
+            "" | *[!0-9]*) exit 1 ;;
+          esac
+          case "$tran_level" in
+            1 | 2 | 3) ;;
+            *) exit 1 ;;
+          esac
+          case "$type" in
+            0 | 1) ;;
+            *) exit 1 ;;
+          esac
+          case "$template_id" in
+            *[!0-9]*) exit 1 ;;
+          esac
+          case "$lock" in
+            0 | 1) ;;
+            *) exit 1 ;;
+          esac
+          main() {
+            cd src
+            node scripts/ci/medal_improve.mjs "$names" "$mode" "$dry_run" "$core_num" "$tran_level" "$type" "$template_id" "$lock" "$max_spend" "$min_gold_left"
+          }
+          . .github/scripts/logged.sh
+          start_logged main
+
+      - if: always() && env.LOG != ''
+        env:
+          LOG_KEY: ${{ secrets.LOG_KEY }}
+        run: |
+          . .github/scripts/logged.sh
+          finish_logged
