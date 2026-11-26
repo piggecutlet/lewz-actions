@@ -3,6 +3,8 @@ on:
     inputs:
       name:
         required: true
+      start_at:
+        default: ""
 
 permissions:
   contents: write
@@ -24,18 +26,41 @@ jobs:
             /scripts/core/
             /savedata/
             /scripts/ci/city_giveup.mjs
+            /scripts/ci/wait_until.mjs
 
       - env:
           LOG_KEY: ${{ secrets.LOG_KEY }}
+          GH_TOKEN: ${{ secrets.LEWZ_GITHUB_PAT }}
         run: |
           name=$(jq -r .inputs.name "$GITHUB_EVENT_PATH")
+          start_at=$(jq -r '.inputs.start_at // ""' "$GITHUB_EVENT_PATH")
           case "$name" in
             "" | *[!0-9]*) exit 1 ;;
           esac
+          [[ "$start_at" =~ ^[0-9T:+-]*$ ]] || exit 1
           main() {
             cd src
+            if [ -n "$start_at" ]; then
+              node scripts/ci/wait_until.mjs "$start_at"
+              case $? in
+                0) next="" ;;
+                10) next="$start_at" ;;
+                *) exit 1 ;;
+              esac
+              gh workflow run city-giveup.yml -R "$GITHUB_REPOSITORY" -f name="$name" -f start_at="$next" && echo "次の city-giveup.yml を起動した（start_at ${next:-なし}）"
+              exit $?
+            fi
             node scripts/ci/city_giveup.mjs "$name"
             code=$?
+            case $code in
+              20) next=$(date -d '+24 hours 5 minutes' +%Y-%m-%dT%H:%M:%S%:z) ;;
+              21) next=$(date -d '+30 minutes' +%Y-%m-%dT%H:%M:%S%:z) ;;
+              *) next="" ;;
+            esac
+            if [ -n "$next" ]; then
+              gh workflow run city-giveup.yml -R "$GITHUB_REPOSITORY" -f name="$name" -f start_at="$next" && echo "次の city-giveup.yml を起動した（start_at $next）"
+              code=$?
+            fi
             node -e "import('./scripts/core/_ci.mjs').then(({pushAccounts})=>pushAccounts('chore: CI で同盟の都市を放棄し、accounts.json を更新する'))"
             exit $code
           }
