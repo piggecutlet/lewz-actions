@@ -25,6 +25,8 @@ on:
         default: "211014"
       item_num:
         default: "1"
+      sample_n:
+        default: "10"
 
 permissions:
   contents: write
@@ -62,11 +64,12 @@ jobs:
           min_gold_left=$(jq -r '.inputs.min_gold_left // "200000"' "$GITHUB_EVENT_PATH")
           item_id=$(jq -r '.inputs.item_id // "211014"' "$GITHUB_EVENT_PATH")
           item_num=$(jq -r '.inputs.item_num // "1"' "$GITHUB_EVENT_PATH")
+          sample_n=$(jq -r '.inputs.sample_n // "10"' "$GITHUB_EVENT_PATH")
           case "$names" in
             "" | *[!0-9]*) exit 1 ;;
           esac
           case "$mode" in
-            read | buy-core | improve | discard | save | lock | buy-item | use-item) ;;
+            read | buy-core | improve | discard | save | lock | buy-item | use-item | sample) ;;
             *) exit 1 ;;
           esac
           case "$dry_run" in
@@ -103,13 +106,19 @@ jobs:
             1 | 2 | 3 | 4 | 5) ;;
             *) exit 1 ;;
           esac
+          case "$sample_n" in
+            "" | *[!0-9]*) exit 1 ;;
+          esac
+          if [ "$sample_n" -lt 1 ] || [ "$sample_n" -gt 30 ]; then
+            exit 1
+          fi
           case "$lock" in
             0 | 1) ;;
             *) exit 1 ;;
           esac
           main() {
             cd src
-            node scripts/ci/medal_improve.mjs "$names" "$mode" "$dry_run" "$core_num" "$tran_level" "$type" "$template_id" "$lock" "$max_spend" "$min_gold_left" "$item_id" "$item_num"
+            node scripts/ci/medal_improve.mjs "$names" "$mode" "$dry_run" "$core_num" "$tran_level" "$type" "$template_id" "$lock" "$max_spend" "$min_gold_left" "$item_id" "$item_num" "$sample_n"
           }
           . .github/scripts/logged.sh
           start_logged main
