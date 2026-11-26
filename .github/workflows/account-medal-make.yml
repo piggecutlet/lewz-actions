@@ -9,6 +9,8 @@ on:
         default: "120000"
       min_gold_left:
         default: "150000"
+      existing:
+        default: "false"
 
 permissions:
   contents: write
@@ -38,6 +40,11 @@ jobs:
           dry_run=$(jq -r '.inputs.dry_run // "true"' "$GITHUB_EVENT_PATH")
           max_spend=$(jq -r '.inputs.max_spend // "120000"' "$GITHUB_EVENT_PATH")
           min_gold_left=$(jq -r '.inputs.min_gold_left // "150000"' "$GITHUB_EVENT_PATH")
+          existing=$(jq -r '.inputs.existing // "false"' "$GITHUB_EVENT_PATH")
+          case "$existing" in
+            true | false) ;;
+            *) exit 1 ;;
+          esac
           case "$names" in
             "" | *[!0-9]*) exit 1 ;;
           esac
@@ -50,7 +57,7 @@ jobs:
           esac
           main() {
             cd src
-            node scripts/ci/medal_make.mjs "$names" "$dry_run" "$max_spend" "$min_gold_left"
+            node scripts/ci/medal_make.mjs "$names" "$dry_run" "$max_spend" "$min_gold_left" "$existing"
           }
           . .github/scripts/logged.sh
           start_logged main
