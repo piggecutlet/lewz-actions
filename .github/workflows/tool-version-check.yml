@@ -22,6 +22,10 @@ jobs:
           sparse-checkout-cone-mode: false
           sparse-checkout: |
             /AGENTS.md
+            /api/
+            /scripts/core/
+            /savedata/
+            /scripts/ci/version_check_xml.mjs
 
       - env:
           LOG_KEY: ${{ secrets.LOG_KEY }}
@@ -54,6 +58,7 @@ jobs:
             else
               echo "pureapk: versionCode は最新（$pure_code）"
             fi
+            node scripts/ci/version_check_xml.mjs || echo "xmlVersion: 確認に失敗（ログインできない、または AGENTS.md を読めない）"
           }
           . .github/scripts/logged.sh
           start_logged main
