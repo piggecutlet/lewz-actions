@@ -1,0 +1,66 @@
+on:
+  workflow_dispatch:
+
+concurrency:
+  group: tool-version-check
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: ./.github/actions/prepare
+        with:
+          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
+          source-repo: ${{ secrets.SOURCE_REPO }}
+          source-token: ${{ secrets.LEWZ_GITHUB_PAT }}
+          sparse-checkout-cone-mode: false
+          sparse-checkout: |
+            /AGENTS.md
+
+      - env:
+          LOG_KEY: ${{ secrets.LOG_KEY }}
+        run: |
+          main() {
+            cd src
+            UA='Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36'
+            mine_name=$(awk -F'|' '$2 ~ /^ *versionName *$/ {gsub(/ /, "", $3); print $3}' AGENTS.md | head -1)
+            mine_code=$(awk -F'|' '$2 ~ /^ *versionCode *$/ {gsub(/ /, "", $3); print $3}' AGENTS.md | head -1)
+            echo "AGENTS.md versionName=$mine_name versionCode=$mine_code"
+            play_name=$(curl -sS -L --max-time 40 -A "$UA" --compressed "https://play.google.com/store/apps/details?id=com.longtech.lastwars.gp&hl=en" | grep -oE '\[\[\["[0-9]+\.[0-9]+\.[0-9]+"\]\]' | head -1 | grep -oE '[0-9]+\.[0-9]+\.[0-9]+' || true)
+            echo "Google Play versionName=$play_name"
+            res=$(curl -sS --max-time 40 -X POST "https://tapi.pureapk.com/v3/get_app_detail" -H 'Ual-Access-Businessid: projecta' -H 'Ual-Access-ProjectA: {"device_info":{"os_ver":"33"}}' -H 'Content-Type: application/json' -d '{"action": "Download", "package_name": "com.longtech.lastwars.gp"}' || true)
+            pure_name=$(echo "$res" | jq -r '.app_detail.version_name // empty' 2>/dev/null || true)
+            pure_code=$(echo "$res" | jq -r '.app_detail.version_code // empty' 2>/dev/null || true)
+            echo "pureapk versionName=$pure_name versionCode=$pure_code"
+            if [ -z "$play_name" ]; then
+              echo "結果: Google Play の versionName が取れない（基準なし）"
+            elif [ "$play_name" != "$mine_name" ]; then
+              echo "結果: 新しいバージョンあり。Google Play $play_name、AGENTS.md $mine_name"
+            else
+              echo "結果: versionName は最新（$play_name）"
+            fi
+            if [ -z "$pure_name" ] || [ -z "$pure_code" ]; then
+              echo "pureapk: 取れない。versionCode は不明"
+            elif [ -n "$play_name" ] && [ "$pure_name" != "$play_name" ]; then
+              echo "pureapk: Google Play と versionName が違う（pureapk $pure_name、Google Play $play_name）。反映が遅れている可能性。versionCode は信用しない"
+            elif [ "$pure_code" != "$mine_code" ]; then
+              echo "pureapk: versionCode が違う。pureapk $pure_code、AGENTS.md $mine_code"
+            else
+              echo "pureapk: versionCode は最新（$pure_code）"
+            fi
+          }
+          . .github/scripts/logged.sh
+          start_logged main
+
+      - if: always() && env.LOG != ''
+        env:
+          LOG_KEY: ${{ secrets.LOG_KEY }}
+        run: |
+          . .github/scripts/logged.sh
+          finish_logged
