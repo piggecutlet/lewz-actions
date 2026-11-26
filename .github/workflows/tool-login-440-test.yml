@@ -24,14 +24,14 @@ jobs:
             /api/
             /scripts/core/
             /savedata/
-            /scripts/scratch/login_440_test.mjs
+            /scripts/scratch/login_xmlversion_test.mjs
 
       - env:
           LOG_KEY: ${{ secrets.LOG_KEY }}
         run: |
           main() {
             cd src
-            node scripts/scratch/login_440_test.mjs
+            node scripts/scratch/login_xmlversion_test.mjs
           }
           . .github/scripts/logged.sh
           start_logged main
