@@ -80,7 +80,7 @@ jobs:
           LOG_KEY: ${{ secrets.LOG_KEY }}
         run: |
           target=$(jq -r .inputs.name "$GITHUB_EVENT_PATH")
-          [[ "$target" =~ ^[0-9]+$ ]] || exit 1
+          [[ "$target" =~ ^[0-9]+(,[0-9]+)*$ ]] || exit 1
           opt=""
           for key in make weapon troop times; do
             value=$(jq -r ".inputs.$key // \"\"" "$GITHUB_EVENT_PATH")
@@ -131,7 +131,7 @@ jobs:
             opt="$opt --items"
           fi
           main() {
-            cd src && node scripts/core/weapon_troop_up.mjs "$target" $opt ${gift_arg:+"$gift_arg"}
+            cd src && printf '%s\n' ${target//,/ } | xargs -P 10 -I{} node scripts/core/weapon_troop_up.mjs {} $opt ${gift_arg:+"$gift_arg"}
           }
           . .github/scripts/logged.sh
           start_logged main
