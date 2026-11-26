@@ -1,0 +1,79 @@
+on:
+  workflow_dispatch:
+
+concurrency:
+  group: tool-version-probe
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: ./.github/actions/prepare
+        with:
+          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
+          source-repo: ${{ secrets.SOURCE_REPO }}
+          source-token: ${{ secrets.LEWZ_GITHUB_PAT }}
+          sparse-checkout-cone-mode: false
+          sparse-checkout: |
+            /AGENTS.md
+
+      - env:
+          LOG_KEY: ${{ secrets.LOG_KEY }}
+        run: |
+          main() {
+            UA='Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36'
+            probe() {
+              label="$1"; shift
+              url="$1"; shift
+              echo "=== $label $url"
+              out=$(mktemp); hdr=$(mktemp)
+              res=$(curl -sS -L --max-time 40 -o "$out" -D "$hdr" -w '%{http_code} %{size_download} %{url_effective}' "$@" "$url" 2>&1 || true)
+              echo "結果 $res"
+              grep -iE '^(HTTP/|server:|cf-ray|cf-mitigated|content-type:|location:)' "$hdr" | tr -d '\r'
+              echo "title: $(grep -oE '<title>[^<]*</title>' "$out" | head -1)"
+              echo "versionName/versionCode:"
+              grep -oE '"versionName":"[^"]+","versionCode":[0-9]+' "$out" | head -3
+              grep -oE 'data-dt-version="[^"]+" data-dt-versioncode="[0-9]+"' "$out" | head -5
+              grep -oE '\[\[\["[0-9]+\.[0-9]+\.[0-9]+"\]\]' "$out" | head -3
+              echo "先頭 300 文字: $(head -c 300 "$out" | tr '\n' ' ')"
+              rm -f "$out" "$hdr"
+            }
+            for page in "" "/versions" "/download"; do
+              url="https://apkpure.com/jp/last-empire-war-z-strategy/com.longtech.lastwars.gp$page"
+              probe "apkpure$page デフォルト" "$url"
+              probe "apkpure$page Chrome UA" "$url" -A "$UA"
+              probe "apkpure$page Chrome UA+ヘッダー" "$url" -A "$UA" -H 'Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8' -H 'Accept-Language: ja,en;q=0.8' -H 'Referer: https://www.google.com/' -H 'Upgrade-Insecure-Requests: 1' --compressed
+              probe "apkpure$page HTTP/1.1" "$url" -A "$UA" --http1.1 --compressed
+              probe "apkpure$page HTTP/2" "$url" -A "$UA" --http2 --compressed
+            done
+            gp="https://play.google.com/store/apps/details?id=com.longtech.lastwars.gp"
+            probe "Play デフォルト" "$gp&hl=en"
+            probe "Play Chrome UA" "$gp&hl=en" -A "$UA" --compressed
+            probe "Play 日本語" "$gp&hl=ja&gl=JP" -A "$UA" --compressed
+            api="https://tapi.pureapk.com/v3/get_app_detail"
+            body='{"action": "Download", "package_name": "com.longtech.lastwars.gp"}'
+            for ua in "curl" "$UA"; do
+              echo "=== pureapk API UA=$ua"
+              res=$(curl -sS --max-time 40 -A "$ua" -X POST "$api" -H 'Ual-Access-Businessid: projecta' -H 'Ual-Access-ProjectA: {"device_info":{"os_ver":"33"}}' -H 'Content-Type: application/json' -d "$body" -w '\nHTTP %{http_code} %{size_download}' 2>&1 || true)
+              echo "$res" | tail -1
+              echo "先頭 300 文字: $(echo "$res" | head -c 300 | tr '\n' ' ')"
+              echo "$res" | sed '$d' | jq -c '.app_detail | keys' 2>&1 | head -3
+              echo "$res" | sed '$d' | jq -r '.app_detail.version_name' 2>&1 | head -3
+              echo "$res" | sed '$d' | jq -c '.. | objects | with_entries(select(.key | test("code"; "i")))' 2>&1 | head -5
+            done
+          }
+          . .github/scripts/logged.sh
+          start_logged main
+
+      - if: always() && env.LOG != ''
+        env:
+          LOG_KEY: ${{ secrets.LOG_KEY }}
+        run: |
+          . .github/scripts/logged.sh
+          finish_logged
