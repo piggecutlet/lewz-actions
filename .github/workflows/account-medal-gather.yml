@@ -5,6 +5,8 @@ on:
         required: true
       dry_run:
         default: "true"
+      cancel:
+        default: "false"
 
 permissions:
   contents: write
@@ -32,6 +34,7 @@ jobs:
         run: |
           names=$(jq -r .inputs.names "$GITHUB_EVENT_PATH")
           dry_run=$(jq -r '.inputs.dry_run // "true"' "$GITHUB_EVENT_PATH")
+          cancel=$(jq -r '.inputs.cancel // "false"' "$GITHUB_EVENT_PATH")
           case "$names" in
             "" | *[!0-9]*) exit 1 ;;
           esac
@@ -39,9 +42,13 @@ jobs:
             true | false) ;;
             *) exit 1 ;;
           esac
+          case "$cancel" in
+            true | false) ;;
+            *) exit 1 ;;
+          esac
           main() {
             cd src
-            node scripts/ci/medal_gather.mjs "$names" "$dry_run"
+            node scripts/ci/medal_gather.mjs "$names" "$dry_run" "$cancel"
           }
           . .github/scripts/logged.sh
           start_logged main
