@@ -138,7 +138,11 @@ jobs:
             opt="$opt --items"
           fi
           main() {
-            cd src && printf '%s\n' ${target//,/ } | xargs -P 10 -I{} node scripts/core/weapon_troop_up.mjs {} $opt ${gift_arg:+"$gift_arg"}
+            cd src
+            printf '%s\n' ${target//,/ } | xargs -P 10 -I{} node scripts/core/weapon_troop_up.mjs {} $opt ${gift_arg:+"$gift_arg"}
+            code=$?
+            node -e "import('./scripts/core/_ci.mjs').then(({pushAccounts})=>pushAccounts('chore: CI の weapon-troop-up で accounts.json を更新する'))"
+            exit $code
           }
           . .github/scripts/logged.sh
           start_logged main
