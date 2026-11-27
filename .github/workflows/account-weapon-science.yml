@@ -11,6 +11,9 @@ on:
       instant:
         required: false
         default: "false"
+      repeat:
+        required: false
+        default: "false"
 
 concurrency:
   group: weapon-science
@@ -44,14 +47,26 @@ jobs:
           node=$(jq -r .inputs.node "$GITHUB_EVENT_PATH")
           dry=$(jq -r '.inputs.dry_run // "true"' "$GITHUB_EVENT_PATH")
           [[ "$name" =~ ^[0-9]+$ ]] || exit 1
-          [[ "$node" =~ ^[0-9]+$ ]] || exit 1
+          [[ "$node" =~ ^[0-9]+(,[0-9]+)*$ ]] || exit 1
           instant=$(jq -r '.inputs.instant // "false"' "$GITHUB_EVENT_PATH")
+          repeat=$(jq -r '.inputs.repeat // "false"' "$GITHUB_EVENT_PATH")
           flag=""
           [ "$dry" = "true" ] && flag="--dry-run"
           [ "$instant" = "true" ] && flag="$flag --instant"
           main() {
             cd src
-            node scripts/ci/weapon_science.mjs "$name" "$node" $flag
+            if [ "$repeat" != "true" ]; then
+              node scripts/ci/weapon_science.mjs "$name" "$node" $flag
+              return
+            fi
+            for n in ${node//,/ }; do
+              for i in $(seq 1 40); do
+                rc=0
+                node scripts/ci/weapon_science.mjs "$name" "$n" $flag || rc=$?
+                [ "$rc" = "3" ] && break
+                [ "$rc" != "0" ] && return "$rc"
+              done
+            done
           }
           . .github/scripts/logged.sh
           start_logged main
