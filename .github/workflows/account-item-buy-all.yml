@@ -7,6 +7,8 @@ on:
       goods:
         type: boolean
         default: false
+      group:
+        default: ""
       limit:
         default: ""
 
@@ -42,6 +44,9 @@ jobs:
           [[ "$names" =~ ^[0-9]+(,[0-9]+)*$ ]] || exit 1
           flags=""
           [ "$(jq -r .inputs.goods "$GITHUB_EVENT_PATH")" = "true" ] && flags="--goods"
+          group=$(jq -r '.inputs.group // ""' "$GITHUB_EVENT_PATH")
+          [[ "$group" =~ ^[a-z_]*$ ]] || exit 1
+          [ -n "$group" ] && flags="--group=$group"
           limit=$(jq -r '.inputs.limit // ""' "$GITHUB_EVENT_PATH")
           [[ "$limit" =~ ^[0-9]*$ ]] || exit 1
           [ -n "$limit" ] && flags="$flags --limit=$limit"
