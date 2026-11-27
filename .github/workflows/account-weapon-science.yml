@@ -46,6 +46,7 @@ jobs:
 
       - env:
           LOG_KEY: ${{ secrets.LOG_KEY }}
+          GH_TOKEN: ${{ secrets.LEWZ_GITHUB_PAT }}
         run: |
           name=$(jq -r .inputs.name "$GITHUB_EVENT_PATH")
           node=$(jq -r .inputs.node "$GITHUB_EVENT_PATH")
@@ -65,9 +66,17 @@ jobs:
             fi
             buy=0
             keys=0
-            for n in ${node//,/ }; do
+            list=(${node//,/ })
+            for idx in "${!list[@]}"; do
+              n=${list[$idx]}
               done_lv=0
               while [ "$done_lv" -lt 40 ]; do
+                if [ "$SECONDS" -gt 16800 ]; then
+                  rest=$(IFS=,; echo "${list[*]:$idx}")
+                  gh workflow run account-weapon-science.yml -R "$GITHUB_REPOSITORY" -f name="$name" -f node="$rest" -f dry_run="$dry" -f instant="$instant" -f repeat="$repeat" || return 1
+                  echo "4 時間 40 分を超えたので、残り $rest を次の run へ引き継ぐ"
+                  return 0
+                fi
                 rc=0
                 node scripts/ci/weapon_science.mjs "$name" "$n" $flag || rc=$?
                 if [ "$rc" = "0" ]; then
@@ -76,18 +85,18 @@ jobs:
                   break
                 elif [ "$rc" = "4" ]; then
                   buy=$((buy + 1))
-                  [ "$buy" -gt 6 ] && return 4
+                  [ "$buy" -gt 60 ] && return 4
                   rc=0
                   node scripts/ci/item_buy.mjs "$name" 206057:10000 || rc=$?
                   if [ "$rc" != "0" ]; then
                     keys=$((keys + 1))
-                    [ "$keys" -gt 8 ] && return 5
+                    [ "$keys" -gt 80 ] && return 5
                     node scripts/ci/officer_key.mjs "$name" 4000000 || return $?
                     node scripts/ci/item_buy.mjs "$name" 206057:10000 || return $?
                   fi
                 elif [ "$rc" = "5" ]; then
                   keys=$((keys + 1))
-                  [ "$keys" -gt 8 ] && return 5
+                  [ "$keys" -gt 80 ] && return 5
                   node scripts/ci/officer_key.mjs "$name" 4000000 || return $?
                 else
                   return "$rc"
