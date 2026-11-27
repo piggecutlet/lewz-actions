@@ -37,6 +37,8 @@ on:
         default: ""
       gift_search:
         default: ""
+      use_to:
+        default: ""
       use_items:
         description: 持っている分を 1 個ずつ使うアイテム（<itemId>,...。空なら使わない）
         default: ""
@@ -138,6 +140,11 @@ jobs:
               opt="$opt --${key//_/-}=$value"
             fi
           done
+          use_to=$(jq -r '.inputs.use_to // ""' "$GITHUB_EVENT_PATH")
+          [[ "$use_to" =~ ^([0-9]+:[0-9]+)?$ ]] || exit 1
+          if [ -n "$use_to" ]; then
+            opt="$opt --use-to=$use_to"
+          fi
           castle=$(jq -r '.inputs.attack_castle // ""' "$GITHUB_EVENT_PATH")
           [[ "$castle" =~ ^([0-9]+,[0-9]+)?$ ]] || exit 1
           if [ -n "$castle" ]; then
