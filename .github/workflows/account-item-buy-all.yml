@@ -9,6 +9,8 @@ on:
         default: false
       group:
         default: ""
+      name:
+        default: ""
       limit:
         default: ""
 
@@ -47,6 +49,9 @@ jobs:
           group=$(jq -r '.inputs.group // ""' "$GITHUB_EVENT_PATH")
           [[ "$group" =~ ^[a-z_]*$ ]] || exit 1
           [ -n "$group" ] && flags="--group=$group"
+          part=$(jq -r '.inputs.name // ""' "$GITHUB_EVENT_PATH")
+          [[ "$part" != *[\"\'\ ]* ]] || exit 1
+          [ -n "$part" ] && flags="$flags --name=$part"
           limit=$(jq -r '.inputs.limit // ""' "$GITHUB_EVENT_PATH")
           [[ "$limit" =~ ^[0-9]*$ ]] || exit 1
           [ -n "$limit" ] && flags="$flags --limit=$limit"
