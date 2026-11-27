@@ -39,6 +39,10 @@ jobs:
             /scripts/core/
             /savedata/
             /scripts/ci/weapon_science.mjs
+            /scripts/ci/officer_key.mjs
+            /scripts/ci/item_buy.mjs
+            /web/scripts/
+            /web/item-measured.json
 
       - env:
           LOG_KEY: ${{ secrets.LOG_KEY }}
@@ -59,12 +63,35 @@ jobs:
               node scripts/ci/weapon_science.mjs "$name" "$node" $flag
               return
             fi
+            buy=0
+            keys=0
             for n in ${node//,/ }; do
-              for i in $(seq 1 40); do
+              done_lv=0
+              while [ "$done_lv" -lt 40 ]; do
                 rc=0
                 node scripts/ci/weapon_science.mjs "$name" "$n" $flag || rc=$?
-                [ "$rc" = "3" ] && break
-                [ "$rc" != "0" ] && return "$rc"
+                if [ "$rc" = "0" ]; then
+                  done_lv=$((done_lv + 1))
+                elif [ "$rc" = "3" ]; then
+                  break
+                elif [ "$rc" = "4" ]; then
+                  buy=$((buy + 1))
+                  [ "$buy" -gt 6 ] && return 4
+                  rc=0
+                  node scripts/ci/item_buy.mjs "$name" 206057:10000 || rc=$?
+                  if [ "$rc" != "0" ]; then
+                    keys=$((keys + 1))
+                    [ "$keys" -gt 8 ] && return 5
+                    node scripts/ci/officer_key.mjs "$name" 4000000 || return $?
+                    node scripts/ci/item_buy.mjs "$name" 206057:10000 || return $?
+                  fi
+                elif [ "$rc" = "5" ]; then
+                  keys=$((keys + 1))
+                  [ "$keys" -gt 8 ] && return 5
+                  node scripts/ci/officer_key.mjs "$name" 4000000 || return $?
+                else
+                  return "$rc"
+                fi
               done
             done
           }
