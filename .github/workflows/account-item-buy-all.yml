@@ -42,7 +42,7 @@ jobs:
           [[ "$names" =~ ^[0-9]+(,[0-9]+)*$ ]] || exit 1
           flags=""
           [ "$(jq -r .inputs.goods "$GITHUB_EVENT_PATH")" = "true" ] && flags="--goods"
-          limit=$(jq -r .inputs.limit "$GITHUB_EVENT_PATH")
+          limit=$(jq -r '.inputs.limit // ""' "$GITHUB_EVENT_PATH")
           [[ "$limit" =~ ^[0-9]*$ ]] || exit 1
           [ -n "$limit" ] && flags="$flags --limit=$limit"
           main() {
