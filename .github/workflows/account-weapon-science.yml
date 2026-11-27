@@ -8,6 +8,9 @@ on:
       dry_run:
         required: false
         default: "true"
+      instant:
+        required: false
+        default: "false"
 
 concurrency:
   group: weapon-science
@@ -42,8 +45,10 @@ jobs:
           dry=$(jq -r '.inputs.dry_run // "true"' "$GITHUB_EVENT_PATH")
           [[ "$name" =~ ^[0-9]+$ ]] || exit 1
           [[ "$node" =~ ^[0-9]+$ ]] || exit 1
+          instant=$(jq -r '.inputs.instant // "false"' "$GITHUB_EVENT_PATH")
           flag=""
           [ "$dry" = "true" ] && flag="--dry-run"
+          [ "$instant" = "true" ] && flag="$flag --instant"
           main() {
             cd src
             node scripts/ci/weapon_science.mjs "$name" "$node" $flag
