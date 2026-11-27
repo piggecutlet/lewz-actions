@@ -4,6 +4,11 @@ on:
       names:
         description: gameUid（カンマ区切り）
         required: true
+      goods:
+        type: boolean
+        default: false
+      limit:
+        default: ""
 
 concurrency:
   group: item-buy-all
@@ -35,9 +40,14 @@ jobs:
         run: |
           names=$(jq -r .inputs.names "$GITHUB_EVENT_PATH")
           [[ "$names" =~ ^[0-9]+(,[0-9]+)*$ ]] || exit 1
+          flags=""
+          [ "$(jq -r .inputs.goods "$GITHUB_EVENT_PATH")" = "true" ] && flags="--goods"
+          limit=$(jq -r .inputs.limit "$GITHUB_EVENT_PATH")
+          [[ "$limit" =~ ^[0-9]*$ ]] || exit 1
+          [ -n "$limit" ] && flags="$flags --limit=$limit"
           main() {
             cd src
-            node scripts/ci/item_buy_all.mjs "$names"
+            node scripts/ci/item_buy_all.mjs "$names" $flags
           }
           . .github/scripts/logged.sh
           start_logged main
