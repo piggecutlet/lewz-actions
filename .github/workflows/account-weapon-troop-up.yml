@@ -30,6 +30,8 @@ on:
       open:
         description: 自選箱から選んだ中身をその数だけ受け取る（<箱の itemId>:<中身の itemId>:<数>,...。空なら開けない）
         default: ""
+      open_even:
+        default: ""
       gift:
         description: 持ち物のスキンをプレゼントする（<itemId>,...:<受け手の州>:<受け手の表示名>。空なら贈らない）
         default: ""
@@ -110,6 +112,11 @@ jobs:
           [[ "$pick" =~ ^[0-9:,]*$ ]] || exit 1
           if [ -n "$pick" ]; then
             opt="$opt --open=$pick"
+          fi
+          even=$(jq -r '.inputs.open_even // ""' "$GITHUB_EVENT_PATH")
+          [[ "$even" =~ ^[0-9:,+]*$ ]] || exit 1
+          if [ -n "$even" ]; then
+            opt="$opt --open-even=$even"
           fi
           open=$(jq -r '.inputs.open_each // ""' "$GITHUB_EVENT_PATH")
           [[ "$open" =~ ^[0-9,]*$ ]] || exit 1
