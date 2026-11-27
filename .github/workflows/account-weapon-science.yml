@@ -1,0 +1,59 @@
+on:
+  workflow_dispatch:
+    inputs:
+      name:
+        required: true
+      node:
+        required: true
+      dry_run:
+        required: false
+        default: "true"
+
+concurrency:
+  group: weapon-science
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: ./.github/actions/prepare
+        with:
+          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
+          source-repo: ${{ secrets.SOURCE_REPO }}
+          source-token: ${{ secrets.LEWZ_GITHUB_PAT }}
+          sparse-checkout-cone-mode: false
+          sparse-checkout: |
+            /api/
+            /scripts/core/
+            /savedata/
+            /scripts/ci/weapon_science.mjs
+
+      - env:
+          LOG_KEY: ${{ secrets.LOG_KEY }}
+        run: |
+          name=$(jq -r .inputs.name "$GITHUB_EVENT_PATH")
+          node=$(jq -r .inputs.node "$GITHUB_EVENT_PATH")
+          dry=$(jq -r '.inputs.dry_run // "true"' "$GITHUB_EVENT_PATH")
+          [[ "$name" =~ ^[0-9]+$ ]] || exit 1
+          [[ "$node" =~ ^[0-9]+$ ]] || exit 1
+          flag=""
+          [ "$dry" = "true" ] && flag="--dry-run"
+          main() {
+            cd src
+            node scripts/ci/weapon_science.mjs "$name" "$node" $flag
+          }
+          . .github/scripts/logged.sh
+          start_logged main
+
+      - if: always() && env.LOG != ''
+        env:
+          LOG_KEY: ${{ secrets.LOG_KEY }}
+        run: |
+          . .github/scripts/logged.sh
+          finish_logged
