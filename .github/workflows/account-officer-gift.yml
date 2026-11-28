@@ -1,0 +1,99 @@
+on:
+  workflow_dispatch:
+    inputs:
+      arm:
+        type: choice
+        options:
+          - Lv.10 ゾンビ
+          - Lv.10 戦士
+          - Lv.10 車両
+          - Lv.10 射手
+      to:
+        required: false
+        default: ""
+      accept:
+        required: false
+        default: ""
+      approver:
+        required: false
+        default: ""
+      amount:
+        default: "10000000"
+      diamonds:
+        default: "2000000"
+      dry_run:
+        type: boolean
+        default: false
+      state:
+        default: "775"
+
+concurrency:
+  group: ${{ inputs.dry_run && format('officer-gift-dry-{0}', github.run_id) || format('officer-gift-{0}-{1}', inputs.state, inputs.approver) }}
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: ./.github/actions/prepare
+        with:
+          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
+          source-repo: ${{ secrets.SOURCE_REPO }}
+          source-token: ${{ secrets.LEWZ_GITHUB_PAT }}
+          sparse-checkout-cone-mode: false
+          sparse-checkout: |
+            /api/
+            /scripts/core/
+            /scripts/skip/
+            /savedata/
+            /scripts/ci/officer_gift.mjs
+            /scripts/ci/officer_key.mjs
+            /scripts/ci/leave_alliance.mjs
+            /decompile/resources/ja/ja_ilocalize_base.json
+            /decompile/resources/WarZDoc/config/database.activity.xml
+            /decompile/resources/obb/assets/WorldMap.tmx
+
+      - timeout-minutes: 340
+        env:
+          LOG_KEY: ${{ secrets.LOG_KEY }}
+          LOG_EVERY: 6
+          GH_TOKEN: ${{ secrets.LEWZ_GITHUB_PAT }}
+          ARM: ${{ inputs.arm }}
+          AMOUNT: ${{ inputs.amount }}
+          DIAMONDS: ${{ inputs.diamonds }}
+          DRY_RUN: ${{ inputs.dry_run && '--dry-run' || '' }}
+          STATE: ${{ inputs.state || '775' }}
+        run: |
+          case "$AMOUNT$DIAMONDS$STATE" in
+            *[!0-9]*) exit 1 ;;
+          esac
+          to=$(jq -r ".inputs.to // \"\"" "$GITHUB_EVENT_PATH")
+          accept=$(jq -r ".inputs.accept // \"\"" "$GITHUB_EVENT_PATH")
+          case "$accept" in
+            *[!0-9]*) exit 1 ;;
+          esac
+          approver=$(jq -r ".inputs.approver // \"\"" "$GITHUB_EVENT_PATH")
+          case "$approver" in
+            *[!0-9]*) exit 1 ;;
+          esac
+          main() {
+            cd src
+            node --max-old-space-size=8192 scripts/ci/officer_gift.mjs --arm="$ARM" ${to:+"--to=$to"} ${accept:+"--accept=$accept"} ${approver:+"--approver=$approver"} --amount="$AMOUNT" --diamonds="$DIAMONDS" --state="$STATE" $DRY_RUN
+            code=$?
+            node -e "import('./scripts/core/_ci.mjs').then(({pushAccounts})=>pushAccounts('chore: CI の officer-gift で accounts.json を更新する'))"
+            exit $code
+          }
+          . .github/scripts/logged.sh
+          start_logged main
+
+      - if: always() && env.LOG != ''
+        env:
+          LOG_KEY: ${{ secrets.LOG_KEY }}
+        run: |
+          . .github/scripts/logged.sh
+          finish_logged
