@@ -91,13 +91,13 @@ jobs:
                   if [ "$rc" != "0" ]; then
                     keys=$((keys + 1))
                     [ "$keys" -gt 80 ] && return 5
-                    node scripts/ci/officer_key.mjs "$name" 4000000 || return $?
+                    node scripts/ci/officer_key.mjs "$name" 4000000 --no-gift || return $?
                     node scripts/ci/item_buy.mjs "$name" 206057:10000 || return $?
                   fi
                 elif [ "$rc" = "5" ]; then
                   keys=$((keys + 1))
                   [ "$keys" -gt 80 ] && return 5
-                  node scripts/ci/officer_key.mjs "$name" 4000000 || return $?
+                  node scripts/ci/officer_key.mjs "$name" 4000000 --no-gift || return $?
                 else
                   return "$rc"
                 fi
