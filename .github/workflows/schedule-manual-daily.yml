@@ -58,7 +58,7 @@ jobs:
             if [ "$slot" = 09 ]; then node scripts/core/vip_store.mjs "$names" --officer-exp || true; fi
             if [ "$slot" = 09 ]; then
               for n in ${names//,/ }; do
-                node scripts/core/weapon_troop_up.mjs "$n" --weapon=130202 --troop=4 --weapon-gold-limit=100000 --troop-gold-limit=50000 || true
+                node scripts/core/weapon_troop_up.mjs "$n" --weapon=130202 --troop=4 --weapon-gold-limit=1000000 --troop-gold-limit=50000 || true
                 node scripts/ci/bulk_reward.mjs "$n" || true
               done
             fi
