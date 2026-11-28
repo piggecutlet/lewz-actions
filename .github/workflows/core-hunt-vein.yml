@@ -119,6 +119,7 @@ jobs:
               esac
             fi
             skip_on() {
+              case "$(TZ=Asia/Tokyo date +%H%M)" in 09[0-2]?|21[0-2]?) return 0 ;; esac
               git fetch -q origin main
               [ "$(git show origin/main:scripts/skip/core-hunt-vein.txt | tr -d '[:space:]')" = true ]
             }
@@ -132,7 +133,7 @@ jobs:
             rc=0
             while [ "$(date +%s)" -lt $stop_at ]; do
               if skip_on; then
-                echo "scripts/skip/core-hunt-vein.txt が true なのでログインしない"
+                echo "JST 9:00〜9:30・21:00〜21:30 か scripts/skip/core-hunt-vein.txt が true なのでログインしない"
                 [ -z "$daily" ] && return 0
                 sleep 60
                 continue
@@ -147,7 +148,7 @@ jobs:
                 if [ $t -ge 60 ]; then
                   t=0
                   if skip_on; then
-                    echo "scripts/skip/core-hunt-vein.txt が true になったので止める"
+                    echo "JST 9:00〜9:30・21:00〜21:30 か scripts/skip/core-hunt-vein.txt が true になったので止める"
                     kill $pid
                     stopped=1
                     break
