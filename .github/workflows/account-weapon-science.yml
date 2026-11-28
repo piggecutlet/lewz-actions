@@ -14,6 +14,9 @@ on:
       repeat:
         required: false
         default: "false"
+      goods:
+        required: false
+        default: "206057"
 
 concurrency:
   group: weapon-science
@@ -55,6 +58,8 @@ jobs:
           [[ "$node" =~ ^[0-9]+(,[0-9]+)*$ ]] || exit 1
           instant=$(jq -r '.inputs.instant // "false"' "$GITHUB_EVENT_PATH")
           repeat=$(jq -r '.inputs.repeat // "false"' "$GITHUB_EVENT_PATH")
+          goods=$(jq -r '.inputs.goods // "206057"' "$GITHUB_EVENT_PATH")
+          [[ "$goods" =~ ^[0-9]+$ ]] || exit 1
           flag=""
           [ "$dry" = "true" ] && flag="--dry-run"
           [ "$instant" = "true" ] && flag="$flag --instant"
@@ -73,7 +78,7 @@ jobs:
               while [ "$done_lv" -lt 40 ]; do
                 if [ "$SECONDS" -gt 16800 ]; then
                   rest=$(IFS=,; echo "${list[*]:$idx}")
-                  gh workflow run account-weapon-science.yml -R "$GITHUB_REPOSITORY" -f name="$name" -f node="$rest" -f dry_run="$dry" -f instant="$instant" -f repeat="$repeat" || return 1
+                  gh workflow run account-weapon-science.yml -R "$GITHUB_REPOSITORY" -f name="$name" -f node="$rest" -f dry_run="$dry" -f instant="$instant" -f repeat="$repeat" -f goods="$goods" || return 1
                   echo "4 時間 40 分を超えたので、残り $rest を次の run へ引き継ぐ"
                   return 0
                 fi
@@ -87,12 +92,12 @@ jobs:
                   buy=$((buy + 1))
                   [ "$buy" -gt 60 ] && return 4
                   rc=0
-                  node scripts/ci/item_buy.mjs "$name" 206057:10000 || rc=$?
+                  node scripts/ci/item_buy.mjs "$name" "$goods:10000" || rc=$?
                   if [ "$rc" != "0" ]; then
                     keys=$((keys + 1))
                     [ "$keys" -gt 80 ] && return 5
                     node scripts/ci/officer_key.mjs "$name" 4000000 --no-gift || return $?
-                    node scripts/ci/item_buy.mjs "$name" 206057:10000 || return $?
+                    node scripts/ci/item_buy.mjs "$name" "$goods:10000" || return $?
                   fi
                 elif [ "$rc" = "5" ]; then
                   keys=$((keys + 1))
