@@ -5,6 +5,12 @@ on:
         required: true
       diamonds:
         required: true
+      no_gift:
+        required: false
+        default: "false"
+      batch:
+        required: false
+        default: "1"
 
 concurrency:
   group: officer-key
@@ -38,9 +44,14 @@ jobs:
           diamonds=$(jq -r .inputs.diamonds "$GITHUB_EVENT_PATH")
           [[ "$name" =~ ^[0-9]+$ ]] || exit 1
           [[ "$diamonds" =~ ^[0-9]+$ ]] || exit 1
+          no_gift=$(jq -r '.inputs.no_gift // "false"' "$GITHUB_EVENT_PATH")
+          batch=$(jq -r '.inputs.batch // "1"' "$GITHUB_EVENT_PATH")
+          [[ "$batch" =~ ^[0-9]+$ ]] || exit 1
+          flag="--batch=$batch"
+          [ "$no_gift" = "true" ] && flag="$flag --no-gift"
           main() {
             cd src
-            node scripts/ci/officer_key.mjs "$name" "$diamonds"
+            node scripts/ci/officer_key.mjs "$name" "$diamonds" $flag
           }
           . .github/scripts/logged.sh
           start_logged main
