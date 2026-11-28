@@ -8,12 +8,6 @@ on:
       no_gift:
         required: false
         default: "false"
-      batch:
-        required: false
-        default: "1"
-      gift_batch:
-        required: false
-        default: "1"
 
 concurrency:
   group: officer-key
@@ -48,11 +42,7 @@ jobs:
           [[ "$name" =~ ^[0-9]+$ ]] || exit 1
           [[ "$diamonds" =~ ^[0-9]+$ ]] || exit 1
           no_gift=$(jq -r '.inputs.no_gift // "false"' "$GITHUB_EVENT_PATH")
-          batch=$(jq -r '.inputs.batch // "1"' "$GITHUB_EVENT_PATH")
-          gift_batch=$(jq -r '.inputs.gift_batch // "1"' "$GITHUB_EVENT_PATH")
-          [[ "$batch" =~ ^[0-9]+$ ]] || exit 1
-          [[ "$gift_batch" =~ ^[0-9]+$ ]] || exit 1
-          flag="--batch=$batch --gift-batch=$gift_batch"
+          flag=""
           [ "$no_gift" = "true" ] && flag="$flag --no-gift"
           main() {
             cd src
